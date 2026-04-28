@@ -66,10 +66,10 @@ export default function Home() {
           characterImage: row.characterImage,
           description: row.description,
           trivia: row.trivia,
-          status: row.status,
+          status: String(row.status || "").trim(),
         }));
 
-        setSpots(data.filter((s) => s.status === "ready"));
+        setSpots(data.filter((s) => s.status.toLowerCase() === "ready"));
       });
   }, []);
 
