@@ -2,6 +2,13 @@
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?output=csv";
 import { useEffect, useState } from "react";
 import spots from "../data/spots.json";
+import Papa from "papaparse";
+
+export const metadata = {
+  title: "TimeWalk Tokyo | 近くの歴史スポットを探せる街歩きガイド",
+  description:
+    "TimeWalk Tokyoは、現在地から近くの歴史スポットを表示し、人物・歴史解説・トリビアを楽しめる街歩きガイドアプリです。",
+};
 
 type Spot = {
   id: string;
@@ -36,33 +43,35 @@ export default function Home() {
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-  fetch(SHEET_URL)
-    .then((res) => res.text())
-    .then((text) => {
-      const rows = text.split("\n").slice(1);
-      const data = rows.map((row) => {
-        const cols = row.split(",");
-        return {
-          id: cols[0],
-          name: cols[1],
-          lat: Number(cols[2]),
-          lng: Number(cols[3]),
-          area: cols[4],
-          category: cols[5],
-          characterId: cols[6],
-          character: cols[7],
-          characterDescription: cols[8],
-          characterImage: cols[9],
-          description: cols[10],
-          trivia: cols[11],
-          status: cols[12]?.trim(),
-        };
-      });
 
-      setSpots(data.filter((s) => s.status === "ready"));
-    });
-}, []);
+  useEffect(() => {
+    fetch(SHEET_URL)
+      .then((res) => res.text())
+      .then((text) => {
+        const parsed = Papa.parse(text, {
+          header: true,
+          skipEmptyLines: true,
+        });
+
+        const data = parsed.data.map((row: any) => ({
+          id: row.id,
+          name: row.name,
+          lat: Number(row.lat),
+          lng: Number(row.lng),
+          area: row.area,
+          category: row.category,
+          characterId: row.characterId,
+          character: row.character,
+          characterDescription: row.characterDescription,
+          characterImage: row.characterImage,
+          description: row.description,
+          trivia: row.trivia,
+          status: row.status,
+        }));
+
+        setSpots(data.filter((s) => s.status === "ready"));
+      });
+  }, []);
 
 useEffect(() => {
   if (!navigator.geolocation) {
@@ -162,7 +171,7 @@ useEffect(() => {
 
           <section className="bg-white text-black rounded-2xl p-4 mb-4">
             <h3 className="font-bold mb-2">歴史解説</h3>
-            <p>{selectedSpot.description}</p>
+            <p dangerouslySetInnerHTML={{ __html: selectedSpot.description }} />
           </section>
 
           <section className="bg-yellow-100 text-black rounded-2xl p-4">
