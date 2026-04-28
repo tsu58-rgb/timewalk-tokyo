@@ -1,0 +1,58 @@
+{
+  "stage_id": "ginza_001",
+  "title": "銀座・消えた時計塔の暗号",
+  "area": "銀座",
+  "clear_message": "すべての謎が解けた。時計塔の暗号が示していた場所は『銀座四丁目』だった。",
+  "puzzles": [
+    {
+      "id": "q1",
+      "type": "anagram",
+      "title": "ばらばらの文字",
+      "question": "次の文字を並び替えて、銀座に関係する言葉を作れ。\n\nぎ ん ざ",
+      "hints": ["東京を代表する繁華街です。", "高級店や百貨店が並びます。"],
+      "answer": ["ぎんざ", "銀座"],
+      "display_answer": "銀座",
+      "explanation": "ぎ・ん・ざ → ぎんざ"
+    },
+    {
+      "id": "q2",
+      "type": "number_code",
+      "title": "数字の暗号",
+      "question": "次の数字を「あいうえお順」に変換せよ。\n\n7 - 46 - 20",
+      "hints": ["あ=1です", "銀座の地名です"],
+      "answer": ["ぎんざ", "銀座"],
+      "display_answer": "銀座",
+      "explanation": "7=ぎ、46=ん、20=ざ"
+    },
+    {
+      "id": "q3",
+      "type": "common_point",
+      "title": "共通点",
+      "question": "時計塔 / 和光 / 三越\n共通する場所は？",
+      "hints": ["交差点", "銀座の中心"],
+      "answer": ["ぎんざよんちょうめ", "銀座四丁目"],
+      "display_answer": "銀座四丁目",
+      "explanation": "銀座四丁目"
+    },
+    {
+      "id": "q4",
+      "type": "visual_rebus",
+      "title": "組み合わせ",
+      "question": "銀 + 座 = ?",
+      "hints": ["そのまま読む"],
+      "answer": ["ぎんざ", "銀座"],
+      "display_answer": "銀座",
+      "explanation": "銀座"
+    },
+    {
+      "id": "q5",
+      "type": "story_reasoning",
+      "title": "最後の場所",
+      "question": "百貨店→時計塔。この場所は？",
+      "hints": ["銀座", "交差点"],
+      "answer": ["ぎんざよんちょうめ", "銀座四丁目"],
+      "display_answer": "銀座四丁目",
+      "explanation": "銀座四丁目"
+    }
+  ]
+}
