@@ -4,12 +4,6 @@ import { useEffect, useState } from "react";
 import spots from "../data/spots.json";
 import Papa from "papaparse";
 
-export const metadata = {
-  title: "TimeWalk Tokyo | 近くの歴史スポットを探せる街歩きガイド",
-  description:
-    "TimeWalk Tokyoは、現在地から近くの歴史スポットを表示し、人物・歴史解説・トリビアを楽しめる街歩きガイドアプリです。",
-};
-
 type Spot = {
   id: string;
   name: string;
