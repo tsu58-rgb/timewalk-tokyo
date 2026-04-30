@@ -383,12 +383,18 @@ export default function Home() {
           </p>
         )}
 
-        {position && filteredSpots.length === 0 && (
+        {position && filteredSpots.length === 0 && selectedTags.length > 0 && (
           <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">
             条件に合う登録スポットがありません。
           </p>
         )}
 
+        {position && selectedTags.length === 0 && (
+          <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">
+            タグが選択されていません。
+          </p>
+        )}
+        
         <p className="text-xs text-slate-400 mb-3">
           表示件数：{filteredSpots.length}件（最大{DISPLAY_LIMIT}件）
         </p>
