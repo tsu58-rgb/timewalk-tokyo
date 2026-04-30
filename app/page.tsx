@@ -57,6 +57,7 @@ export default function Home() {
   const [address, setAddress] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedDistance, setSelectedDistance] = useState(2000);
+  const [tagsInitialized, setTagsInitialized] = useState(false);
 
   useEffect(() => {
     fetch(SHEET_URL)
@@ -95,9 +96,15 @@ export default function Home() {
       const data = await res.json();
       const a = data.address || {};
 
-      const text = `${a.state || ""}${a.city || a.town || a.village || ""}${
-        a.suburb || a.city_district || ""
-      }`;
+      const ward = a.city || a.town || a.village || a.city_district || "";
+      const town =
+        a.suburb ||
+        a.neighbourhood ||
+        a.quarter ||
+        a.residential ||
+        "";
+
+      const text = `${a.state || ""}${ward}${town}`;
 
       setAddress(text ? `${text}付近` : "");
     } catch (e) {
@@ -178,6 +185,7 @@ export default function Home() {
   useEffect(() => {
     if (allTags.length > 0 && selectedTags.length === 0) {
       setSelectedTags(allTags);
+      setTagsInitialized(true);
     }
   }, [allTags, selectedTags.length]);
 
@@ -343,7 +351,7 @@ export default function Home() {
                 onClick={() => setSelectedTags([])}
                 className="text-xs bg-slate-600 text-white px-2 py-1 rounded-lg font-bold"
               >
-                解除
+                全解除
               </button>
             </div>
           </div>
