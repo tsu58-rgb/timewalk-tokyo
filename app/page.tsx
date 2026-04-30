@@ -183,11 +183,11 @@ export default function Home() {
   }, [spots]);
 
   useEffect(() => {
-    if (allTags.length > 0 && selectedTags.length === 0) {
+    if (allTags.length > 0 && !tagsInitialized) {
       setSelectedTags(allTags);
       setTagsInitialized(true);
     }
-  }, [allTags, selectedTags.length]);
+  }, [allTags, tagsInitialized]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
