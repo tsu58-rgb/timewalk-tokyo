@@ -203,16 +203,17 @@ export default function Home() {
 
       return { ...spot, distance };
     })
+
     .filter((spot) => {
       if (!position || spot.distance === null) return false;
+      if (selectedTags.length === 0) return false;
       if (spot.distance > selectedDistance) return false;
 
       const categories = getCategories(spot.category);
 
-      if (selectedTags.length === 0) return false;
-
       return categories.some((cat) => selectedTags.includes(cat));
     })
+    
     .sort((a, b) => {
       if (a.distance === null || b.distance === null) return 0;
       return a.distance - b.distance;
