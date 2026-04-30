@@ -32,17 +32,23 @@ type Spot = {
   status: string;
 };
 
+type SpotWithDistance = Spot & {
+  distance: number | null;
+};
+
 function calcDistanceMeters(
   lat1: number,
   lng1: number,
   lat2: number,
   lng2: number
 ) {
-  return Math.sqrt(Math.pow(lat1 - lat2, 2) + Math.pow(lng1 - lng2, 2)) * 111000;
+  return (
+    Math.sqrt(Math.pow(lat1 - lat2, 2) + Math.pow(lng1 - lng2, 2)) * 111000
+  );
 }
 
 function getCategories(category: string) {
-  return category
+  return String(category || "")
     .split("・")
     .map((c) => c.trim())
     .filter(Boolean);
@@ -68,23 +74,34 @@ export default function Home() {
           skipEmptyLines: true,
         });
 
-        const data = parsed.data.map((row: any) => ({
-          id: row.id,
-          name: row.name,
+        const data = (parsed.data as any[]).map((row: any) => ({
+          id: row.id || "",
+          name: row.name || "",
           lat: Number(row.lat),
           lng: Number(row.lng),
-          area: row.area,
+          area: row.area || "",
           category: row.category || "",
-          characterId: row.characterId,
-          character: row.character,
-          characterDescription: row.characterDescription,
-          characterImage: row.characterImage,
-          description: row.description,
-          trivia: row.trivia,
+          characterId: row.characterId || "",
+          character: row.character || "",
+          characterDescription: row.characterDescription || "",
+          characterImage: row.characterImage || "",
+          description: row.description || "",
+          trivia: row.trivia || "",
           status: String(row.status || "").trim(),
         }));
 
-        setSpots(data.filter((s) => s.status.toLowerCase() === "ready"));
+        setSpots(
+          data.filter(
+            (s) =>
+              s.status.toLowerCase() === "ready" &&
+              Number.isFinite(s.lat) &&
+              Number.isFinite(s.lng)
+          )
+        );
+      })
+      .catch((err) => {
+        console.error(err);
+        setError("スポットデータの取得に失敗しました。");
       });
   }, []);
 
@@ -98,14 +115,9 @@ export default function Home() {
 
       const ward = a.city || a.town || a.village || a.city_district || "";
       const town =
-        a.suburb ||
-        a.neighbourhood ||
-        a.quarter ||
-        a.residential ||
-        "";
+        a.suburb || a.neighbourhood || a.quarter || a.residential || "";
 
       const text = `${a.state || ""}${ward}${town}`;
-
       setAddress(text ? `${text}付近` : "");
     } catch (e) {
       console.error(e);
@@ -195,32 +207,33 @@ export default function Home() {
     );
   };
 
-  const filteredSpots = spots
+  const filteredSpots: SpotWithDistance[] = spots
     .map((spot) => {
       const distance = position
-        ? calcDistanceMeters(position.latitude, position.longitude, spot.lat, spot.lng)
+        ? calcDistanceMeters(
+            position.latitude,
+            position.longitude,
+            spot.lat,
+            spot.lng
+          )
         : null;
 
       return { ...spot, distance };
     })
-
     .filter((spot) => {
       if (!position || spot.distance === null) return false;
       if (selectedTags.length === 0) return false;
       if (spot.distance > selectedDistance) return false;
 
       const categories = getCategories(spot.category);
-
       return categories.some((cat) => selectedTags.includes(cat));
     })
-    
     .sort((a, b) => {
       if (a.distance === null || b.distance === null) return 0;
       return a.distance - b.distance;
-    })
-    .slice(0, DISPLAY_LIMIT);
+    });
 
-    const visibleSpots = filteredSpots.slice(0, DISPLAY_LIMIT);
+  const visibleSpots = filteredSpots.slice(0, DISPLAY_LIMIT);
 
   if (selectedSpot) {
     return (
@@ -264,9 +277,11 @@ export default function Home() {
               />
             )}
 
-            <h2 className="text-xl font-bold text-center mb-2">
-              {selectedSpot.character}
-            </h2>
+            {selectedSpot.character && (
+              <h2 className="text-xl font-bold text-center mb-2">
+                {selectedSpot.character}
+              </h2>
+            )}
 
             {selectedSpot.characterDescription && (
               <p
@@ -391,7 +406,7 @@ export default function Home() {
             タグが選択されていません。
           </p>
         )}
-        
+
         <p className="text-xs text-slate-400 mb-3">
           表示件数：{visibleSpots.length}件（最大{DISPLAY_LIMIT}件）
         </p>
@@ -402,13 +417,12 @@ export default function Home() {
           </p>
         ) : (
           <div className="space-y-3">
-            {visibleSpots.map((spot) => {
-              return (
-                <button
-                  key={spot.id}
-                  onClick={() => setSelectedSpot(spot)}
-                  className="w-full text-left bg-slate-800 rounded-2xl p-4 border border-slate-600"
-                >
+            {visibleSpots.map((spot) => (
+              <button
+                key={`${spot.id}-${spot.lat}-${spot.lng}`}
+                onClick={() => setSelectedSpot(spot)}
+                className="w-full text-left bg-slate-800 rounded-2xl p-4 border border-slate-600"
+              >
                 <div className="flex justify-between gap-3">
                   <div>
                     <div className="flex flex-wrap gap-1 mb-1">
@@ -436,11 +450,9 @@ export default function Home() {
                   </div>
                 </div>
               </button>
-            );
-          })}
-        </div>
-      )}
-
+            ))}
+          </div>
+        )}
 
         <div className="mt-8 text-sm text-slate-400 leading-relaxed">
           TimeWalk Tokyoは、現在地から近くの歴史スポットを探せる街歩きアプリです。
@@ -461,5 +473,4 @@ export default function Home() {
       </div>
     </main>
   );
-)}
 }
