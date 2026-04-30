@@ -44,6 +44,7 @@ export default function Home() {
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [error, setError] = useState("");
   const [locationLoading, setLocationLoading] = useState(false);
+  const [address, setAddress] = useState("");
 
   useEffect(() => {
     fetch(SHEET_URL)
@@ -86,6 +87,7 @@ export default function Home() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setPosition(pos.coords);
+        fetchAddress(pos.coords.latitude, pos.coords.longitude);
         setError("");
         setLocationLoading(false);
       },
@@ -101,6 +103,23 @@ export default function Home() {
     );
   };
 
+  const fetchAddress = async (lat: number, lon: number) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=ja`
+      );
+      const data = await res.json();
+
+      const a = data.address;
+
+      const text = `${a.state || ""}${a.city || a.town || a.village || ""}${a.suburb || ""}`;
+
+      setAddress(text + "付近");
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     if (!navigator.geolocation) {
       setError("このブラウザは位置情報に対応していません");
@@ -112,6 +131,7 @@ export default function Home() {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         setPosition(pos.coords);
+        fetchAddress(pos.coords.latitude, pos.coords.longitude);
         setError("");
       },
       (err) => {
@@ -161,14 +181,6 @@ export default function Home() {
 
       return da - db;
     });
-
-  const mapUrl =
-    sortedSpots.length > 0
-      ? `https://www.google.com/maps/dir/?api=1&destination=${sortedSpots[0].lat},${sortedSpots[0].lng}&waypoints=${sortedSpots
-          .slice(1, 10)
-          .map((spot) => `${spot.lat},${spot.lng}`)
-          .join("|")}`
-      : "";
 
   if (selectedSpot) {
     return (
@@ -253,6 +265,10 @@ export default function Home() {
           TimeWalk Tokyo
         </h1>
 
+        <p className="text-center text-sm text-slate-300 mb-2">
+          📍 {address || "現在地取得中..."}
+        </p>
+
         <p className="text-center text-sm text-slate-300 mb-4">
           近くの歴史スポット
         </p>
@@ -263,17 +279,6 @@ export default function Home() {
         >
           {locationLoading ? "現在地を取得中..." : "📍 現在地を更新"}
         </button>
-
-        {sortedSpots.length > 0 && (
-          <a
-            href={mapUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block mb-4 bg-green-500 text-white text-center px-4 py-3 rounded-xl font-bold"
-          >
-            🗺️ 近くのスポットをGoogleマップで見る
-          </a>
-        )}
 
         {error && (
           <p className="bg-red-900 rounded-xl p-3 mb-4 text-sm">{error}</p>
@@ -335,6 +340,21 @@ export default function Home() {
               </button>
             );
           })}
+
+          <div className="mt-8 text-sm text-slate-400 leading-relaxed">
+            TimeWalk Tokyoは、現在地から近くの歴史スポットを探せる街歩きアプリです。東京を中心に、寺社・史跡・記念碑・文化財・劇場などのスポットを一覧で表示し、登場人物や歴史解説、トリビアをあわせて楽しめます。<br /><br />
+            GPSを利用して現在地周辺のスポットを距離順に表示できるため、散歩や観光の途中でも効率よく歴史を学ぶことができます。浅草・上野・日本橋・銀座・新宿・渋谷・神保町など、さまざまなエリアでの歴史スポット巡りにも対応しています。<br /><br />
+            スマートフォンから利用でき、近くのスポットをその場で確認しながら街歩きを楽しめるのが特徴です。今いる場所から新しい発見ができる、歴史散歩のためのガイドツールです。<br /><br />
+
+            <a
+              href="https://yuru-rekishi-sanpo.com/timewalk"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 underline"
+            >
+              ▶ TimeWalk Tokyoの使い方・特徴はこちら
+            </a>
+          </div>
         </div>
       </div>
     </main>
