@@ -29,6 +29,9 @@ type Spot = {
   characterImage?: string;
   description: string;
   trivia: string;
+  country: string;
+  prefecture: string;
+  city: string;
   status: string;
 };
 
@@ -74,14 +77,17 @@ export default function Home() {
           skipEmptyLines: true,
         });
 
+
         const data = (parsed.data as any[]).map((row: any) => ({
           id: row.id || "",
           name: row.name || "",
           lat: Number(row.lat),
           lng: Number(row.lng),
+          country: row.country || "",
+          prefecture: row.prefecture || "",
+          city: row.city || "",
           area: row.area || "",
-          category: row.category || "",
-          characterId: row.characterId || "",
+          category: row.category || "",        characterId: row.characterId || "",
           character: row.character || "",
           characterDescription: row.characterDescription || "",
           characterImage: row.characterImage || "",
