@@ -220,6 +220,8 @@ export default function Home() {
     })
     .slice(0, DISPLAY_LIMIT);
 
+    const visibleSpots = filteredSpots.slice(0, DISPLAY_LIMIT);
+
   if (selectedSpot) {
     return (
       <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
@@ -384,12 +386,6 @@ export default function Home() {
           </p>
         )}
 
-        {position && filteredSpots.length === 0 && selectedTags.length > 0 && (
-          <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">
-            条件に合う登録スポットがありません。
-          </p>
-        )}
-
         {position && selectedTags.length === 0 && (
           <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">
             タグが選択されていません。
@@ -397,17 +393,22 @@ export default function Home() {
         )}
         
         <p className="text-xs text-slate-400 mb-3">
-          表示件数：{filteredSpots.length}件（最大{DISPLAY_LIMIT}件）
+          表示件数：{visibleSpots.length}件（最大{DISPLAY_LIMIT}件）
         </p>
 
-        <div className="space-y-3">
-          {filteredSpots.map((spot) => {
-            return (
-              <button
-                key={spot.id}
-                onClick={() => setSelectedSpot(spot)}
-                className="w-full text-left bg-slate-800 rounded-2xl p-4 border border-slate-600"
-              >
+        {visibleSpots.length === 0 ? (
+          <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">
+            条件に合う登録スポットがありません。
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {visibleSpots.map((spot) => {
+              return (
+                <button
+                  key={spot.id}
+                  onClick={() => setSelectedSpot(spot)}
+                  className="w-full text-left bg-slate-800 rounded-2xl p-4 border border-slate-600"
+                >
                 <div className="flex justify-between gap-3">
                   <div>
                     <div className="flex flex-wrap gap-1 mb-1">
@@ -438,6 +439,8 @@ export default function Home() {
             );
           })}
         </div>
+      )}
+
 
         <div className="mt-8 text-sm text-slate-400 leading-relaxed">
           TimeWalk Tokyoは、現在地から近くの歴史スポットを探せる街歩きアプリです。
@@ -458,4 +461,5 @@ export default function Home() {
       </div>
     </main>
   );
+)}
 }
