@@ -84,7 +84,7 @@ export default function Home() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedDistance, setSelectedDistance] = useState(2000);
   const [tagsInitialized, setTagsInitialized] = useState(false);
-
+  const [screen, setScreen] = useState<"home" | "courseSelect">("home");
   const [baseMode, setBaseMode] = useState<"current" | "custom">("current");
   const [customPosition, setCustomPosition] = useState<{
     lat: number;
@@ -330,6 +330,43 @@ export default function Home() {
 
   const visibleSpots = filteredSpots.slice(0, DISPLAY_LIMIT);
 
+  if (screen === "courseSelect") {
+    return (
+      <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
+        <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
+          <button
+            onClick={() => setScreen("home")}
+            className="mb-4 bg-white text-black px-4 py-2 rounded-xl font-bold"
+          >
+            ← Topに戻る
+          </button>
+
+          <h1 className="text-2xl font-bold mb-4">コース変更</h1>
+
+          <div className="space-y-3">
+            {allCourses.map((course) => (
+              <button
+                key={course}
+                onClick={() => {
+                  setSelectedCourse(course);
+                  setScreen("home");
+                }}
+                className={`w-full text-left px-4 py-4 rounded-2xl font-bold ${
+                  selectedCourse === course
+                    ? "bg-blue-500 text-white"
+                    : "bg-slate-800 text-slate-200"
+                }`}
+              >
+                {selectedCourse === course ? "✅ " : ""}
+                {course}
+              </button>
+            ))}
+          </div>
+        </div>
+      </main>
+    );
+  }  
+
   if (selectedSpot) {
     return (
       <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
@@ -364,15 +401,6 @@ export default function Home() {
           </button>
 
           <div className="flex flex-wrap gap-2 mb-3">
-            {getModes(selectedSpot.mode).map((mode) => (
-              <span
-                key={mode}
-                className="text-xs bg-blue-300 text-black px-2 py-1 rounded-full font-bold"
-              >
-                {mode}
-              </span>
-            ))}
-
             {getCategories(selectedSpot.category).map((cat) => (
               <span
                 key={cat}
@@ -458,25 +486,20 @@ export default function Home() {
         </button>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <p className="font-bold mb-2">コース</p>
+          <p className="text-sm text-slate-300 mb-2">現在選択中のコース：</p>
 
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {allCourses.map((course) => (
-              <button
-                key={course}
-                onClick={() => setSelectedCourse(course)}
-                className={`px-3 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${
-                  selectedCourse === course
-                    ? "bg-blue-500 text-white"
-                    : "bg-slate-700 text-slate-300"
-                }`}
-              >
-                {course}
-              </button>
-            ))}
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xl font-bold">{selectedCourse}</p>
+
+            <button
+              onClick={() => setScreen("courseSelect")}
+              className="bg-blue-500 text-white px-4 py-2 rounded-xl font-bold whitespace-nowrap"
+            >
+              コース変更
+            </button>
           </div>
         </section>
-
+        
         <div className="flex gap-2 mb-4">
           <button
             onClick={() => setBaseMode("current")}
@@ -614,15 +637,6 @@ export default function Home() {
                 <div className="flex justify-between gap-3">
                   <div>
                     <div className="flex flex-wrap gap-1 mb-1">
-                      {getModes(spot.mode).map((mode) => (
-                        <span
-                          key={mode}
-                          className="text-xs bg-blue-300 text-black px-2 py-1 rounded-full font-bold"
-                        >
-                          {mode}
-                        </span>
-                      ))}
-
                       {getCategories(spot.category).map((cat) => (
                         <span
                           key={cat}
