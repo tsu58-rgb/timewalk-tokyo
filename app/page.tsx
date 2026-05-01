@@ -321,14 +321,18 @@ export default function Home() {
           <h1 className="text-2xl font-bold mb-4">{selectedSpot.name}</h1>
 
           <div className="bg-slate-800 rounded-2xl p-4 mb-4">
+            
             {selectedSpot.characterImage && (
               <img
                 src={selectedSpot.characterImage}
                 alt={selectedSpot.character}
                 className="w-full max-h-64 object-contain mb-3 rounded-xl"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
               />
             )}
-
+                        
             {selectedSpot.character && (
               <h2 className="text-xl font-bold text-center mb-2">
                 {selectedSpot.character}
