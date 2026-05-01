@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Papa from "papaparse";
-import MapPicker from "./components/MapPicker";
+
+const MapPicker = dynamic(() => import("./components/MapPicker"), {
+  ssr: false,
+});
 
 const SHEET_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?output=csv";
