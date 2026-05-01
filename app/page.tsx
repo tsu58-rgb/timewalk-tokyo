@@ -435,44 +435,6 @@ export default function Home() {
               </p>
             )}
           </div>
-        )}<div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setMode("current")}
-            className={`flex-1 py-2 rounded-xl font-bold ${
-              mode === "current" ? "bg-blue-500 text-white" : "bg-slate-700 text-slate-300"
-            }`}
-          >
-            現在地
-          </button>
-
-          <button
-            onClick={() => setMode("custom")}
-            className={`flex-1 py-2 rounded-xl font-bold ${
-              mode === "custom" ? "bg-blue-500 text-white" : "bg-slate-700 text-slate-300"
-            }`}
-          >
-            指定地点
-          </button>
-        </div>
-
-        {mode === "custom" && (
-          <div className="mb-4 bg-slate-800 rounded-2xl p-3">
-            <MapPicker
-              onSelect={(lat, lng) => {
-                setCustomPosition({ lat, lng });
-              }}
-            />
-
-            <p className="text-xs mt-2 text-slate-400">
-              地図をタップして基準地点を選択
-            </p>
-
-            {!customPosition && (
-              <p className="text-xs mt-1 text-yellow-300">
-                まだ指定地点が選択されていません。
-              </p>
-            )}
-          </div>
         )}
         
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
