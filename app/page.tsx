@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
+import MapPicker from "./components/MapPicker";
 
 const SHEET_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?output=csv";
@@ -62,11 +63,25 @@ export default function Home() {
   const [position, setPosition] = useState<GeolocationCoordinates | null>(null);
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [error, setError] = useState("");
+  const [visitedSpotIds, setVisitedSpotIds] = useState<string[]>([]);
   const [locationLoading, setLocationLoading] = useState(false);
   const [address, setAddress] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedDistance, setSelectedDistance] = useState(2000);
   const [tagsInitialized, setTagsInitialized] = useState(false);
+  const [mode, setMode] = useState<"current" | "custom">("current");
+  const [customPosition, setCustomPosition] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("visitedSpotIds");
+
+    if (saved) {
+      setVisitedSpotIds(JSON.parse(saved));
+    }
+  }, []);
 
   useEffect(() => {
     fetch(SHEET_URL)
@@ -213,17 +228,35 @@ export default function Home() {
     );
   };
 
+  const toggleVisited = (spotId: string) => {
+    setVisitedSpotIds((prev) => {
+      const next = prev.includes(spotId)
+        ? prev.filter((id) => id !== spotId)
+        : [...prev, spotId];
+
+      localStorage.setItem("visitedSpotIds", JSON.stringify(next));
+
+      return next;
+    });
+  };
+
+  const basePosition =
+  mode === "current"
+    ? position
+    : customPosition
+    ? { latitude: customPosition.lat, longitude: customPosition.lng }
+    : null;
+
   const filteredSpots: SpotWithDistance[] = spots
     .map((spot) => {
-      const distance = position
-        ? calcDistanceMeters(
-            position.latitude,
-            position.longitude,
-            spot.lat,
-            spot.lng
-          )
-        : null;
-
+    const distance = basePosition
+      ? calcDistanceMeters(
+          basePosition.latitude,
+          basePosition.longitude,
+          spot.lat,
+          spot.lng
+        )
+      : null;
       return { ...spot, distance };
     })
     .filter((spot) => {
@@ -260,6 +293,19 @@ export default function Home() {
           >
             📍 Googleマップで開く
           </a>
+
+          <button
+            onClick={() => toggleVisited(selectedSpot.id)}
+            className={`block mb-4 w-full text-center px-4 py-2 rounded-xl font-bold ${
+              visitedSpotIds.includes(selectedSpot.id)
+                ? "bg-yellow-300 text-black"
+                : "bg-slate-700 text-white"
+            }`}
+          >
+            {visitedSpotIds.includes(selectedSpot.id)
+              ? "✅ 行った（解除する）"
+              : "行った"}
+          </button>
 
           <div className="flex flex-wrap gap-2 mb-3">
             {getCategories(selectedSpot.category).map((cat) => (
@@ -324,6 +370,10 @@ export default function Home() {
       <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
         <h1 className="text-2xl font-bold text-center mb-2">TimeWalk Tokyo</h1>
 
+        <p className="text-center text-xs text-yellow-300 mb-3">
+          訪問済み：{visitedSpotIds.length}件
+        </p>
+
         <p className="text-center text-sm text-slate-300 mb-1">
           {address ? `📍 ${address}` : "📍 現在地取得中..."}
         </p>
@@ -339,6 +389,84 @@ export default function Home() {
           {locationLoading ? "現在地を取得中..." : "📍 現在地を更新"}
         </button>
 
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setMode("current")}
+            className={`flex-1 py-2 rounded-xl font-bold ${
+              mode === "current" ? "bg-blue-500 text-white" : "bg-slate-700 text-slate-300"
+            }`}
+          >
+            現在地
+          </button>
+
+          <button
+            onClick={() => setMode("custom")}
+            className={`flex-1 py-2 rounded-xl font-bold ${
+              mode === "custom" ? "bg-blue-500 text-white" : "bg-slate-700 text-slate-300"
+            }`}
+          >
+            指定地点
+          </button>
+        </div>
+
+        {mode === "custom" && (
+          <div className="mb-4 bg-slate-800 rounded-2xl p-3">
+            <MapPicker
+              onSelect={(lat, lng) => {
+                setCustomPosition({ lat, lng });
+              }}
+            />
+
+            <p className="text-xs mt-2 text-slate-400">
+              地図をタップして基準地点を選択
+            </p>
+
+            {!customPosition && (
+              <p className="text-xs mt-1 text-yellow-300">
+                まだ指定地点が選択されていません。
+              </p>
+            )}
+          </div>
+        )}<div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setMode("current")}
+            className={`flex-1 py-2 rounded-xl font-bold ${
+              mode === "current" ? "bg-blue-500 text-white" : "bg-slate-700 text-slate-300"
+            }`}
+          >
+            現在地
+          </button>
+
+          <button
+            onClick={() => setMode("custom")}
+            className={`flex-1 py-2 rounded-xl font-bold ${
+              mode === "custom" ? "bg-blue-500 text-white" : "bg-slate-700 text-slate-300"
+            }`}
+          >
+            指定地点
+          </button>
+        </div>
+
+        {mode === "custom" && (
+          <div className="mb-4 bg-slate-800 rounded-2xl p-3">
+            <MapPicker
+              onSelect={(lat, lng) => {
+                setCustomPosition({ lat, lng });
+              }}
+            />
+
+            <p className="text-xs mt-2 text-slate-400">
+              地図をタップして基準地点を選択
+            </p>
+
+            {!customPosition && (
+              <p className="text-xs mt-1 text-yellow-300">
+                まだ指定地点が選択されていません。
+              </p>
+            )}
+          </div>
+        )}
+        
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
           <p className="font-bold mb-2">表示距離</p>
 
@@ -444,6 +572,11 @@ export default function Home() {
 
                     <h2 className="text-lg font-bold">{spot.name}</h2>
 
+                    {visitedSpotIds.includes(spot.id) && (
+                      <p className="text-xs text-yellow-300 font-bold mt-1">
+                        ✅ 行った
+                      </p>
+                    )}
                     <p className="text-sm text-slate-300 mt-1">
                       登場人物：{spot.character}
                     </p>
