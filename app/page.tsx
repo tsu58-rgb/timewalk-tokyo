@@ -20,13 +20,18 @@ const DISTANCE_OPTIONS = [
 ];
 
 const DISPLAY_LIMIT = 30;
+const DEFAULT_COURSE = "通常";
 
 type Spot = {
   id: string;
   name: string;
   lat: number;
   lng: number;
+  country: string;
+  prefecture: string;
+  city: string;
   area: string;
+  mode: string;
   category: string;
   characterId: string;
   character: string;
@@ -34,9 +39,6 @@ type Spot = {
   characterImage?: string;
   description: string;
   trivia: string;
-  country: string;
-  prefecture: string;
-  city: string;
   status: string;
 };
 
@@ -55,11 +57,20 @@ function calcDistanceMeters(
   );
 }
 
-function getCategories(category: string) {
-  return String(category || "")
+function splitJapaneseList(value: string) {
+  return String(value || "")
     .split("・")
-    .map((c) => c.trim())
+    .map((v) => v.trim())
     .filter(Boolean);
+}
+
+function getCategories(category: string) {
+  return splitJapaneseList(category);
+}
+
+function getModes(mode: string) {
+  const modes = splitJapaneseList(mode);
+  return modes.length > 0 ? modes : [DEFAULT_COURSE];
 }
 
 export default function Home() {
@@ -73,11 +84,14 @@ export default function Home() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedDistance, setSelectedDistance] = useState(2000);
   const [tagsInitialized, setTagsInitialized] = useState(false);
-  const [mode, setMode] = useState<"current" | "custom">("current");
+
+  const [baseMode, setBaseMode] = useState<"current" | "custom">("current");
   const [customPosition, setCustomPosition] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
+
+  const [selectedCourse, setSelectedCourse] = useState(DEFAULT_COURSE);
 
   useEffect(() => {
     const saved = localStorage.getItem("visitedSpotIds");
@@ -96,7 +110,6 @@ export default function Home() {
           skipEmptyLines: true,
         });
 
-
         const data = (parsed.data as any[]).map((row: any) => ({
           id: row.id || "",
           name: row.name || "",
@@ -106,7 +119,9 @@ export default function Home() {
           prefecture: row.prefecture || "",
           city: row.city || "",
           area: row.area || "",
-          category: row.category || "",        characterId: row.characterId || "",
+          mode: row.mode || DEFAULT_COURSE,
+          category: row.category || "",
+          characterId: row.characterId || "",
           character: row.character || "",
           characterDescription: row.characterDescription || "",
           characterImage: row.characterImage || "",
@@ -138,12 +153,26 @@ export default function Home() {
       const data = await res.json();
       const a = data.address || {};
 
-      const ward = a.city || a.town || a.village || a.city_district || "";
-      const town =
-        a.suburb || a.neighbourhood || a.quarter || a.residential || "";
+      const prefecture = a.state || "";
+      const ward =
+        a.city ||
+        a.town ||
+        a.village ||
+        a.city_district ||
+        a.municipality ||
+        "";
 
-      const text = `${a.state || ""}${ward}${town}`;
-      setAddress(text ? `${text}付近` : "");
+      const town =
+        a.suburb ||
+        a.neighbourhood ||
+        a.quarter ||
+        a.residential ||
+        a.hamlet ||
+        "";
+
+      const text = `${prefecture}${ward}${town}`;
+
+      setAddress(text ? `${text}付近` : "現在地付近");
     } catch (e) {
       console.error(e);
     }
@@ -209,6 +238,25 @@ export default function Home() {
     };
   }, []);
 
+  const allCourses = useMemo(() => {
+    const courses = new Set<string>();
+
+    spots.forEach((spot) => {
+      getModes(spot.mode).forEach((mode) => courses.add(mode));
+    });
+
+    const result = Array.from(courses).sort();
+
+    if (!result.includes(DEFAULT_COURSE)) {
+      result.unshift(DEFAULT_COURSE);
+    } else {
+      result.splice(result.indexOf(DEFAULT_COURSE), 1);
+      result.unshift(DEFAULT_COURSE);
+    }
+
+    return result;
+  }, [spots]);
+
   const allTags = useMemo(() => {
     const tags = new Set<string>();
 
@@ -245,28 +293,32 @@ export default function Home() {
   };
 
   const basePosition =
-  mode === "current"
-    ? position
-    : customPosition
-    ? { latitude: customPosition.lat, longitude: customPosition.lng }
-    : null;
+    baseMode === "current"
+      ? position
+      : customPosition
+      ? { latitude: customPosition.lat, longitude: customPosition.lng }
+      : null;
 
   const filteredSpots: SpotWithDistance[] = spots
     .map((spot) => {
-    const distance = basePosition
-      ? calcDistanceMeters(
-          basePosition.latitude,
-          basePosition.longitude,
-          spot.lat,
-          spot.lng
-        )
-      : null;
+      const distance = basePosition
+        ? calcDistanceMeters(
+            basePosition.latitude,
+            basePosition.longitude,
+            spot.lat,
+            spot.lng
+          )
+        : null;
+
       return { ...spot, distance };
     })
     .filter((spot) => {
-      if (!position || spot.distance === null) return false;
+      if (!basePosition || spot.distance === null) return false;
       if (selectedTags.length === 0) return false;
       if (spot.distance > selectedDistance) return false;
+
+      const modes = getModes(spot.mode);
+      if (!modes.includes(selectedCourse)) return false;
 
       const categories = getCategories(spot.category);
       return categories.some((cat) => selectedTags.includes(cat));
@@ -312,6 +364,15 @@ export default function Home() {
           </button>
 
           <div className="flex flex-wrap gap-2 mb-3">
+            {getModes(selectedSpot.mode).map((mode) => (
+              <span
+                key={mode}
+                className="text-xs bg-blue-300 text-black px-2 py-1 rounded-full font-bold"
+              >
+                {mode}
+              </span>
+            ))}
+
             {getCategories(selectedSpot.category).map((cat) => (
               <span
                 key={cat}
@@ -325,7 +386,6 @@ export default function Home() {
           <h1 className="text-2xl font-bold mb-4">{selectedSpot.name}</h1>
 
           <div className="bg-slate-800 rounded-2xl p-4 mb-4">
-            
             {selectedSpot.characterImage && (
               <img
                 src={selectedSpot.characterImage}
@@ -336,7 +396,7 @@ export default function Home() {
                 }}
               />
             )}
-                        
+
             {selectedSpot.character && (
               <h2 className="text-xl font-bold text-center mb-2">
                 {selectedSpot.character}
@@ -383,7 +443,7 @@ export default function Home() {
         </p>
 
         <p className="text-center text-sm text-slate-300 mb-1">
-          {address ? `📍 ${address}` : "📍 現在地取得中..."}
+          {address ? `📍 ${address}` : "📍 現在地確認中..."}
         </p>
 
         <p className="text-center text-sm text-slate-300 mb-4">
@@ -397,27 +457,51 @@ export default function Home() {
           {locationLoading ? "現在地を取得中..." : "📍 現在地を更新"}
         </button>
 
+        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+          <p className="font-bold mb-2">コース</p>
+
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {allCourses.map((course) => (
+              <button
+                key={course}
+                onClick={() => setSelectedCourse(course)}
+                className={`px-3 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${
+                  selectedCourse === course
+                    ? "bg-blue-500 text-white"
+                    : "bg-slate-700 text-slate-300"
+                }`}
+              >
+                {course}
+              </button>
+            ))}
+          </div>
+        </section>
+
         <div className="flex gap-2 mb-4">
           <button
-            onClick={() => setMode("current")}
+            onClick={() => setBaseMode("current")}
             className={`flex-1 py-2 rounded-xl font-bold ${
-              mode === "current" ? "bg-blue-500 text-white" : "bg-slate-700 text-slate-300"
+              baseMode === "current"
+                ? "bg-blue-500 text-white"
+                : "bg-slate-700 text-slate-300"
             }`}
           >
             現在地
           </button>
 
           <button
-            onClick={() => setMode("custom")}
+            onClick={() => setBaseMode("custom")}
             className={`flex-1 py-2 rounded-xl font-bold ${
-              mode === "custom" ? "bg-blue-500 text-white" : "bg-slate-700 text-slate-300"
+              baseMode === "custom"
+                ? "bg-blue-500 text-white"
+                : "bg-slate-700 text-slate-300"
             }`}
           >
             指定地点
           </button>
         </div>
 
-        {mode === "custom" && (
+        {baseMode === "custom" && (
           <div className="mb-4 bg-slate-800 rounded-2xl p-3">
             <MapPicker
               onSelect={(lat, lng) => {
@@ -436,7 +520,7 @@ export default function Home() {
             )}
           </div>
         )}
-        
+
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
           <p className="font-bold mb-2">表示距離</p>
 
@@ -499,13 +583,13 @@ export default function Home() {
           <p className="bg-red-900 rounded-xl p-3 mb-4 text-sm">{error}</p>
         )}
 
-        {!position && !error && (
+        {!basePosition && !error && (
           <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">
-            位置情報を取得中...
+            基準地点を取得中です。
           </p>
         )}
 
-        {position && selectedTags.length === 0 && (
+        {basePosition && selectedTags.length === 0 && (
           <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">
             タグが選択されていません。
           </p>
@@ -530,6 +614,15 @@ export default function Home() {
                 <div className="flex justify-between gap-3">
                   <div>
                     <div className="flex flex-wrap gap-1 mb-1">
+                      {getModes(spot.mode).map((mode) => (
+                        <span
+                          key={mode}
+                          className="text-xs bg-blue-300 text-black px-2 py-1 rounded-full font-bold"
+                        >
+                          {mode}
+                        </span>
+                      ))}
+
                       {getCategories(spot.category).map((cat) => (
                         <span
                           key={cat}
@@ -547,6 +640,7 @@ export default function Home() {
                         ✅ 行った
                       </p>
                     )}
+
                     <p className="text-sm text-slate-300 mt-1">
                       登場人物：{spot.character}
                     </p>
