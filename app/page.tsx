@@ -386,6 +386,19 @@ export default function Home() {
 
   const todayEvents = events.filter((e) => e.date === todayKey);
   const tomorrowEvents = events.filter((e) => e.date === tomorrowKey);
+  const selectedSpotDistanceFromCurrent =
+    selectedSpot && position
+      ? calcDistanceMeters(
+          position.latitude,
+          position.longitude,
+          selectedSpot.lat,
+          selectedSpot.lng
+        )
+      : null;
+
+  const canMarkVisited =
+    selectedSpotDistanceFromCurrent !== null &&
+    selectedSpotDistanceFromCurrent <= 50;
 
   if (screen === "courseSelect") {
     return (
@@ -506,18 +519,21 @@ export default function Home() {
             </section>
           )}
 
-          <button
-            onClick={() => toggleVisited(getSpotKey(selectedSpot))}
-            className={`mt-4 w-full text-center px-4 py-3 rounded-xl font-bold ${
-              visitedSpotIds.includes(getSpotKey(selectedSpot))
-                ? "bg-yellow-300 text-black"
-                : "bg-slate-700 text-white"
-            }`}
-          >
-            {visitedSpotIds.includes(getSpotKey(selectedSpot))
-              ? "✅ 着いた（解除する）"
-              : "着いた"}
-          </button>
+          {canMarkVisited && (
+            <button
+              onClick={() => toggleVisited(getSpotKey(selectedSpot))}
+              className={`mt-4 w-full text-center px-4 py-3 rounded-xl font-bold ${
+                visitedSpotIds.includes(getSpotKey(selectedSpot))
+                  ? "bg-yellow-300 text-black"
+                  : "bg-slate-700 text-white"
+              }`}
+            >
+              {visitedSpotIds.includes(getSpotKey(selectedSpot))
+                ? "✅ 着いた（解除する）"
+                : "着いた"}
+            </button>
+          )}
+
         </div>
       </main>
     );
