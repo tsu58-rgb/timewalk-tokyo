@@ -374,6 +374,10 @@ export default function Home() {
     return `${mm}-${dd}`;
   };
 
+  const formatDisplayDate = (date: Date) => {
+    return `${date.getMonth() + 1}/${date.getDate()}`;
+  };
+
   const todayKey = formatMMDD(new Date());
 
   const tomorrowDate = new Date();
@@ -518,7 +522,10 @@ export default function Home() {
         <h1 className="text-2xl font-bold text-center mb-2">TimeWalk Tokyo</h1>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <h2 className="font-bold mb-2">今日のできごと</h2>
+          
+          <h2 className="font-bold mb-2">
+            今日({formatDisplayDate(new Date())})のできごと
+          </h2>
 
           {todayEvents.length === 0 ? (
             <p className="text-sm text-slate-400">今日のできごとは登録されていません。</p>
@@ -526,7 +533,9 @@ export default function Home() {
             <div className="space-y-2">
               {todayEvents.map((event) => (
                 <p key={event.id} className="text-sm text-slate-200 leading-relaxed">
-                  {event.description}
+                  <span
+                    dangerouslySetInnerHTML={{ __html: event.description }}
+                  />
                   {event.source_url && (
                     <>
                       {" "}
@@ -547,15 +556,18 @@ export default function Home() {
         </section>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <h2 className="font-bold mb-2">明日のできごと</h2>
-
+          <h2 className="font-bold mb-2">
+            明日({formatDisplayDate(tomorrowDate)})のできごと
+          </h2>
           {tomorrowEvents.length === 0 ? (
             <p className="text-sm text-slate-400">明日のできごとは登録されていません。</p>
           ) : (
             <div className="space-y-2">
               {tomorrowEvents.map((event) => (
                 <p key={event.id} className="text-sm text-slate-200 leading-relaxed">
-                  {event.description}
+                  <span
+                    dangerouslySetInnerHTML={{ __html: event.description }}
+                  />
                   {event.source_url && (
                     <>
                       {" "}
