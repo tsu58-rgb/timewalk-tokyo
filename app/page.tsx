@@ -73,6 +73,10 @@ function getModes(mode: string) {
   return modes.length > 0 ? modes : [DEFAULT_COURSE];
 }
 
+function getSpotKey(spot: Spot) {
+  return spot.id || `${spot.name}-${spot.lat}-${spot.lng}`;
+}
+
 export default function Home() {
   const [spots, setSpots] = useState<Spot[]>([]);
   const [position, setPosition] = useState<GeolocationCoordinates | null>(null);
