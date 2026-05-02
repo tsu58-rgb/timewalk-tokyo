@@ -654,9 +654,12 @@ export default function Home() {
                       {spot.name}
                     </h2>
 
-                    <p className="text-sm text-slate-300 mt-1">
-                      登場人物：{spot.character}
-                    </p>
+                    {spot.character && spot.character.trim() !== "" && (
+                      <p className="text-sm text-slate-300 mt-1">
+                        登場人物：{spot.character}
+                      </p>
+                    )}
+                    
                   </div>
 
                   <div className="text-right text-sm text-blue-300 min-w-[70px]">
