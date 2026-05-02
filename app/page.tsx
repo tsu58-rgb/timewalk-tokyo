@@ -8,6 +8,9 @@ const MapPicker = dynamic(() => import("./components/MapPicker"), {
   ssr: false,
 });
 
+const EVENTS_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=1015785763&single=true&output=csv";
+
 const SHEET_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?output=csv";
 
@@ -41,6 +44,15 @@ type Spot = {
   trivia: string;
   status: string;
 };
+
+type EventItem = {
+  id: string;
+  date: string;
+  description: string;
+  category: string;
+  source_url: string;
+};
+
 
 type SpotWithDistance = Spot & {
   distance: number | null;
@@ -96,6 +108,7 @@ export default function Home() {
   } | null>(null);
 
   const [selectedCourse, setSelectedCourse] = useState(DEFAULT_COURSE);
+  const [events, setEvents] = useState<EventItem[]>([]);
 
   useEffect(() => {
     const saved = localStorage.getItem("visitedSpotIds");
@@ -146,6 +159,27 @@ export default function Home() {
       .catch((err) => {
         console.error(err);
         setError("スポットデータの取得に失敗しました。");
+      });
+  }, []);
+
+  useEffect(() => {
+    fetch(EVENTS_URL)
+      .then((res) => res.text())
+      .then((text) => {
+        const parsed = Papa.parse(text, {
+          header: true,
+          skipEmptyLines: true,
+        });
+
+        const data = (parsed.data as any[]).map((row: any) => ({
+          id: row.id || "",
+          date: row.date || "",
+          description: row.description || "",
+          category: row.category || "",
+          source_url: row.source_url || "",
+        }));
+
+        setEvents(data);
       });
   }, []);
 
@@ -334,6 +368,21 @@ export default function Home() {
 
   const visibleSpots = filteredSpots.slice(0, DISPLAY_LIMIT);
 
+  const formatMMDD = (date: Date) => {
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${mm}-${dd}`;
+  };
+
+  const todayKey = formatMMDD(new Date());
+
+  const tomorrowDate = new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrowKey = formatMMDD(tomorrowDate);
+
+  const todayEvents = events.filter((e) => e.date === todayKey);
+  const tomorrowEvents = events.filter((e) => e.date === tomorrowKey);
+
   if (screen === "courseSelect") {
     return (
       <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
@@ -468,6 +517,64 @@ export default function Home() {
       <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
         <h1 className="text-2xl font-bold text-center mb-2">TimeWalk Tokyo</h1>
 
+        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+          <h2 className="font-bold mb-2">今日のできごと</h2>
+
+          {todayEvents.length === 0 ? (
+            <p className="text-sm text-slate-400">今日のできごとは登録されていません。</p>
+          ) : (
+            <div className="space-y-2">
+              {todayEvents.map((event) => (
+                <p key={event.id} className="text-sm text-slate-200 leading-relaxed">
+                  {event.description}
+                  {event.source_url && (
+                    <>
+                      {" "}
+                      <a
+                        href={event.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 underline"
+                      >
+                        その他
+                      </a>
+                    </>
+                  )}
+                </p>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+          <h2 className="font-bold mb-2">明日のできごと</h2>
+
+          {tomorrowEvents.length === 0 ? (
+            <p className="text-sm text-slate-400">明日のできごとは登録されていません。</p>
+          ) : (
+            <div className="space-y-2">
+              {tomorrowEvents.map((event) => (
+                <p key={event.id} className="text-sm text-slate-200 leading-relaxed">
+                  {event.description}
+                  {event.source_url && (
+                    <>
+                      {" "}
+                      <a
+                        href={event.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 underline"
+                      >
+                        その他
+                      </a>
+                    </>
+                  )}
+                </p>
+              ))}
+            </div>
+          )}
+        </section>
+        
         <p className="text-center text-xs text-yellow-300 mb-3">
           訪問済み：{visitedSpotIds.length}件
         </p>
@@ -674,7 +781,7 @@ export default function Home() {
         )}
 
         <div className="mt-8 text-sm text-slate-400 leading-relaxed">
-          TimeWalk Tokyoは、現在地から近くの歴史スポットを探せる街歩きアプリです。
+          TimeWalkは、現在地から近くの歴史スポットを探せる街歩きアプリです。
           <br />
           <br />
           GPSを利用して現在地周辺のスポットを距離順に表示できるため、散歩や観光の途中でも効率よく歴史を学ぶことができます。
