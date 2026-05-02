@@ -387,19 +387,6 @@ export default function Home() {
             📍 Googleマップで開く
           </a>
 
-          <button
-            onClick={() => toggleVisited(selectedSpot.id)}
-            className={`block mb-4 w-full text-center px-4 py-2 rounded-xl font-bold ${
-              visitedSpotIds.includes(selectedSpot.id)
-                ? "bg-yellow-300 text-black"
-                : "bg-slate-700 text-white"
-            }`}
-          >
-            {visitedSpotIds.includes(selectedSpot.id)
-              ? "✅ 行った（解除する）"
-              : "行った"}
-          </button>
-
           <div className="flex flex-wrap gap-2 mb-3">
             {getCategories(selectedSpot.category).map((cat) => (
               <span
@@ -441,21 +428,32 @@ export default function Home() {
             )}
           </div>
 
-          <section className="bg-white text-black rounded-2xl p-4 mb-4">
-            <h3 className="font-bold mb-2">歴史解説</h3>
-            <div
-              className="[&_a]:text-blue-600 [&_a]:underline"
-              dangerouslySetInnerHTML={{ __html: selectedSpot.description }}
-            />
-          </section>
+          {selectedSpot.description && selectedSpot.description.trim() !== "" && (
+            <section className="bg-white text-black rounded-2xl p-4 mb-4">
+              <h3 className="font-bold mb-2">歴史解説</h3>
+              <div dangerouslySetInnerHTML={{ __html: selectedSpot.description }} />
+            </section>
+          )}
 
-          <section className="bg-yellow-100 text-black rounded-2xl p-4">
-            <h3 className="font-bold mb-2">トリビア</h3>
-            <div
-              className="[&_a]:text-blue-600 [&_a]:underline"
-              dangerouslySetInnerHTML={{ __html: selectedSpot.trivia }}
-            />
-          </section>
+          {selectedSpot.trivia && selectedSpot.trivia.trim() !== "" && (
+            <section className="bg-yellow-100 text-black rounded-2xl p-4">
+              <h3 className="font-bold mb-2">トリビア</h3>
+              <div dangerouslySetInnerHTML={{ __html: selectedSpot.trivia }} />
+            </section>
+          )}
+
+          <button
+            onClick={() => toggleVisited(getSpotKey(selectedSpot))}
+            className={`mt-4 w-full text-center px-4 py-3 rounded-xl font-bold ${
+              visitedSpotIds.includes(getSpotKey(selectedSpot))
+                ? "bg-yellow-300 text-black"
+                : "bg-slate-700 text-white"
+            }`}
+          >
+            {visitedSpotIds.includes(getSpotKey(selectedSpot))
+              ? "✅ 着いた（解除する）"
+              : "着いた"}
+          </button>
         </div>
       </main>
     );
@@ -647,13 +645,10 @@ export default function Home() {
                       ))}
                     </div>
 
-                    <h2 className="text-lg font-bold">{spot.name}</h2>
-
-                    {visitedSpotIds.includes(spot.id) && (
-                      <p className="text-xs text-yellow-300 font-bold mt-1">
-                        ✅ 行った
-                      </p>
-                    )}
+                    <h2 className="text-lg font-bold">
+                      {visitedSpotIds.includes(getSpotKey(spot)) ? "✅ " : ""}
+                      {spot.name}
+                    </h2>
 
                     <p className="text-sm text-slate-300 mt-1">
                       登場人物：{spot.character}
