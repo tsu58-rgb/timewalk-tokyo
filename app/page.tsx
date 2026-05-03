@@ -462,9 +462,6 @@ export default function Home() {
                   <div key={event.id}>
                     {event.memorial && event.memorial.trim() !== "" && (
                       <div className="mb-4">
-                        <h2 className="font-bold text-yellow-300 mb-2">
-                          今日({formatDisplayDate(new Date())})はなんの日？
-                        </h2>
                         <div
                           className="text-sm text-slate-200 leading-relaxed"
                           dangerouslySetInnerHTML={{ __html: event.memorial }}
@@ -665,20 +662,18 @@ export default function Home() {
           訪問済み：{visitedSpotIds.length}件
         </p>
 
-        <p className="text-center text-sm text-slate-300 mb-1">
-          {address ? `📍 ${address}` : "📍 現在地確認中..."}
-        </p>
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <p className="text-sm text-slate-300">
+            {address ? `📍 ${address}` : "📍 現在地確認中..."}
+          </p>
 
-        <p className="text-center text-sm text-slate-300 mb-4">
-          近くの歴史スポット
-        </p>
-
-        <button
-          onClick={getCurrentLocation}
-          className="mb-4 w-full bg-blue-500 text-white py-3 rounded-xl font-bold"
-        >
-          {locationLoading ? "現在地を取得中..." : "📍 現在地を更新"}
-        </button>
+          <button
+            onClick={getCurrentLocation}
+            className="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-bold whitespace-nowrap"
+          >
+            {locationLoading ? "更新中" : "更新"}
+          </button>
+        </div>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
           <p className="text-sm text-slate-300 mb-2">現在選択中のコース：</p>
@@ -814,7 +809,7 @@ export default function Home() {
         )}
 
         <p className="text-xs text-slate-400 mb-3">
-          表示件数：{visibleSpots.length}件（最大{DISPLAY_LIMIT}件）
+          近くの歴史スポット：{visibleSpots.length}件（最大{DISPLAY_LIMIT}件表示）
         </p>
 
         {visibleSpots.length === 0 ? (
