@@ -49,10 +49,9 @@ type EventItem = {
   id: string;
   date: string;
   description: string;
-  category: string;
+  memorial: string;
   source_url: string;
 };
-
 
 type SpotWithDistance = Spot & {
   distance: number | null;
@@ -100,7 +99,7 @@ export default function Home() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedDistance, setSelectedDistance] = useState(2000);
   const [tagsInitialized, setTagsInitialized] = useState(false);
-  const [screen, setScreen] = useState<"home" | "courseSelect">("home");
+  const [screen, setScreen] = useState<"home" | "courseSelect" | "today">("home");
   const [baseMode, setBaseMode] = useState<"current" | "custom">("current");
   const [customPosition, setCustomPosition] = useState<{
     lat: number;
@@ -175,10 +174,10 @@ export default function Home() {
           id: row.id || "",
           date: row.date || "",
           description: row.description || "",
-          category: row.category || "",
+          memorial: row.memorial || "",
           source_url: row.source_url || "",
         }));
-
+        
         setEvents(data);
       });
   }, []);
@@ -437,6 +436,117 @@ export default function Home() {
     );
   }  
 
+  if (screen === "today") {
+    return (
+      <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
+        <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
+          <button
+            onClick={() => setScreen("home")}
+            className="mb-4 bg-white text-black px-4 py-2 rounded-xl font-bold"
+          >
+            ← Topに戻る
+          </button>
+
+          <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+            <h1 className="text-xl font-bold mb-4">
+              今日({formatDisplayDate(new Date())})はなんの日？
+            </h1>
+
+            {todayEvents.length === 0 ? (
+              <p className="text-sm text-slate-400">
+                今日の情報は登録されていません。
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {todayEvents.map((event) => (
+                  <div key={event.id}>
+                    {event.memorial && event.memorial.trim() !== "" && (
+                      <div className="mb-4">
+                        <h2 className="font-bold text-yellow-300 mb-2">
+                          今日({formatDisplayDate(new Date())})はなんの日？
+                        </h2>
+                        <div
+                          className="text-sm text-slate-200 leading-relaxed"
+                          dangerouslySetInnerHTML={{ __html: event.memorial }}
+                        />
+                      </div>
+                    )}
+
+                    {event.description && event.description.trim() !== "" && (
+                      <div>
+                        <h2 className="font-bold text-yellow-300 mb-2">
+                          今日のできごと
+                        </h2>
+                        <p className="text-sm text-slate-200 leading-relaxed">
+                          <span
+                            dangerouslySetInnerHTML={{
+                              __html: event.description,
+                            }}
+                          />
+                          {event.source_url && (
+                            <>
+                              {" "}
+                              <a
+                                href={event.source_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 underline"
+                              >
+                                その他
+                              </a>
+                            </>
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-6">
+              <h2 className="font-bold text-yellow-300 mb-2">明日のできごと</h2>
+
+              {tomorrowEvents.length === 0 ? (
+                <p className="text-sm text-slate-400">
+                  明日のできごとは登録されていません。
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {tomorrowEvents.map((event) => (
+                    <p
+                      key={event.id}
+                      className="text-sm text-slate-200 leading-relaxed"
+                    >
+                      <span
+                        dangerouslySetInnerHTML={{
+                          __html: event.description,
+                        }}
+                      />
+                      {event.source_url && (
+                        <>
+                          {" "}
+                          <a
+                            href={event.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 underline"
+                          >
+                            その他
+                          </a>
+                        </>
+                      )}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
   if (selectedSpot) {
     return (
       <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
@@ -542,74 +652,15 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
       <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
-        <h1 className="text-2xl font-bold text-center mb-2">TimeWalk Tokyo</h1>
+        <h1 className="text-2xl font-bold text-center mb-2">TimeWalk</h1>
 
-        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          
-          <h2 className="font-bold mb-2">
-            今日({formatDisplayDate(new Date())})のできごと
-          </h2>
+        <button
+          onClick={() => setScreen("today")}
+          className="mb-4 w-full bg-yellow-300 text-black py-3 rounded-xl font-bold"
+        >
+          今日はなんの日？
+        </button>
 
-          {todayEvents.length === 0 ? (
-            <p className="text-sm text-slate-400">今日のできごとは登録されていません。</p>
-          ) : (
-            <div className="space-y-2">
-              {todayEvents.map((event) => (
-                <p key={event.id} className="text-sm text-slate-200 leading-relaxed">
-                  <span
-                    dangerouslySetInnerHTML={{ __html: event.description }}
-                  />
-                  {event.source_url && (
-                    <>
-                      {" "}
-                      <a
-                        href={event.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-400 underline"
-                      >
-                        その他
-                      </a>
-                    </>
-                  )}
-                </p>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <h2 className="font-bold mb-2">
-            明日({formatDisplayDate(tomorrowDate)})のできごと
-          </h2>
-          {tomorrowEvents.length === 0 ? (
-            <p className="text-sm text-slate-400">明日のできごとは登録されていません。</p>
-          ) : (
-            <div className="space-y-2">
-              {tomorrowEvents.map((event) => (
-                <p key={event.id} className="text-sm text-slate-200 leading-relaxed">
-                  <span
-                    dangerouslySetInnerHTML={{ __html: event.description }}
-                  />
-                  {event.source_url && (
-                    <>
-                      {" "}
-                      <a
-                        href={event.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-400 underline"
-                      >
-                        その他
-                      </a>
-                    </>
-                  )}
-                </p>
-              ))}
-            </div>
-          )}
-        </section>
-        
         <p className="text-center text-xs text-yellow-300 mb-3">
           訪問済み：{visitedSpotIds.length}件
         </p>
