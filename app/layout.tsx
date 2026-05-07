@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ContactFooter from "./components/ContactFooter";
 
 export const metadata: Metadata = {
   title: "TimeWalk Tokyo | 近くの歴史スポットを探せる街歩きガイド",
@@ -14,7 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body>
+        {children}
+        <ContactFooter />
+      </body>
     </html>
   );
 }

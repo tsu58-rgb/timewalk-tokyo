@@ -11,8 +11,11 @@ const MapPicker = dynamic(() => import("./components/MapPicker"), {
 const EVENTS_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=1015785763&single=true&output=csv";
 
-const SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?output=csv";
+const SPOTS_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=1242477641&single=true&output=csv";
+
+const CHARACTERS_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=1745190060&single=true&output=csv";
 
 const DISTANCE_OPTIONS = [
   { label: "200m", value: 200 },
@@ -36,13 +39,20 @@ type Spot = {
   area: string;
   mode: string;
   category: string;
-  characterId: string;
-  character: string;
-  characterDescription?: string;
-  characterImage?: string;
+  characterIds: string;
   description: string;
   trivia: string;
   status: string;
+};
+
+type Character = {
+  characterId: string;
+  characterName: string;
+  characterKana?: string;
+  characterDescription?: string;
+  characterImage?: string;
+  wikipediaUrl?: string;
+  status?: string;
 };
 
 type EventItem = {
@@ -75,6 +85,13 @@ function splitJapaneseList(value: string) {
     .filter(Boolean);
 }
 
+function getCharacterIds(value: string) {
+  return String(value || "")
+    .split("・")
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
 function getCategories(category: string) {
   return splitJapaneseList(category);
 }
@@ -91,7 +108,6 @@ function getSpotKey(spot: Spot) {
 export default function Home() {
   const [spots, setSpots] = useState<Spot[]>([]);
   const [position, setPosition] = useState<GeolocationCoordinates | null>(null);
-  const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [error, setError] = useState("");
   const [visitedSpotIds, setVisitedSpotIds] = useState<string[]>([]);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -101,6 +117,7 @@ export default function Home() {
   const [tagsInitialized, setTagsInitialized] = useState(false);
   const [screen, setScreen] = useState<"home" | "courseSelect" | "today">("home");
   const [baseMode, setBaseMode] = useState<"current" | "custom">("current");
+  const [characters, setCharacters] = useState<Character[]>([]);
   const [customPosition, setCustomPosition] = useState<{
     lat: number;
     lng: number;
@@ -118,7 +135,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    fetch(SHEET_URL)
+    fetch(SPOTS_URL)
       .then((res) => res.text())
       .then((text) => {
         const parsed = Papa.parse(text, {
@@ -137,10 +154,7 @@ export default function Home() {
           area: row.area || "",
           mode: row.mode || DEFAULT_COURSE,
           category: row.category || "",
-          characterId: row.characterId || "",
-          character: row.character || "",
-          characterDescription: row.characterDescription || "",
-          characterImage: row.characterImage || "",
+          characterIds: row.characterIds || "",
           description: row.description || "",
           trivia: row.trivia || "",
           status: String(row.status || "").trim(),
@@ -161,6 +175,28 @@ export default function Home() {
       });
   }, []);
 
+  useEffect(() => {
+    fetch(CHARACTERS_URL)
+      .then((res) => res.text())
+      .then((text) => {
+        const parsed = Papa.parse(text, {
+          header: true,
+          skipEmptyLines: true,
+        });
+
+        const data = (parsed.data as any[]).map((row: any) => ({
+          characterId: row.characterId || "",
+          characterName: row.characterName || "",
+          characterKana: row.characterKana || "",
+          characterDescription: row.characterDescription || "",
+          characterImage: row.characterImage || "",
+          wikipediaUrl: row.wikipediaUrl || "",
+          status: row.status || "",
+        }));
+
+        setCharacters(data);
+      });
+  }, []);
   useEffect(() => {
     fetch(EVENTS_URL)
       .then((res) => res.text())
@@ -385,20 +421,7 @@ export default function Home() {
 
   const todayEvents = events.filter((e) => e.date === todayKey);
   const tomorrowEvents = events.filter((e) => e.date === tomorrowKey);
-  const selectedSpotDistanceFromCurrent =
-    selectedSpot && position
-      ? calcDistanceMeters(
-          position.latitude,
-          position.longitude,
-          selectedSpot.lat,
-          selectedSpot.lng
-        )
-      : null;
-
-  const canMarkVisited =
-    selectedSpotDistanceFromCurrent !== null &&
-    selectedSpotDistanceFromCurrent <= 50;
-
+  
   if (screen === "courseSelect") {
     return (
       <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
@@ -539,108 +562,6 @@ export default function Home() {
               )}
             </div>
           </section>
-        </div>
-      </main>
-    );
-  }
-
-  if (selectedSpot) {
-    return (
-      <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
-        <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
-          <button
-            onClick={() => setSelectedSpot(null)}
-            className="mb-4 bg-white text-black px-4 py-2 rounded-xl font-bold"
-          >
-            ← Topに戻る
-          </button>
-
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${selectedSpot.lat},${selectedSpot.lng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block mb-4 bg-green-500 text-white text-center px-4 py-2 rounded-xl font-bold"
-          >
-            📍 Googleマップで開く
-          </a>
-
-          <div className="flex flex-wrap gap-2 mb-3">
-            {getCategories(selectedSpot.category).map((cat) => (
-              <span
-                key={cat}
-                className="text-xs bg-yellow-300 text-black px-2 py-1 rounded-full font-bold"
-              >
-                {cat}
-              </span>
-            ))}
-          </div>
-
-          <h1 className="text-2xl font-bold mb-4">{selectedSpot.name}</h1>
-
-          {(
-            (selectedSpot.characterImage &&
-              selectedSpot.characterImage.trim() !== "") ||
-            (selectedSpot.characterDescription &&
-              selectedSpot.characterDescription.trim() !== "")
-          ) && (
-            <div className="bg-slate-800 rounded-2xl p-4 mb-4">
-              {selectedSpot.characterImage && (
-                <img
-                  src={selectedSpot.characterImage}
-                  alt={selectedSpot.character}
-                  className="w-full max-h-64 object-contain mb-3 rounded-xl"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-              )}
-
-              {selectedSpot.character && selectedSpot.character.trim() !== "" && (
-                <h2 className="text-xl font-bold text-center mb-2">
-                  {selectedSpot.character}
-                </h2>
-              )}
-
-              {selectedSpot.characterDescription &&
-                selectedSpot.characterDescription.trim() !== "" && (
-                  <p
-                    className="text-sm text-slate-300 text-center"
-                    dangerouslySetInnerHTML={{
-                      __html: selectedSpot.characterDescription,
-                    }}
-                  />
-                )}
-            </div>
-          )}          
-          {selectedSpot.description && selectedSpot.description.trim() !== "" && (
-            <section className="bg-white text-black rounded-2xl p-4 mb-4">
-              <h3 className="font-bold mb-2">歴史解説</h3>
-              <div dangerouslySetInnerHTML={{ __html: selectedSpot.description }} />
-            </section>
-          )}
-
-          {selectedSpot.trivia && selectedSpot.trivia.trim() !== "" && (
-            <section className="bg-yellow-100 text-black rounded-2xl p-4">
-              <h3 className="font-bold mb-2">トリビア</h3>
-              <div dangerouslySetInnerHTML={{ __html: selectedSpot.trivia }} />
-            </section>
-          )}
-
-          {canMarkVisited && (
-            <button
-              onClick={() => toggleVisited(getSpotKey(selectedSpot))}
-              className={`mt-4 w-full text-center px-4 py-3 rounded-xl font-bold ${
-                visitedSpotIds.includes(getSpotKey(selectedSpot))
-                  ? "bg-yellow-300 text-black"
-                  : "bg-slate-700 text-white"
-              }`}
-            >
-              {visitedSpotIds.includes(getSpotKey(selectedSpot))
-                ? "✅ 着いた（解除する）"
-                : "着いた"}
-            </button>
-          )}
-
         </div>
       </main>
     );
@@ -819,10 +740,10 @@ export default function Home() {
         ) : (
           <div className="space-y-3">
             {visibleSpots.map((spot) => (
-              <button
+              <a
                 key={`${spot.id}-${spot.lat}-${spot.lng}`}
-                onClick={() => setSelectedSpot(spot)}
-                className="w-full text-left bg-slate-800 rounded-2xl p-4 border border-slate-600"
+                href={`/spot/${spot.id}`}
+                className="block w-full text-left bg-slate-800 rounded-2xl p-4 border border-slate-600"
               >
                 <div className="flex justify-between gap-3">
                   <div>
@@ -842,12 +763,18 @@ export default function Home() {
                       {spot.name}
                     </h2>
 
-                    {spot.character && spot.character.trim() !== "" && (
+                    {getCharacterIds(spot.characterIds).length > 0 && (
                       <p className="text-sm text-slate-300 mt-1">
-                        登場人物：{spot.character}
+                        登場人物：
+                        {getCharacterIds(spot.characterIds)
+                          .map(
+                            (id) =>
+                              characters.find((c) => c.characterId === id)?.characterName
+                          )
+                          .filter(Boolean)
+                          .join("・")}
                       </p>
-                    )}
-                    
+                  )}
                   </div>
 
                   <div className="text-right text-sm text-blue-300 min-w-[70px]">
@@ -856,7 +783,7 @@ export default function Home() {
                       : "計測中"}
                   </div>
                 </div>
-              </button>
+              </a>
             ))}
           </div>
         )}

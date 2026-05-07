@@ -1,0 +1,209 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Papa from "papaparse";
+
+const SPOTS_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=1242477641&single=true&output=csv";
+
+const CHARACTERS_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=1745190060&single=true&output=csv";
+
+type Spot = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  category: string;
+  characterIds: string;
+  description: string;
+  trivia: string;
+  status: string;
+};
+
+type Character = {
+  characterId: string;
+  characterName: string;
+  characterDescription?: string;
+  characterImage?: string;
+  wikipediaUrl?: string;
+};
+
+function getCharacterIds(value: string) {
+  return String(value || "")
+    .split("・")
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
+function splitJapaneseList(value: string) {
+  return String(value || "")
+    .split("・")
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
+export default function SpotPageClient({ id }: { id: string }) {
+  const [spot, setSpot] = useState<Spot | null>(null);
+  const [characters, setCharacters] = useState<Character[]>([]);
+
+  useEffect(() => {
+    fetch(SPOTS_URL)
+      .then((res) => res.text())
+      .then((text) => {
+        const parsed = Papa.parse(text, {
+          header: true,
+          skipEmptyLines: true,
+        });
+
+        const data = (parsed.data as any[]).map((row: any) => ({
+          id: row.id || "",
+          name: row.name || "",
+          lat: Number(row.lat),
+          lng: Number(row.lng),
+          category: row.category || "",
+          characterIds: row.characterIds || "",
+          description: row.description || "",
+          trivia: row.trivia || "",
+          status: String(row.status || "").trim(),
+        }));
+
+        setSpot(data.find((s) => s.id === id) || null);
+      });
+
+    fetch(CHARACTERS_URL)
+      .then((res) => res.text())
+      .then((text) => {
+        const parsed = Papa.parse(text, {
+          header: true,
+          skipEmptyLines: true,
+        });
+
+        const data = (parsed.data as any[]).map((row: any) => ({
+          characterId: row.characterId || "",
+          characterName: row.characterName || "",
+          characterDescription: row.characterDescription || "",
+          characterImage: row.characterImage || "",
+          wikipediaUrl: row.wikipediaUrl || "",
+        }));
+
+        setCharacters(data);
+      });
+  }, [id]);
+
+  if (!spot) {
+    return (
+      <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
+        <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
+          スポットが見つかりません。
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
+      <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
+        <a
+          href="/"
+          className="inline-block mb-4 bg-white text-black px-4 py-2 rounded-xl font-bold"
+        >
+          ← Topに戻る
+        </a>
+
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block mb-4 bg-green-500 text-white text-center px-4 py-2 rounded-xl font-bold"
+        >
+          📍 Googleマップで開く
+        </a>
+
+        <div className="flex flex-wrap gap-2 mb-3">
+          {splitJapaneseList(spot.category).map((cat) => (
+            <span
+              key={cat}
+              className="text-xs bg-yellow-300 text-black px-2 py-1 rounded-full font-bold"
+            >
+              {cat}
+            </span>
+          ))}
+        </div>
+
+        <h1 className="text-2xl font-bold mb-4">{spot.name}</h1>
+
+        {getCharacterIds(spot.characterIds).map((characterId) => {
+          const character = characters.find(
+            (c) => c.characterId === characterId
+          );
+
+          if (!character) return null;
+
+          return (
+            <div
+              key={character.characterId}
+              className="bg-slate-800 rounded-2xl p-4 mb-4"
+            >
+              {character.characterImage && (
+                <img
+                  src={character.characterImage}
+                  alt={character.characterName}
+                  className="w-full max-h-64 object-contain mb-3 rounded-xl"
+                />
+              )}
+
+              <h2 className="text-xl font-bold text-center mb-2">
+                {character.characterName}
+              </h2>
+
+              {character.characterDescription && (
+                <p
+                  className="text-sm text-slate-300 text-center"
+                  dangerouslySetInnerHTML={{
+                    __html: character.characterDescription,
+                  }}
+                />
+              )}
+
+              {character.wikipediaUrl && (
+                <a
+                  href={character.wikipediaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block mt-3 text-center text-blue-400 underline"
+                >
+                  Wikipediaを見る
+                </a>
+              )}
+            </div>
+          );
+        })}
+
+        {spot.description && spot.description.trim() !== "" && (
+          <section className="bg-white text-black rounded-2xl p-4 mb-4">
+            <h2 className="font-bold mb-2">歴史解説</h2>
+
+            <div
+              dangerouslySetInnerHTML={{
+                __html: spot.description,
+              }}
+            />
+          </section>
+        )}
+
+        {spot.trivia && spot.trivia.trim() !== "" && (
+          <section className="bg-yellow-100 text-black rounded-2xl p-4">
+            <h2 className="font-bold mb-2">トリビア</h2>
+
+            <div
+              dangerouslySetInnerHTML={{
+                __html: spot.trivia,
+              }}
+            />
+          </section>
+        )}
+      </div>
+    </main>
+  );
+}
