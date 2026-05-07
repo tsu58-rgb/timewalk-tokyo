@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Papa from "papaparse";
-const [loading, setLoading] = useState(true);
+
 const SPOTS_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=1242477641&single=true&output=csv";
 
@@ -46,7 +46,8 @@ function splitJapaneseList(value: string) {
 export default function SpotPageClient({ id }: { id: string }) {
   const [spot, setSpot] = useState<Spot | null>(null);
   const [characters, setCharacters] = useState<Character[]>([]);
-
+  const [loading, setLoading] = useState(true);
+  
   useEffect(() => {
     fetch(SPOTS_URL)
       .then((res) => res.text())
