@@ -474,7 +474,7 @@ export default function Home() {
 
           <section className="bg-slate-800 rounded-2xl p-4 mb-4">
             <h1 className="text-xl font-bold mb-4">
-              今日({formatDisplayDate(new Date())})は何の日？
+              今日（{formatDisplayDate(new Date())}）は何の日？
             </h1>
 
             {todayEvents.length === 0 ? (
