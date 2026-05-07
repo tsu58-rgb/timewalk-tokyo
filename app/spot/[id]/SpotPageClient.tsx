@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Papa from "papaparse";
-
+const [loading, setLoading] = useState(true);
 const SPOTS_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=1242477641&single=true&output=csv";
 
@@ -69,6 +69,7 @@ export default function SpotPageClient({ id }: { id: string }) {
         }));
 
         setSpot(data.find((s) => s.id === id) || null);
+        setLoading(false);
       });
 
     fetch(CHARACTERS_URL)
@@ -90,7 +91,15 @@ export default function SpotPageClient({ id }: { id: string }) {
         setCharacters(data);
       });
   }, [id]);
-
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
+        <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
+          読み込み中...
+        </div>
+      </main>
+    );
+  }
   if (!spot) {
     return (
       <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
