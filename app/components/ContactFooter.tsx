@@ -20,7 +20,7 @@ export default function ContactFooter() {
         rel="noopener noreferrer"
         className="underline text-blue-400"
       >
-        誤情報の指摘・スポット掲載依頼・お問い合わせ
+        誤情報の指摘や要望等の問合せはこちら
       </a>
     </footer>
   );
