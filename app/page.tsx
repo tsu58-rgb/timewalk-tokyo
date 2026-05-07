@@ -487,10 +487,27 @@ export default function Home() {
                   <div key={event.id}>
                     {event.memorial && event.memorial.trim() !== "" && (
                       <div className="mb-6 rounded-2xl border border-pink-500 bg-pink-950/40 p-4">
-                        <div
-                          className="text-sm text-pink-400 leading-relaxed font-bold"
-                          dangerouslySetInnerHTML={{ __html: event.memorial }}
-                        />
+                        {(() => {
+                          const parts = String(event.memorial || "").split("<br>");
+
+                          const title = parts[0] || "";
+                          const body = parts.slice(1).join("<br>");
+
+                          return (
+                            <div className="leading-relaxed">
+                              <div className="text-pink-400 font-bold text-lg mb-2">
+                                {title}
+                              </div>
+
+                              {body && (
+                                <div
+                                  className="text-sm text-slate-200"
+                                  dangerouslySetInnerHTML={{ __html: body }}
+                                />
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
 
