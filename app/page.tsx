@@ -61,6 +61,7 @@ type EventItem = {
   description: string;
   memorial: string;
   source_url: string;
+  quiz: string;
 };
 
 type SpotWithDistance = Spot & {
@@ -212,6 +213,7 @@ export default function Home() {
           description: row.description || "",
           memorial: row.memorial || "",
           source_url: row.source_url || "",
+          quiz: row.quiz || "",
         }));
         
         setEvents(data);
@@ -561,6 +563,26 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            <div className="mt-6">
+              <h2 className="font-bold text-yellow-300 mb-2">今日のクイズ</h2>
+
+              {todayEvents.some((event) => event.quiz && event.quiz.trim() !== "") ? (
+                <div className="space-y-2">
+                  {todayEvents
+                    .filter((event) => event.quiz && event.quiz.trim() !== "")
+                    .map((event) => (
+                      <div
+                        key={`${event.id}-quiz`}
+                        className="text-sm text-slate-200 leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: event.quiz }}
+                      />
+                    ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400">なし</p>
+              )}
+            </div>
           </section>
         </div>
       </main>
@@ -741,8 +763,9 @@ export default function Home() {
           <div className="space-y-3">
             {visibleSpots.map((spot) => (
               <a
-                key={`${spot.id}-${spot.lat}-${spot.lng}`}
                 href={`/spot/${spot.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block w-full text-left bg-slate-800 rounded-2xl p-4 border border-slate-600"
               >
                 <div className="flex justify-between gap-3">
