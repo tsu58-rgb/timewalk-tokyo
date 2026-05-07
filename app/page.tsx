@@ -411,9 +411,9 @@ export default function Home() {
     return `${mm}-${dd}`;
   };
 
-  const formatDisplayDate = (date: Date) => {
-    return `${date.getMonth() + 1}/${date.getDate()}`;
-  };
+  function formatDisplayDate(date: Date) {
+    return `${date.getMonth() + 1}月${date.getDate()}日`;
+  }
 
   const todayKey = formatMMDD(new Date());
 
