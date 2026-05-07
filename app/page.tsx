@@ -474,7 +474,7 @@ export default function Home() {
 
           <section className="bg-slate-800 rounded-2xl p-4 mb-4">
             <h1 className="text-xl font-bold mb-4">
-              今日({formatDisplayDate(new Date())})はなんの日？
+              今日({formatDisplayDate(new Date())})は何の日？
             </h1>
 
             {todayEvents.length === 0 ? (
@@ -486,9 +486,13 @@ export default function Home() {
                 {todayEvents.map((event) => (
                   <div key={event.id}>
                     {event.memorial && event.memorial.trim() !== "" && (
-                      <div className="mb-4">
+                      <div className="mb-6 rounded-2xl border border-pink-500 bg-pink-950/40 p-4">
+                        <h2 className="font-bold text-pink-400 mb-2">
+                          今日はなんの日？
+                        </h2>
+
                         <div
-                          className="text-sm text-slate-200 leading-relaxed"
+                          className="text-sm text-slate-100 leading-relaxed"
                           dangerouslySetInnerHTML={{ __html: event.memorial }}
                         />
                       </div>
@@ -824,7 +828,7 @@ export default function Home() {
             rel="noopener noreferrer"
             className="text-blue-400 underline"
           >
-            ▶ TimeWalk Tokyoの使い方・特徴はこちら
+            ▶ TimeWalkの使い方・特徴はこちら
           </a>
         </div>
       </div>

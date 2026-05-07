@@ -105,13 +105,6 @@ export default function SpotPageClient({ id }: { id: string }) {
     <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
       <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
         <a
-          href="/"
-          className="inline-block mb-4 bg-white text-black px-4 py-2 rounded-xl font-bold"
-        >
-          ← Topに戻る
-        </a>
-
-        <a
           href={`https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`}
           target="_blank"
           rel="noopener noreferrer"

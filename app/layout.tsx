@@ -3,9 +3,9 @@ import "./globals.css";
 import ContactFooter from "./components/ContactFooter";
 
 export const metadata: Metadata = {
-  title: "TimeWalk Tokyo | 近くの歴史スポットを探せる街歩きガイド",
+  title: "TimeWalk | 近くの歴史スポットを探せる街歩きガイド",
   description:
-    "TimeWalk Tokyoは、現在地から近くの歴史スポットを表示し、人物・歴史解説・トリビアを楽しめる街歩きガイドアプリです。",
+    "TimeWalkは、現在地から近くの歴史スポットを表示し、人物・歴史解説・トリビアを楽しめる街歩きガイドアプリです。",
 };
 
 export default function RootLayout({

@@ -13,15 +13,26 @@ export default function ContactFooter() {
   }, []);
 
   return (
-    <footer className="mt-8 text-center text-sm text-slate-400 pb-10">
-      <a
-        href={`${FORM_BASE}${encodeURIComponent(url)}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="underline text-blue-400"
-      >
-        誤情報の指摘や要望等の問合せはこちら
-      </a>
+    <footer className="mt-8 text-center text-sm text-slate-400 pb-10 space-y-3">
+      <div>
+        <a
+          href={`${FORM_BASE}${encodeURIComponent(url)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline text-blue-400"
+        >
+          誤情報の指摘や要望等の問合せはこちら
+        </a>
+      </div>
+
+      <div>
+        <a
+          href="https://timewalk.yuru-rekishi-sanpo.com/"
+          className="text-slate-300 underline"
+        >
+          TimeWalk
+        </a>
+      </div>
     </footer>
   );
 }
