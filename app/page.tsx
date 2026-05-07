@@ -486,7 +486,7 @@ export default function Home() {
                 {todayEvents.map((event) => (
                   <div key={event.id}>
                     {event.memorial && event.memorial.trim() !== "" && (
-                      <div className="mb-6 rounded-2xl border border-pink-500 bg-pink-950/40 p-4">
+                      <div className="mb-6">
                         {(() => {
                           const parts = String(event.memorial || "").split("<br>");
 
