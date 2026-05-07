@@ -487,12 +487,8 @@ export default function Home() {
                   <div key={event.id}>
                     {event.memorial && event.memorial.trim() !== "" && (
                       <div className="mb-6 rounded-2xl border border-pink-500 bg-pink-950/40 p-4">
-                        <h2 className="font-bold text-pink-400 mb-2">
-                          今日はなんの日？
-                        </h2>
-
                         <div
-                          className="text-sm text-slate-100 leading-relaxed"
+                          className="text-sm text-pink-400 leading-relaxed font-bold"
                           dangerouslySetInnerHTML={{ __html: event.memorial }}
                         />
                       </div>
