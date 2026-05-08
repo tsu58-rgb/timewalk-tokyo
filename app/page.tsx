@@ -608,7 +608,7 @@ export default function Home() {
             </div>
 
             <div className="mt-6">
-              <h2 className="font-bold text-yellow-300 mb-2">昨日のクイズ</h2>
+              <h2 className="font-bold text-yellow-300 mb-2">昨日のクイズの答え</h2>
 
               {yesterdayEvents.some((event) => event.quiz && event.quiz.trim() !== "") ? (
                 <div className="space-y-3">
@@ -622,10 +622,12 @@ export default function Home() {
                         />
 
                         {event.quizAnswer && event.quizAnswer.trim() !== "" && (
-                          <div
-                            className="text-xs text-slate-400 leading-relaxed mt-1"
-                            dangerouslySetInnerHTML={{ __html: event.quizAnswer }}
-                          />
+                          <div className="text-xs text-slate-400 leading-relaxed mt-1">
+                            答え：
+                            <span
+                              dangerouslySetInnerHTML={{ __html: event.quizAnswer }}
+                            />
+                          </div>
                         )}
                       </div>
                     ))}
