@@ -24,6 +24,8 @@ type Spot = {
 type Character = {
   characterId: string;
   characterName: string;
+  characterKana?: string;
+  characterYears?: string;
   characterDescription?: string;
   characterImage?: string;
   wikipediaUrl?: string;
@@ -84,6 +86,8 @@ export default function SpotPageClient({ id }: { id: string }) {
         const data = (parsed.data as any[]).map((row: any) => ({
           characterId: row.characterId || "",
           characterName: row.characterName || "",
+          characterKana: row.characterKana || "",
+          characterYears: row.characterYears || "",
           characterDescription: row.characterDescription || "",
           characterImage: row.characterImage || "",
           wikipediaUrl: row.wikipediaUrl || "",
@@ -156,10 +160,24 @@ export default function SpotPageClient({ id }: { id: string }) {
                 />
               )}
 
-              <h2 className="text-xl font-bold text-center mb-2">
-                {character.characterName}
-              </h2>
+              <div className="text-center mb-2">
+                {character.characterKana && character.characterKana.trim() !== "" && (
+                  <p className="text-sm text-slate-400">
+                    {character.characterKana}
+                  </p>
+                )}
 
+                <h2 className="text-xl font-bold">
+                  {character.characterName}
+                </h2>
+
+                {character.characterYears && character.characterYears.trim() !== "" && (
+                  <p className="text-sm text-slate-400">
+                    {character.characterYears}
+                  </p>
+                )}
+              </div>
+              
               {character.characterDescription && (
                 <p
                   className="text-sm text-slate-300 text-center"
