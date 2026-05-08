@@ -12,6 +12,7 @@ const CHARACTERS_URL =
 type Spot = {
   id: string;
   name: string;
+  kana: string;
   lat: number;
   lng: number;
   category: string;
@@ -62,6 +63,7 @@ export default function SpotPageClient({ id }: { id: string }) {
         const data = (parsed.data as any[]).map((row: any) => ({
           id: row.id || "",
           name: row.name || "",
+          kana: row.kana || "",
           lat: Number(row.lat),
           lng: Number(row.lng),
           category: row.category || "",
@@ -138,8 +140,14 @@ export default function SpotPageClient({ id }: { id: string }) {
           ))}
         </div>
 
-        <h1 className="text-2xl font-bold mb-4">{spot.name}</h1>
+        {spot.kana && spot.kana.trim() !== "" && (
+          <p className="text-xs text-slate-400 mb-1">
+            {spot.kana}
+          </p>
+        )}
 
+        <h1 className="text-2xl font-bold mb-4">{spot.name}</h1>
+        
         {spot.description && spot.description.trim() !== "" && (
           <section className="bg-white text-black rounded-2xl p-4 mb-4">
             <h2 className="font-bold mb-2">歴史解説</h2>
@@ -193,7 +201,7 @@ export default function SpotPageClient({ id }: { id: string }) {
 
               <div className="text-center mb-2">
                 {character.characterKana && character.characterKana.trim() !== "" && (
-                  <p className="text-sm text-slate-400">
+                  <p className="text-xs text-slate-400">
                     {character.characterKana}
                   </p>
                 )}
@@ -203,7 +211,7 @@ export default function SpotPageClient({ id }: { id: string }) {
                 </h2>
 
                 {character.characterYears && character.characterYears.trim() !== "" && (
-                  <p className="text-sm text-slate-400">
+                  <p className="text-xs text-slate-400">
                     {character.characterYears}
                   </p>
                 )}

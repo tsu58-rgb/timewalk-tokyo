@@ -62,6 +62,7 @@ type EventItem = {
   memorial: string;
   source_url: string;
   quiz: string;
+  quizAnswer: string;
 };
 
 type SpotWithDistance = Spot & {
@@ -214,6 +215,7 @@ export default function Home() {
           memorial: row.memorial || "",
           source_url: row.source_url || "",
           quiz: row.quiz || "",
+          quizAnswer: row.quizAnswer || "",
         }));
         
         setEvents(data);
@@ -420,7 +422,11 @@ export default function Home() {
   const tomorrowDate = new Date();
   tomorrowDate.setDate(tomorrowDate.getDate() + 1);
   const tomorrowKey = formatMMDD(tomorrowDate);
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayKey = formatMMDD(yesterdayDate);
 
+  const yesterdayEvents = events.filter((e) => e.date === yesterdayKey);
   const todayEvents = events.filter((e) => e.date === todayKey);
   const tomorrowEvents = events.filter((e) => e.date === tomorrowKey);
   
@@ -594,6 +600,34 @@ export default function Home() {
                         className="text-sm text-slate-200 leading-relaxed"
                         dangerouslySetInnerHTML={{ __html: event.quiz }}
                       />
+                    ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400">なし</p>
+              )}
+            </div>
+
+            <div className="mt-6">
+              <h2 className="font-bold text-yellow-300 mb-2">昨日のクイズ</h2>
+
+              {yesterdayEvents.some((event) => event.quiz && event.quiz.trim() !== "") ? (
+                <div className="space-y-3">
+                  {yesterdayEvents
+                    .filter((event) => event.quiz && event.quiz.trim() !== "")
+                    .map((event) => (
+                      <div key={`${event.id}-yesterday-quiz`}>
+                        <div
+                          className="text-sm text-slate-200 leading-relaxed"
+                          dangerouslySetInnerHTML={{ __html: event.quiz }}
+                        />
+
+                        {event.quizAnswer && event.quizAnswer.trim() !== "" && (
+                          <div
+                            className="text-xs text-slate-400 leading-relaxed mt-1"
+                            dangerouslySetInnerHTML={{ __html: event.quizAnswer }}
+                          />
+                        )}
+                      </div>
                     ))}
                 </div>
               ) : (
