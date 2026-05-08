@@ -164,18 +164,25 @@ export default function SpotPageClient({ id }: { id: string }) {
           </section>
         )}
 
-        {getCharacterIds(spot.characterIds).map((characterId) => {
-          const character = characters.find(
-            (c) => c.characterId === characterId
-          );
+        {getCharacterIds(spot.characterIds)
+          .map((characterId) =>
+            characters.find((c) => c.characterId === characterId)
+          )
+          .filter(Boolean)
+          .map((character, index, characterList) => {
+            if (!character) return null;
 
-          if (!character) return null;
+            return (
+              <section
+                key={character.characterId}
+                className="bg-slate-800 rounded-2xl p-4 mt-4 mb-4"
+              >
+                <h2 className="font-bold mb-2">
+                  {characterList.length === 1
+                    ? "人物紹介"
+                    : `人物紹介（${index + 1}/${characterList.length}）`}
+                </h2>
 
-          return (
-            <div
-              key={character.characterId}
-              className="bg-slate-800 rounded-2xl p-4 mb-4"
-            >
               {character.characterImage && (
                 <img
                   src={character.characterImage}
@@ -221,7 +228,7 @@ export default function SpotPageClient({ id }: { id: string }) {
                   Wikipediaを見る
                 </a>
               )}
-            </div>
+            </section>
           );
         })}
        </div>
