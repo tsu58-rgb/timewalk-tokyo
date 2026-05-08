@@ -140,6 +140,30 @@ export default function SpotPageClient({ id }: { id: string }) {
 
         <h1 className="text-2xl font-bold mb-4">{spot.name}</h1>
 
+        {spot.description && spot.description.trim() !== "" && (
+          <section className="bg-white text-black rounded-2xl p-4 mb-4">
+            <h2 className="font-bold mb-2">歴史解説</h2>
+
+            <div
+              dangerouslySetInnerHTML={{
+                __html: spot.description,
+              }}
+            />
+          </section>
+        )}
+
+        {spot.trivia && spot.trivia.trim() !== "" && (
+          <section className="bg-yellow-100 text-black rounded-2xl p-4">
+            <h2 className="font-bold mb-2">トリビア</h2>
+
+            <div
+              dangerouslySetInnerHTML={{
+                __html: spot.trivia,
+              }}
+            />
+          </section>
+        )}
+
         {getCharacterIds(spot.characterIds).map((characterId) => {
           const character = characters.find(
             (c) => c.characterId === characterId
@@ -200,31 +224,7 @@ export default function SpotPageClient({ id }: { id: string }) {
             </div>
           );
         })}
-
-        {spot.description && spot.description.trim() !== "" && (
-          <section className="bg-white text-black rounded-2xl p-4 mb-4">
-            <h2 className="font-bold mb-2">歴史解説</h2>
-
-            <div
-              dangerouslySetInnerHTML={{
-                __html: spot.description,
-              }}
-            />
-          </section>
-        )}
-
-        {spot.trivia && spot.trivia.trim() !== "" && (
-          <section className="bg-yellow-100 text-black rounded-2xl p-4">
-            <h2 className="font-bold mb-2">トリビア</h2>
-
-            <div
-              dangerouslySetInnerHTML={{
-                __html: spot.trivia,
-              }}
-            />
-          </section>
-        )}
-      </div>
-    </main>
+       </div>
+   </main>
   );
 }
