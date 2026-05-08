@@ -209,25 +209,31 @@ export default function SpotPageClient({ id }: { id: string }) {
                 )}
               </div>
               
-              {character.characterDescription && (
-                <p
-                  className="text-sm text-slate-300 text-center"
-                  dangerouslySetInnerHTML={{
-                    __html: character.characterDescription,
-                  }}
-                />
-              )}
+              {character.characterDescription &&
+                character.characterDescription.trim() !== "" && (
+                  <p className="text-sm text-slate-300 text-center">
+                    <span
+                      dangerouslySetInnerHTML={{
+                        __html: character.characterDescription,
+                      }}
+                    />
 
-              {character.wikipediaUrl && (
-                <a
-                  href={character.wikipediaUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block mt-3 text-center text-blue-400 underline"
-                >
-                  Wikipediaを見る
-                </a>
-              )}
+                    {character.wikipediaUrl &&
+                      character.wikipediaUrl.trim() !== "" && (
+                        <>
+                          {" "}
+                          <a
+                            href={character.wikipediaUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 underline"
+                          >
+                            Wikipedia
+                          </a>
+                        </>
+                      )}
+                  </p>
+                )}
             </section>
           );
         })}
