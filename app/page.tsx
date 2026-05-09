@@ -645,13 +645,17 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
       <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
-        <h1 className="text-2xl font-bold text-center mb-2">TimeWalk</h1>
+        <h1 className="text-2xl font-bold text-center mb-1">TimeWalk</h1>
+
+        <p className="text-center text-xs text-slate-300 mb-3">
+          近くの歴史スポットがわかるアプリ
+        </p>
 
         <button
           onClick={() => setScreen("today")}
           className="mb-4 w-full bg-yellow-300 text-black py-3 rounded-xl font-bold"
         >
-          今日はなんの日？
+          今日は何の日？
         </button>
 
         <p className="text-center text-xs text-yellow-300 mb-3">
@@ -659,16 +663,27 @@ export default function Home() {
         </p>
 
         <div className="flex items-center justify-center gap-2 mb-4">
-          <p className="text-sm text-slate-300">
-            {address ? `📍 ${address}` : "📍 現在地確認中..."}
-          </p>
+          {address ? (
+            <>
+              <p className="text-sm text-slate-300">📍 {address}</p>
 
-          <button
-            onClick={getCurrentLocation}
-            className="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-bold whitespace-nowrap"
-          >
-            {locationLoading ? "更新中" : "更新"}
-          </button>
+              <button
+                onClick={getCurrentLocation}
+                className="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-bold whitespace-nowrap"
+              >
+                {locationLoading ? "更新中" : "更新"}
+              </button>
+            </>
+          ) : (
+            <a
+              href="https://yuru-rekishi-sanpo.com/timewalk#toc11"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-yellow-300 underline font-bold"
+            >
+              位置情報サービスをオンにしてください
+            </a>
+          )}
         </div>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
@@ -804,9 +819,12 @@ export default function Home() {
           </p>
         )}
 
-        <p className="text-xs text-slate-400 mb-3">
-          近くの歴史スポット：{visibleSpots.length}件（最大{DISPLAY_LIMIT}件表示）
-        </p>
+        <div className="mb-3">
+          <p className="font-bold">近くの歴史スポット</p>
+          <p className="text-xs text-slate-400 mt-1">
+            {visibleSpots.length}件（最大{DISPLAY_LIMIT}件表示）
+          </p>
+        </div>
 
         {visibleSpots.length === 0 ? (
           <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">
