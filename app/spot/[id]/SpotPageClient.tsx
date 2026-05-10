@@ -161,7 +161,7 @@ export default function SpotPageClient({ id }: { id: string }) {
             src={spot.spotsImage}
             alt={spot.name}
             onError={() => setSpotImageError(true)}
-            className="w-full max-h-72 object-contain mb-4 rounded-xl bg-slate-800"
+            className="w-full h-auto mb-4 rounded-xl"
           />
         )}
 
