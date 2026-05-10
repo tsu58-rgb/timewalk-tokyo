@@ -20,6 +20,7 @@ type Spot = {
   description: string;
   trivia: string;
   status: string;
+  spotsImage: string;
 };
 
 type Character = {
@@ -50,7 +51,8 @@ export default function SpotPageClient({ id }: { id: string }) {
   const [spot, setSpot] = useState<Spot | null>(null);
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [spotImageError, setSpotImageError] = useState(false);
+  const [characterImageErrors, setCharacterImageErrors] = useState<Record<string, boolean>>({});
   useEffect(() => {
     fetch(SPOTS_URL)
       .then((res) => res.text())
@@ -71,6 +73,7 @@ export default function SpotPageClient({ id }: { id: string }) {
           description: row.description || "",
           trivia: row.trivia || "",
           status: String(row.status || "").trim(),
+          spotsImage: row.spotsImage || "",
         }));
 
         setSpot(data.find((s) => s.id === id) || null);
@@ -98,6 +101,11 @@ export default function SpotPageClient({ id }: { id: string }) {
         setCharacters(data);
       });
   }, [id]);
+  
+  useEffect(() => {
+    setSpotImageError(false);
+  }, [spot?.id]);
+
   if (loading) {
     return (
       <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
@@ -148,6 +156,15 @@ export default function SpotPageClient({ id }: { id: string }) {
 
         <h1 className="text-2xl font-bold mb-4">{spot.name}</h1>
         
+        {spot.spotsImage && spot.spotsImage.trim() !== "" && !spotImageError && (
+          <img
+            src={spot.spotsImage}
+            alt={spot.name}
+            onError={() => setSpotImageError(true)}
+            className="w-full max-h-72 object-contain mb-4 rounded-xl bg-slate-800"
+          />
+        )}
+
         {spot.description && spot.description.trim() !== "" && (
           <section className="bg-white text-black rounded-2xl p-4 mb-4">
             <h2 className="font-bold mb-2">歴史解説</h2>
@@ -191,13 +208,21 @@ export default function SpotPageClient({ id }: { id: string }) {
                     : `人物紹介（${index + 1}/${characterList.length}）`}
                 </h2>
 
-              {character.characterImage && (
-                <img
-                  src={character.characterImage}
-                  alt={character.characterName}
-                  className="w-full max-h-64 object-contain mb-3 rounded-xl"
-                />
-              )}
+              {character.characterImage &&
+                character.characterImage.trim() !== "" &&
+                !characterImageErrors[character.characterId] && (
+                  <img
+                    src={character.characterImage}
+                    alt={character.characterName}
+                    onError={() =>
+                      setCharacterImageErrors((prev) => ({
+                        ...prev,
+                        [character.characterId]: true,
+                      }))
+                    }
+                    className="w-full max-h-64 object-contain mb-3 rounded-xl"
+                  />
+                )}
 
               <div className="text-center mb-2">
                 {character.characterKana && character.characterKana.trim() !== "" && (

@@ -43,6 +43,8 @@ type Spot = {
   description: string;
   trivia: string;
   status: string;
+  kana: string;
+  spotsImage: string;
 };
 
 type Character = {
@@ -148,6 +150,8 @@ export default function Home() {
         const data = (parsed.data as any[]).map((row: any) => ({
           id: row.id || "",
           name: row.name || "",
+          kana: row.kana || "",
+          spotsImage: row.spotsImage || "",
           lat: Number(row.lat),
           lng: Number(row.lng),
           country: row.country || "",
@@ -319,7 +323,9 @@ export default function Home() {
     const courses = new Set<string>();
 
     spots.forEach((spot) => {
-      getModes(spot.mode).forEach((mode) => courses.add(mode));
+      getModes(spot.mode)
+        .filter((mode) => mode !== "除外")
+        .forEach((mode) => courses.add(mode));
     });
 
     const result = Array.from(courses).sort();
@@ -395,6 +401,8 @@ export default function Home() {
       if (spot.distance > selectedDistance) return false;
 
       const modes = getModes(spot.mode);
+
+      if (modes.includes("除外")) return false;
       if (!modes.includes(selectedCourse)) return false;
 
       const categories = getCategories(spot.category);
