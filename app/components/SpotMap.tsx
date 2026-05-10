@@ -85,14 +85,7 @@ export default function SpotMap({ spots }: Props) {
 
         <Marker
         position={currentPosition}
-        title="現在地"
-
-        label={{
-        text: "現在地",
-        color: "white",
-        fontWeight: "bold",
-        }}
-        
+        title="現在地"        
         icon={{
             path: window.google.maps.SymbolPath.CIRCLE,
             scale: 10,
