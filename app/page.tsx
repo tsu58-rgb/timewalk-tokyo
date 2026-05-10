@@ -863,6 +863,7 @@ export default function Home() {
                     <h2 className="text-lg font-bold">
                       {visitedSpotIds.includes(getSpotKey(spot)) ? "✅ " : ""}
                       {spot.name}
+                      {spot.spotsImage && spot.spotsImage.trim() !== "" ? " 🖼️" : ""}
                     </h2>
 
                     {getCharacterIds(spot.characterIds).length > 0 && (
