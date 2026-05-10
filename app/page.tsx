@@ -402,9 +402,12 @@ export default function Home() {
 
       const modes = getModes(spot.mode);
 
-      if (modes.includes("除外")) return false;
-      if (!modes.includes(selectedCourse)) return false;
-
+      if (selectedCourse === DEFAULT_COURSE) {
+        if (modes.includes("除外")) return false;
+      } else {
+        if (!modes.includes(selectedCourse)) return false;
+      }
+      
       const categories = getCategories(spot.category);
       return categories.some((cat) => selectedTags.includes(cat));
     })
