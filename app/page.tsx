@@ -407,7 +407,7 @@ export default function Home() {
       } else {
         if (!modes.includes(selectedCourse)) return false;
       }
-      
+
       const categories = getCategories(spot.category);
       return categories.some((cat) => selectedTags.includes(cat));
     })
@@ -695,6 +695,15 @@ export default function Home() {
               位置情報サービスをオンにしてください
             </a>
           )}
+        </div>
+
+        <div className="text-center mb-4">
+          <a
+            href="/map"
+            className="text-sm text-blue-400 underline font-bold"
+          >
+            全スポットマップを表示
+          </a>
         </div>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
