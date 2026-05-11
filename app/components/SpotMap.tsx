@@ -1,5 +1,6 @@
 "use client";
 
+import MarkerClusterGroup from "react-leaflet-cluster";
 import { useEffect, useState } from "react";
 import { useMap } from "react-leaflet";
 import {
@@ -108,21 +109,23 @@ export default function SpotMap({ spots }: Props) {
         </Pane>
       )}
 
-      {spots.map((spot) => (
-        <Marker
-          key={spot.id}
-          position={[spot.lat, spot.lng]}
-          icon={spotIcon}
-        >
-          <Popup>
-            <div>
-              <strong>{spot.name}</strong>
-              <br />
-              <a href={`/spot/${spot.id}`}>詳細を見る</a>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      <MarkerClusterGroup chunkedLoading>
+        {spots.map((spot) => (
+          <Marker
+            key={spot.id}
+            position={[spot.lat, spot.lng]}
+            icon={spotIcon}
+          >
+            <Popup>
+              <div>
+                <strong>{spot.name}</strong>
+                <br />
+                <a href={`/spot/${spot.id}`}>詳細を見る</a>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MarkerClusterGroup>
     </MapContainer>
   );
 }
