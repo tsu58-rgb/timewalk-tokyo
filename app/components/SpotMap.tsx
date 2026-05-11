@@ -10,7 +10,9 @@ import {
   Popup,
   CircleMarker,
   Pane,
+  useMapEvents,
 } from "react-leaflet";
+
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -51,11 +53,41 @@ function RecenterMap({
   return null;
 }
 
+function VisibleBoundsController({
+  spots,
+  onVisibleSpotsChange,
+}: {
+  spots: Spot[];
+  onVisibleSpotsChange: (spots: Spot[]) => void;
+}) {
+  const updateVisibleSpots = (map: L.Map) => {
+    const bounds = map.getBounds();
+
+    const visible = spots.filter((spot) =>
+      bounds.contains([spot.lat, spot.lng])
+    );
+
+    onVisibleSpotsChange(visible);
+  };
+
+  const map = useMapEvents({
+    load: () => updateVisibleSpots(map),
+    moveend: () => updateVisibleSpots(map),
+    zoomend: () => updateVisibleSpots(map),
+  });
+
+  useEffect(() => {
+    updateVisibleSpots(map);
+  }, [spots, map]);
+
+  return null;
+}
+
 export default function SpotMap({ spots }: Props) {
   const [currentPosition, setCurrentPosition] = useState<[number, number] | null>(
     null
   );
-
+  const [visibleSpots, setVisibleSpots] = useState<Spot[]>([]);
   useEffect(() => {
     if (!navigator.geolocation) return;
 
@@ -88,6 +120,11 @@ export default function SpotMap({ spots }: Props) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
+      <VisibleBoundsController
+        spots={spots}
+        onVisibleSpotsChange={setVisibleSpots}
+      />
+
       {currentPosition && (
         <RecenterMap position={currentPosition} />
       )}
@@ -110,7 +147,7 @@ export default function SpotMap({ spots }: Props) {
       )}
 
       <MarkerClusterGroup chunkedLoading>
-        {spots.map((spot) => (
+        {visibleSpots.map((spot) => (
           <Marker
             key={spot.id}
             position={[spot.lat, spot.lng]}

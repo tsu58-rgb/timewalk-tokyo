@@ -715,22 +715,12 @@ export default function Home() {
           </a>
         </div>
 
-        <div className="mb-4">
-          <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="w-full bg-slate-800 text-white py-3 rounded-2xl font-bold"
-          >
-            {showDetails ? "詳細非表示" : "詳細表示"}
-          </button>
-        </div>
-
-
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="w-full text-left font-bold text-white"
+            className="w-full text-center text-sm font-bold text-white"
           >
-            {showDetails ? "詳細非表示" : "詳細表示"}
+            {showDetails ? "[詳細非表示]" : "[詳細表示]"}
           </button>
 
           {showDetails && (
@@ -749,50 +739,6 @@ export default function Home() {
                   </button>
                 </div>
               </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setBaseMode("current")}
-                  className={`flex-1 py-2 rounded-xl font-bold ${
-                    baseMode === "current"
-                      ? "bg-blue-500 text-white"
-                      : "bg-slate-700 text-slate-300"
-                  }`}
-                >
-                  現在地
-                </button>
-
-                <button
-                  onClick={() => setBaseMode("custom")}
-                  className={`flex-1 py-2 rounded-xl font-bold ${
-                    baseMode === "custom"
-                      ? "bg-blue-500 text-white"
-                      : "bg-slate-700 text-slate-300"
-                  }`}
-                >
-                  指定地点
-                </button>
-              </div>
-
-              {baseMode === "custom" && (
-                <div className="bg-slate-900 rounded-2xl p-3">
-                  <MapPicker
-                    onSelect={(lat, lng) => {
-                      setCustomPosition({ lat, lng });
-                    }}
-                  />
-
-                  <p className="text-xs mt-2 text-slate-400">
-                    地図をタップして基準地点を選択
-                  </p>
-
-                  {!customPosition && (
-                    <p className="text-xs mt-1 text-yellow-300">
-                      まだ指定地点が選択されていません。
-                    </p>
-                  )}
-                </div>
-              )}
 
               <div>
                 <p className="font-bold mb-2">表示距離</p>
@@ -851,9 +797,58 @@ export default function Home() {
                   ))}
                 </div>
               </div>
+
+              <div>
+                <p className="font-bold mb-2">基準地点</p>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setBaseMode("current")}
+                    className={`flex-1 py-2 rounded-xl font-bold ${
+                      baseMode === "current"
+                        ? "bg-blue-500 text-white"
+                        : "bg-slate-700 text-slate-300"
+                    }`}
+                  >
+                    現在地
+                  </button>
+
+                  <button
+                    onClick={() => setBaseMode("custom")}
+                    className={`flex-1 py-2 rounded-xl font-bold ${
+                      baseMode === "custom"
+                        ? "bg-blue-500 text-white"
+                        : "bg-slate-700 text-slate-300"
+                    }`}
+                  >
+                    指定地点
+                  </button>
+                </div>
+              </div>
+
+              {baseMode === "custom" && (
+                <div className="bg-slate-900 rounded-2xl p-3">
+                  <MapPicker
+                    onSelect={(lat, lng) => {
+                      setCustomPosition({ lat, lng });
+                    }}
+                  />
+
+                  <p className="text-xs mt-2 text-slate-400">
+                    地図をタップして基準地点を選択
+                  </p>
+
+                  {!customPosition && (
+                    <p className="text-xs mt-1 text-yellow-300">
+                      まだ指定地点が選択されていません。
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </section>
+
         {error && !position && (
           <p className="bg-red-900 rounded-xl p-3 mb-4 text-sm">{error}</p>
         )}
