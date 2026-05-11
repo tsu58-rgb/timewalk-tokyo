@@ -306,7 +306,7 @@ export default function Home() {
         setError("");
       },
       (err) => {
-        setError("位置情報が取得できません: " + err.message);
+        console.error(err);
       },
       {
         enableHighAccuracy: true,
@@ -410,7 +410,15 @@ export default function Home() {
       }
 
       const categories = getCategories(spot.category);
+
+      // タグ空白
+      if (categories.length === 0) {
+        // 全タグ選択中なら表示
+        return selectedTags.length === allTags.length;
+      }
+
       return categories.some((cat) => selectedTags.includes(cat));
+
     })
     .sort((a, b) => {
       if (a.distance === null || b.distance === null) return 0;
@@ -837,7 +845,7 @@ export default function Home() {
           </>
         )}
 
-        {error && (
+        {error && !position && (
           <p className="bg-red-900 rounded-xl p-3 mb-4 text-sm">{error}</p>
         )}
 

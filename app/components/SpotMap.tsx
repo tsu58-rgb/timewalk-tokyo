@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useMap } from "react-leaflet";
 import {
   MapContainer,
   TileLayer,
@@ -34,6 +35,20 @@ const spotIcon = new L.Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
 });
+
+function RecenterMap({
+  position,
+}: {
+  position: [number, number];
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(position, 14);
+  }, [position, map]);
+
+  return null;
+}
 
 export default function SpotMap({ spots }: Props) {
   const [currentPosition, setCurrentPosition] = useState<[number, number] | null>(
@@ -72,11 +87,15 @@ export default function SpotMap({ spots }: Props) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
+      {currentPosition && (
+        <RecenterMap position={currentPosition} />
+      )}
+
       {currentPosition !== null && (
         <Pane name="current-location-pane" style={{ zIndex: 1000 }}>
           <CircleMarker
             center={[currentPosition[0], currentPosition[1]]}
-            radius={18}
+            radius={10}
             pathOptions={{
               color: "#000000",
               weight: 5,
