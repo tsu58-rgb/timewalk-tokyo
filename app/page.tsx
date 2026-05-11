@@ -720,10 +720,10 @@ export default function Home() {
           <button
             onClick={() => setShowDetails(!showDetails)}
             className={`w-full text-center font-bold text-white ${
-              showDetails ? "text-base py-2" : "text-sm"
+              showDetails ? "text-sm" : "text-base py-2"
             }`}
           >
-            {showDetails ? "詳細非表示" : "詳細表示"}
+            {showDetails ? "［詳細非表示］" : "詳細表示"}
           </button>
 
 
