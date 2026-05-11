@@ -56,9 +56,14 @@ export default function MapPage() {
   return (
     <main className="min-h-screen bg-slate-900 p-4">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-white text-2xl font-bold mb-4">
+        
+        <h1 className="text-white text-2xl font-bold mb-2">
           TimeWalk スポットマップ
         </h1>
+
+        <p className="text-slate-300 text-sm mb-4">
+          現在登録されている地点が表示されています。随時拡充していく予定です。
+        </p>
 
         <SpotMap spots={spots} />
       </div>

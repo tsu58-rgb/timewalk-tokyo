@@ -110,6 +110,7 @@ function getSpotKey(spot: Spot) {
 }
 
 export default function Home() {
+  const [showDetails, setShowDetails] = useState(false);
   const [spots, setSpots] = useState<Spot[]>([]);
   const [position, setPosition] = useState<GeolocationCoordinates | null>(null);
   const [error, setError] = useState("");
@@ -706,122 +707,135 @@ export default function Home() {
           </a>
         </div>
 
-        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <p className="text-sm text-slate-300 mb-2">現在選択中のコース：</p>
-
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xl font-bold">{selectedCourse}</p>
-
-            <button
-              onClick={() => setScreen("courseSelect")}
-              className="bg-blue-500 text-white px-4 py-2 rounded-xl font-bold whitespace-nowrap"
-            >
-              コース変更
-            </button>
-          </div>
-        </section>
-        
-        <div className="flex gap-2 mb-4">
+        <div className="mb-4">
           <button
-            onClick={() => setBaseMode("current")}
-            className={`flex-1 py-2 rounded-xl font-bold ${
-              baseMode === "current"
-                ? "bg-blue-500 text-white"
-                : "bg-slate-700 text-slate-300"
-            }`}
+            onClick={() => setShowDetails(!showDetails)}
+            className="w-full bg-slate-800 text-white py-3 rounded-2xl font-bold"
           >
-            現在地
-          </button>
-
-          <button
-            onClick={() => setBaseMode("custom")}
-            className={`flex-1 py-2 rounded-xl font-bold ${
-              baseMode === "custom"
-                ? "bg-blue-500 text-white"
-                : "bg-slate-700 text-slate-300"
-            }`}
-          >
-            指定地点
+            {showDetails ? "詳細非表示" : "詳細表示"}
           </button>
         </div>
 
-        {baseMode === "custom" && (
-          <div className="mb-4 bg-slate-800 rounded-2xl p-3">
-            <MapPicker
-              onSelect={(lat, lng) => {
-                setCustomPosition({ lat, lng });
-              }}
-            />
+        {showDetails && (
+          <>
+            <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+              <p className="text-sm text-slate-300 mb-2">現在選択中のコース：</p>
 
-            <p className="text-xs mt-2 text-slate-400">
-              地図をタップして基準地点を選択
-            </p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xl font-bold">{selectedCourse}</p>
 
-            {!customPosition && (
-              <p className="text-xs mt-1 text-yellow-300">
-                まだ指定地点が選択されていません。
-              </p>
-            )}
-          </div>
-        )}
-
-        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <p className="font-bold mb-2">表示距離</p>
-
-          <div className="grid grid-cols-5 gap-2">
-            {DISTANCE_OPTIONS.map((option) => (
+                <button
+                  onClick={() => setScreen("courseSelect")}
+                  className="bg-blue-500 text-white px-4 py-2 rounded-xl font-bold whitespace-nowrap"
+                >
+                  コース変更
+                </button>
+              </div>
+            </section>
+            
+            <div className="flex gap-2 mb-4">
               <button
-                key={option.value}
-                onClick={() => setSelectedDistance(option.value)}
-                className={`py-2 rounded-xl text-sm font-bold ${
-                  selectedDistance === option.value
+                onClick={() => setBaseMode("current")}
+                className={`flex-1 py-2 rounded-xl font-bold ${
+                  baseMode === "current"
                     ? "bg-blue-500 text-white"
                     : "bg-slate-700 text-slate-300"
                 }`}
               >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <div className="flex justify-between items-center mb-3">
-            <p className="font-bold">タグ</p>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setSelectedTags(allTags)}
-                className="text-xs bg-white text-black px-2 py-1 rounded-lg font-bold"
-              >
-                全選択
+                現在地
               </button>
 
               <button
-                onClick={() => setSelectedTags([])}
-                className="text-xs bg-slate-600 text-white px-2 py-1 rounded-lg font-bold"
-              >
-                全解除
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {allTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className={`text-xs px-3 py-2 rounded-full font-bold ${
-                  selectedTags.includes(tag)
-                    ? "bg-yellow-300 text-black"
+                onClick={() => setBaseMode("custom")}
+                className={`flex-1 py-2 rounded-xl font-bold ${
+                  baseMode === "custom"
+                    ? "bg-blue-500 text-white"
                     : "bg-slate-700 text-slate-300"
                 }`}
               >
-                {tag}
+                指定地点
               </button>
-            ))}
-          </div>
-        </section>
+            </div>
+
+            {baseMode === "custom" && (
+              <div className="mb-4 bg-slate-800 rounded-2xl p-3">
+                <MapPicker
+                  onSelect={(lat, lng) => {
+                    setCustomPosition({ lat, lng });
+                  }}
+                />
+
+                <p className="text-xs mt-2 text-slate-400">
+                  地図をタップして基準地点を選択
+                </p>
+
+                {!customPosition && (
+                  <p className="text-xs mt-1 text-yellow-300">
+                    まだ指定地点が選択されていません。
+                  </p>
+                )}
+              </div>
+            )}
+
+            <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+              <p className="font-bold mb-2">表示距離</p>
+
+              <div className="grid grid-cols-5 gap-2">
+                {DISTANCE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setSelectedDistance(option.value)}
+                    className={`py-2 rounded-xl text-sm font-bold ${
+                      selectedDistance === option.value
+                        ? "bg-blue-500 text-white"
+                        : "bg-slate-700 text-slate-300"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+              <div className="flex justify-between items-center mb-3">
+                <p className="font-bold">タグ</p>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSelectedTags(allTags)}
+                    className="text-xs bg-white text-black px-2 py-1 rounded-lg font-bold"
+                  >
+                    全選択
+                  </button>
+
+                  <button
+                    onClick={() => setSelectedTags([])}
+                    className="text-xs bg-slate-600 text-white px-2 py-1 rounded-lg font-bold"
+                  >
+                    全解除
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => toggleTag(tag)}
+                    className={`text-xs px-3 py-2 rounded-full font-bold ${
+                      selectedTags.includes(tag)
+                        ? "bg-yellow-300 text-black"
+                        : "bg-slate-700 text-slate-300"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
 
         {error && (
           <p className="bg-red-900 rounded-xl p-3 mb-4 text-sm">{error}</p>
