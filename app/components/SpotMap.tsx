@@ -7,6 +7,7 @@ import {
   Marker,
   Popup,
   CircleMarker,
+  Pane,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -72,19 +73,20 @@ export default function SpotMap({ spots }: Props) {
       />
 
       {currentPosition !== null && (
-        <CircleMarker
-          center={[currentPosition[0], currentPosition[1]]}
-          radius={16}
-          pathOptions={{
-            color: "#000000",
-            weight: 4,
-            fillColor: "#facc15",
-            fillOpacity: 1,
-          }}
-          pane="markerPane"
-        >
-          <Popup>現在地</Popup>
-        </CircleMarker>
+        <Pane name="current-location-pane" style={{ zIndex: 1000 }}>
+          <CircleMarker
+            center={[currentPosition[0], currentPosition[1]]}
+            radius={18}
+            pathOptions={{
+              color: "#000000",
+              weight: 5,
+              fillColor: "#facc15",
+              fillOpacity: 1,
+            }}
+          >
+            <Popup>現在地</Popup>
+          </CircleMarker>
+        </Pane>
       )}
 
       {spots.map((spot) => (
