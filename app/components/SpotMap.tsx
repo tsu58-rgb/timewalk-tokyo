@@ -1,12 +1,15 @@
 "use client";
-import { useEffect, useState } from "react";
 
+import { useEffect, useState } from "react";
 import {
-  GoogleMap,
+  MapContainer,
+  TileLayer,
   Marker,
-  Circle,
-  useJsApiLoader,
-} from "@react-google-maps/api";
+  Popup,
+  CircleMarker,
+} from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 type Spot = {
   id: string;
@@ -19,94 +22,84 @@ type Props = {
   spots: Spot[];
 };
 
-const containerStyle = {
-  width: "100%",
-  height: "80vh",
-};
+const defaultCenter: [number, number] = [35.681236, 139.767125];
 
-const center = {
-  lat: 35.681236,
-  lng: 139.767125,
-};
+const spotIcon = new L.Icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
 
 export default function SpotMap({ spots }: Props) {
-
-    const [currentPosition, setCurrentPosition] = useState<{
-        lat: number;
-        lng: number;
-    } | null>(null);
-
-    const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-  });
+  const [currentPosition, setCurrentPosition] = useState<[number, number] | null>(
+    null
+  );
 
   useEffect(() => {
     if (!navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(
-        (pos) => {
-        setCurrentPosition({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-        });
-        },
-        (err) => {
+      (pos) => {
+        setCurrentPosition([pos.coords.latitude, pos.coords.longitude]);
+      },
+      (err) => {
         console.error(err);
-        },
-        {
+      },
+      {
         enableHighAccuracy: true,
-        }
+      }
     );
-    }, []);
-
-  if (!isLoaded) {
-    return <p className="text-white">地図を読み込み中...</p>;
-  }
+  }, []);
 
   return (
-    <GoogleMap
-      mapContainerStyle={containerStyle}
-      center={currentPosition || center}
+    <MapContainer
+      center={currentPosition || defaultCenter}
       zoom={12}
+      style={{
+        width: "100%",
+        height: "80vh",
+        borderRadius: "16px",
+        overflow: "hidden",
+      }}
     >
-    {currentPosition && (
-    <>
-        <Circle
-        center={currentPosition}
-        radius={50}
-        options={{
-            fillColor: "#4285F4",
-            fillOpacity: 0.35,
-            strokeColor: "#4285F4",
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
-        }}
-        />
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
 
-        <Marker
-        position={currentPosition}
-        title="現在地"        
-        icon={{
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: 10,
-            fillColor: "#4285F4",
+      {currentPosition && (
+        <CircleMarker
+          center={currentPosition}
+          radius={9}
+          pathOptions={{
+            color: "#ffffff",
+            weight: 3,
+            fillColor: "#3b82f6",
             fillOpacity: 1,
-            strokeColor: "white",
-            strokeWeight: 3,
-        }}
-        />
-    </>
-    )}        
+          }}
+        >
+          <Popup>現在地</Popup>
+        </CircleMarker>
+      )}
+
       {spots.map((spot) => (
         <Marker
           key={spot.id}
-          position={{
-            lat: spot.lat,
-            lng: spot.lng,
-          }}
-          title={spot.name}
-        />
+          position={[spot.lat, spot.lng]}
+          icon={spotIcon}
+        >
+          <Popup>
+            <div>
+              <strong>{spot.name}</strong>
+              <br />
+              <a href={`/spot/${spot.id}`}>詳細を見る</a>
+            </div>
+          </Popup>
+        </Marker>
       ))}
-    </GoogleMap>
+    </MapContainer>
   );
 }
