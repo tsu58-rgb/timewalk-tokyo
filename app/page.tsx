@@ -716,17 +716,17 @@ export default function Home() {
         </div>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
- 
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className={`w-full text-center font-bold text-white ${
-              showDetails ? "text-sm" : "text-base py-2"
+            className={`w-full text-center text-base font-bold ${
+              showDetails
+                ? "border border-white py-2"
+                : ""
             }`}
           >
-            {showDetails ? "［詳細非表示］" : "詳細表示"}
+            {showDetails ? "詳細非表示" : "詳細表示"}
           </button>
-
-
+          
           {showDetails && (
             <div className="mt-4 space-y-4">
               <div>
