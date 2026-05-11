@@ -64,8 +64,12 @@ export default function MapPage() {
           TimeWalk スポットマップ
         </h1>
 
-        <p className="text-slate-300 text-sm mb-4">
+        <p className="text-slate-300 text-sm mb-2">
           現在登録されている地点が表示されています。随時拡充していく予定です。
+        </p>
+
+        <p className="text-slate-400 text-xs mb-4">
+          ピンを選択すると詳細ページを見ることができます。
         </p>
 
         <SpotMap spots={spots} />
