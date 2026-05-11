@@ -71,19 +71,21 @@ export default function SpotMap({ spots }: Props) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      <CircleMarker
-        center={currentPosition}
-        radius={16}
-        pathOptions={{
-          color: "#000000",
-          weight: 4,
-          fillColor: "#facc15",
-          fillOpacity: 1,
-        }}
-        pane="markerPane"
-      >
-        <Popup>現在地</Popup>
-      </CircleMarker>
+      {currentPosition !== null && (
+        <CircleMarker
+          center={[currentPosition[0], currentPosition[1]]}
+          radius={16}
+          pathOptions={{
+            color: "#000000",
+            weight: 4,
+            fillColor: "#facc15",
+            fillOpacity: 1,
+          }}
+          pane="markerPane"
+        >
+          <Popup>現在地</Popup>
+        </CircleMarker>
+      )}
 
       {spots.map((spot) => (
         <Marker
