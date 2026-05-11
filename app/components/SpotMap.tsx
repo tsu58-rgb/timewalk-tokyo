@@ -16,6 +16,7 @@ type Spot = {
   name: string;
   lat: number;
   lng: number;
+  mode: string;
 };
 
 type Props = {
@@ -25,7 +26,7 @@ type Props = {
 const defaultCenter: [number, number] = [35.681236, 139.767125];
 
 const spotIcon = new L.Icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -70,20 +71,19 @@ export default function SpotMap({ spots }: Props) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {currentPosition && (
-        <CircleMarker
-          center={currentPosition}
-          radius={9}
-          pathOptions={{
-            color: "#ffffff",
-            weight: 3,
-            fillColor: "#3b82f6",
-            fillOpacity: 1,
-          }}
-        >
-          <Popup>現在地</Popup>
-        </CircleMarker>
-      )}
+      <CircleMarker
+        center={currentPosition}
+        radius={16}
+        pathOptions={{
+          color: "#000000",
+          weight: 4,
+          fillColor: "#facc15",
+          fillOpacity: 1,
+        }}
+        pane="markerPane"
+      >
+        <Popup>現在地</Popup>
+      </CircleMarker>
 
       {spots.map((spot) => (
         <Marker

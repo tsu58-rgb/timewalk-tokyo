@@ -20,11 +20,12 @@ type Spot = {
   lat: number;
   lng: number;
   status: string;
+  mode: string;
 };
 
 export default function MapPage() {
   const [spots, setSpots] = useState<Spot[]>([]);
-
+  
   useEffect(() => {
     fetch(SPOTS_URL)
       .then((res) => res.text())
@@ -41,14 +42,16 @@ export default function MapPage() {
             lat: Number(row.lat),
             lng: Number(row.lng),
             status: String(row.status || "").trim(),
+            mode: row.mode || "",
           }))
+
           .filter(
             (s) =>
               s.status.toLowerCase() === "ready" &&
               Number.isFinite(s.lat) &&
-              Number.isFinite(s.lng)
+              Number.isFinite(s.lng) &&
+              !String(s.mode || "").includes("除外")
           );
-
         setSpots(data);
       });
   }, []);
@@ -56,7 +59,7 @@ export default function MapPage() {
   return (
     <main className="min-h-screen bg-slate-900 p-4">
       <div className="max-w-6xl mx-auto">
-        
+
         <h1 className="text-white text-2xl font-bold mb-2">
           TimeWalk スポットマップ
         </h1>
