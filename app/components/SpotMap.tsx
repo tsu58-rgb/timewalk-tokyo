@@ -155,7 +155,13 @@ export default function SpotMap({ spots }: Props) {
             <div>
               <strong>{spot.name}</strong>
               <br />
-              <a href={`/spot/${spot.id}`}>詳細を見る</a>
+              <a
+                href={`/spot/${spot.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                詳細を見る
+              </a>
             </div>
           </Popup>
         </Marker>
