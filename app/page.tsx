@@ -884,6 +884,7 @@ export default function Home() {
           <div className="space-y-3">
             {visibleSpots.map((spot) => (
               <a
+                key={spot.id}
                 href={`/spot/${spot.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
