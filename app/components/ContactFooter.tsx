@@ -31,7 +31,7 @@ export default function ContactFooter() {
       <div className="mb-6">
         <a
           href="https://timewalk.yuru-rekishi-sanpo.com/"
-          className="text-slate-300 underline"
+          className="underline text-blue-400"
         >
           TimeWalkについて
         </a>
