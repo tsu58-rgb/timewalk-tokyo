@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 const FORM_BASE =
   "https://docs.google.com/forms/d/e/1FAIpQLSfF0kvO-NvprjxXR9BCY9mg5n9SbySzD4JkXQbdKKg4vBvh7Q/viewform?usp=pp_url&entry.1139397192=";
 
+const DEV_FORM_BASE =
+  "https://docs.google.com/forms/d/e/1FAIpQLSdbW8OmzRNzo_1Xd4QdrJZVXmPnClBMpwR5-h-GJKqd8tesUg/viewform?usp=pp_url&entry.1139397192=";
+
 export default function ContactFooter() {
   const [url, setUrl] = useState("");
 
@@ -25,12 +28,23 @@ export default function ContactFooter() {
         </a>
       </div>
 
-      <div>
+      <div className="mb-6">
         <a
           href="https://timewalk.yuru-rekishi-sanpo.com/"
           className="text-slate-300 underline"
         >
-          TimeWalk
+          TimeWalkについて
+        </a>
+      </div>
+
+      <div>
+        <a
+          href={`${DEV_FORM_BASE}${encodeURIComponent(url)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-slate-300 underline"
+        >
+          開発者用フォーム
         </a>
       </div>
     </footer>
