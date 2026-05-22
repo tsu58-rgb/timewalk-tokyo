@@ -156,31 +156,38 @@ export default function SpotMap({ spots }: Props) {
         </Pane>
       )}
 
-      {visibleSpots.map((spot) => (
-        <Marker
-          key={spot.id}
-          position={[spot.lat, spot.lng]}
-          icon={
-            spot.spotImage && spot.spotImage.trim() !== ""
-              ? spotIcon
-              : lightSpotIcon
-          }
-        >
-          <Popup>
-            <div>
-              <strong>{spot.name}</strong>
-              <br />
-              <a
-                href={`/spot/${spot.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                詳細を見る
-              </a>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      {visibleSpots.map((spot) => {
+        const hasImage = spot.spotImage && spot.spotImage.trim() !== "";
+
+        return (
+          <CircleMarker
+            key={spot.id}
+            center={[spot.lat, spot.lng]}
+            radius={8}
+            pathOptions={{
+              color: hasImage ? "#dc2626" : "#fca5a5",
+              fillColor: hasImage ? "#dc2626" : "#fca5a5",
+              fillOpacity: 0.9,
+              weight: 2,
+            }}
+          >
+            <Popup>
+              <div>
+                <strong>{spot.name}</strong>
+                <br />
+                <a
+                  href={`/spot/${spot.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  詳細を見る
+                </a>
+              </div>
+            </Popup>
+          </CircleMarker>
+        );
+      })}
+
     </MapContainer>
   );
 }
