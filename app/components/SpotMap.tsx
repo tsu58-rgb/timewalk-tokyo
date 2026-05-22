@@ -30,30 +30,29 @@ type Props = {
 
 const defaultCenter: [number, number] = [35.681236, 139.767125];
 
-const spotIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-const lightSpotIcon = new L.Icon({
+const normalRedIcon = new L.Icon({
   iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-pink.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+  shadowUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
 });
 
-function RecenterMap({
-  position,
-}: {
-  position: [number, number];
-}) {
+const darkRedIcon = new L.Icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png",
+  shadowUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+function RecenterMap({ position }: { position: [number, number] }) {
   const map = useMap();
 
   useEffect(() => {
@@ -98,6 +97,7 @@ export default function SpotMap({ spots }: Props) {
     null
   );
   const [visibleSpots, setVisibleSpots] = useState<Spot[]>([]);
+
   useEffect(() => {
     if (!navigator.geolocation) return;
 
@@ -135,9 +135,7 @@ export default function SpotMap({ spots }: Props) {
         onVisibleSpotsChange={setVisibleSpots}
       />
 
-      {currentPosition && (
-        <RecenterMap position={currentPosition} />
-      )}
+      {currentPosition && <RecenterMap position={currentPosition} />}
 
       {currentPosition !== null && (
         <Pane name="current-location-pane" style={{ zIndex: 1000 }}>
@@ -160,16 +158,10 @@ export default function SpotMap({ spots }: Props) {
         const hasImage = spot.spotImage && spot.spotImage.trim() !== "";
 
         return (
-          <CircleMarker
+          <Marker
             key={spot.id}
-            center={[spot.lat, spot.lng]}
-            radius={8}
-            pathOptions={{
-              color: hasImage ? "#dc2626" : "#fca5a5",
-              fillColor: hasImage ? "#dc2626" : "#fca5a5",
-              fillOpacity: 0.9,
-              weight: 2,
-            }}
+            position={[spot.lat, spot.lng]}
+            icon={hasImage ? darkRedIcon : normalRedIcon}
           >
             <Popup>
               <div>
@@ -184,10 +176,9 @@ export default function SpotMap({ spots }: Props) {
                 </a>
               </div>
             </Popup>
-          </CircleMarker>
+          </Marker>
         );
       })}
-
     </MapContainer>
   );
 }
