@@ -21,6 +21,7 @@ type Spot = {
   lat: number;
   lng: number;
   mode: string;
+  spotImage: string;
 };
 
 type Props = {
@@ -31,6 +32,16 @@ const defaultCenter: [number, number] = [35.681236, 139.767125];
 
 const spotIcon = new L.Icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const lightSpotIcon = new L.Icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-pink.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -149,7 +160,11 @@ export default function SpotMap({ spots }: Props) {
         <Marker
           key={spot.id}
           position={[spot.lat, spot.lng]}
-          icon={spotIcon}
+          icon={
+            spot.spotImage && spot.spotImage.trim() !== ""
+              ? spotIcon
+              : lightSpotIcon
+          }
         >
           <Popup>
             <div>
