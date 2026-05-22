@@ -41,9 +41,9 @@ const normalRedIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
-const darkRedIcon = new L.Icon({
+const yellowIcon = new L.Icon({
   iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png",
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png",
   shadowUrl:
     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
   iconSize: [25, 41],
@@ -143,12 +143,12 @@ export default function SpotMap({ spots }: Props) {
             center={[currentPosition[0], currentPosition[1]]}
             radius={10}
             pathOptions={{
-              color: "#000000",
-              weight: 5,
-              fillColor: "#facc15",
+              color: "#ffffff",
+              weight: 3,
+              fillColor: "#3b82f6",
               fillOpacity: 1,
             }}
-          >
+            >
             <Popup>現在地</Popup>
           </CircleMarker>
         </Pane>
@@ -161,7 +161,7 @@ export default function SpotMap({ spots }: Props) {
           <Marker
             key={spot.id}
             position={[spot.lat, spot.lng]}
-            icon={hasImage ? darkRedIcon : normalRedIcon}
+            icon={hasImage ? yellowIcon : normalRedIcon}
           >
             <Popup>
               <div>
