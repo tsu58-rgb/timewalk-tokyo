@@ -21,7 +21,7 @@ type Spot = {
   lng: number;
   status: string;
   mode: string;
-  spotImage: string;
+  spotsImage: string;
 };
 
 export default function MapPage() {
@@ -44,7 +44,7 @@ export default function MapPage() {
             lng: Number(row.lng),
             status: String(row.status || "").trim(),
             mode: row.mode || "",
-            spotImage: row.spotImage || "",
+            spotsImage: row.spotsImage || "",
           }))
 
           .filter(

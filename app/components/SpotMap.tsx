@@ -21,7 +21,7 @@ type Spot = {
   lat: number;
   lng: number;
   mode: string;
-  spotImage: string;
+  spotsImage: string;
 };
 
 type Props = {
@@ -155,7 +155,7 @@ export default function SpotMap({ spots }: Props) {
       )}
 
       {visibleSpots.map((spot) => {
-        const hasImage = spot.spotImage && spot.spotImage.trim() !== "";
+        const hasImage = spot.spotsImage && spot.spotsImage.trim() !== "";
 
         return (
           <Marker
