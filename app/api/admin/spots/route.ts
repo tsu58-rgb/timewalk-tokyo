@@ -4,15 +4,8 @@ import Papa from "papaparse";
 const CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?output=csv";
 
-let cache: any[] | null = null;
-let cacheTime = 0;
-
-async function getAllSpots() {
-  const now = Date.now();
-
-  if (cache && now - cacheTime < 5 * 60 * 1000) {
-    return cache;
-  }
+export async function POST(req: Request) {
+  const body = await req.json();
 
   const csv = await fetch(CSV_URL, { cache: "no-store" }).then((r) => r.text());
 
@@ -42,43 +35,13 @@ async function getAllSpots() {
       status: String(s.status || "").trim(),
     }));
 
-  cache = spots;
-  cacheTime = now;
-
-  return spots;
-}
-
-export async function POST(req: Request) {
-  const body = await req.json();
-
-  if (body.pagePassword !== process.env.ADMIN_PAGE_PASSWORD) {
-    return NextResponse.json({ ok: false, error: "password error" }, { status: 401 });
-  }
-
-  const allSpots = await getAllSpots();
-
-  const north = Number(body.north);
-  const south = Number(body.south);
-  const east = Number(body.east);
-  const west = Number(body.west);
-
-  const hasBounds =
-    Number.isFinite(north) &&
-    Number.isFinite(south) &&
-    Number.isFinite(east) &&
-    Number.isFinite(west);
-
-  const spots = hasBounds
-    ? allSpots.filter((s) => {
-        const lat = Number(s.lat);
-        const lng = Number(s.lng);
-        return lat <= north && lat >= south && lng <= east && lng >= west;
-      })
-    : allSpots;
-
   return NextResponse.json({
     ok: true,
     spots,
-    total: allSpots.length,
+    total: spots.length,
+    debug: {
+      receivedPassword: body.pagePassword ? "あり" : "なし",
+      envPassword: process.env.ADMIN_PAGE_PASSWORD ? "あり" : "なし",
+    },
   });
 }
