@@ -51,6 +51,7 @@ export default function AdminSpotsMapPage() {
   const [spot, setSpot] = useState<Spot>(emptySpot);
   const [imageBase64, setImageBase64] = useState("");
   const [message, setMessage] = useState("");
+  const [pendingMove, setPendingMove] = useState<{ lat: number; lng: number } | null>(null);
   const [allSpots, setAllSpots] = useState<any[]>([]);
 
   function login() {
@@ -97,7 +98,8 @@ export default function AdminSpotsMapPage() {
         area: geo.area,
       });
 
-      setImageBase64("");
+      setPendingMove(null);
+    setImageBase64("");
     if (fileInputRef.current) fileInputRef.current.value = "";
       if (fileInputRef.current) fileInputRef.current.value = "";
 
@@ -248,33 +250,21 @@ await loadExistingSpots();
       });
 
       selectedMarkerRef.current = marker;
+      setPendingMove(null);
       setImageBase64("");
       if (fileInputRef.current) fileInputRef.current.value = "";
     });
 
-    marker.on("dragend", async (e: any) => {
+    marker.on("dragend", (e: any) => {
       const p = e.target.getLatLng();
-      const geo = await reverseGeocode(p.lat, p.lng);
 
-      setSpot({
-        id: String(s.id || ""),
-        name: String(s.name || ""),
-        kana: String(s.kana || ""),
+      setPendingMove({
         lat: p.lat,
         lng: p.lng,
-        country: geo.country || String(s.country || ""),
-        prefecture: geo.prefecture || String(s.prefecture || ""),
-        city: geo.city || String(s.city || ""),
-        area: geo.area || String(s.area || ""),
-        category: String(s.category || ""),
-        mode: String(s.mode || ""),
-        spotsImage: String(s.spotsImage || ""),
-        description: String(s.description || ""),
-        trivia: String(s.trivia || ""),
-        characterIds: String(s.characterIds || ""),
       });
 
       selectedMarkerRef.current = marker;
+      setMessage("移動候補があります。「この位置に反映」を押すまで保存対象にはなりません。");
     });
   }
 
