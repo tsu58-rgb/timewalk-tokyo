@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   const body = await req.json();
 
-  if (body.pagePassword !== process.env.NEXT_PUBLIC_ADMIN_PAGE_PASSWORD) {
+  if (body.pagePassword !== process.env.ADMIN_PAGE_PASSWORD) {
     return NextResponse.json({ ok: false, error: "password error" }, { status: 401 });
   }
 
