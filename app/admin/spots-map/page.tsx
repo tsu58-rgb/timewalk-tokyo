@@ -560,6 +560,65 @@ await loadExistingSpots();
         <label>kana</label>
         <input value={spot.kana || ""} onChange={e => setSpot({ ...spot, kana: e.target.value })} style={inputStyle} />
 
+        {pendingMove && (
+          <div style={{
+            border: "2px solid #b33a2f",
+            padding: 12,
+            margin: "12px 0",
+            background: "#fff7f5"
+          }}>
+            <p style={{ margin: "0 0 8px", fontWeight: "bold" }}>移動候補</p>
+            <p style={{ margin: "0 0 4px" }}>lat: {pendingMove.lat}</p>
+            <p style={{ margin: "0 0 8px" }}>lng: {pendingMove.lng}</p>
+
+            <button
+              type="button"
+              onClick={async () => {
+                const geo = await reverseGeocode(pendingMove.lat, pendingMove.lng);
+
+                setSpot(prev => ({
+                  ...prev,
+                  lat: pendingMove.lat,
+                  lng: pendingMove.lng,
+                  country: geo.country || prev.country,
+                  prefecture: geo.prefecture || prev.prefecture,
+                  city: geo.city || prev.city,
+                  area: geo.area || prev.area,
+                }));
+
+                setPendingMove(null);
+                setMessage("移動候補をフォームに反映しました。保存ボタンを押すと確定します。");
+              }}
+              style={{
+                ...buttonStyle,
+                background: "#b33a2f",
+                color: "#fff",
+                border: "1px solid #b33a2f",
+              }}
+            >
+              この位置に反映
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setPendingMove(null);
+                loadExistingSpots();
+                setMessage("移動候補を取り消しました。");
+              }}
+              style={{
+                ...buttonStyle,
+                background: "#eee",
+                color: "#111",
+                border: "1px solid #999",
+                marginTop: 8,
+              }}
+            >
+              取り消し
+            </button>
+          </div>
+        )}
+
         <label>lat</label>
         <input value={spot.lat} readOnly style={inputStyle} />
 
