@@ -532,8 +532,31 @@ await loadExistingSpots();
   }
 
   return (
-    <main style={{ display: "grid", gridTemplateColumns: "1fr 420px", height: "100vh" }}>
-      <div id="map" style={{ width: "100%", height: "100%" }} />
+    <main style={{
+      display: "grid",
+      gridTemplateColumns: "minmax(0, 1fr) 420px",
+      height: "100vh",
+      width: "100vw",
+    }}>
+      <style>{`
+        @media (max-width: 800px) {
+          main {
+            display: block !important;
+            height: auto !important;
+          }
+          #map {
+            width: 100vw !important;
+            height: 60vh !important;
+            min-height: 360px !important;
+          }
+          section {
+            width: 100vw !important;
+            height: auto !important;
+            overflow-y: visible !important;
+          }
+        }
+      `}</style>
+      <div id="map" style={{ width: "100%", height: "100%", minHeight: 420 }} />
 
       <aside style={{ padding: 16, overflowY: "auto", borderLeft: "1px solid #ddd" }}>
         <h2>地点編集</h2>
