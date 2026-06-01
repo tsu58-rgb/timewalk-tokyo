@@ -276,8 +276,14 @@ await loadExistingSpots();
       centerColor = "#ffe96a";
     }
 
-    if (String(s.description || "").includes("自動入力")) {
-      pinColor = "#f3a6a6";
+    const desc = String(s.description || "").trim();
+
+    if (
+      desc.includes("自動入力") ||
+      desc === "" ||
+      desc.length <= 50
+    ) {
+      pinColor = "#e36f6f";
     }
 
     return L.divIcon({
