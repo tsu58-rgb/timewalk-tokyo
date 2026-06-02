@@ -63,6 +63,8 @@ export default function AdminSpotsMapPage() {
     if (!passwordInput) {
       return;
     }
+
+    localStorage.setItem("timewalkAdminPassword", passwordInput);
     setPagePassword(passwordInput);
   }
 
@@ -71,6 +73,14 @@ export default function AdminSpotsMapPage() {
     initMap();
   }, [pagePassword]);
 
+  useEffect(() => {
+    const savedPassword = localStorage.getItem("timewalkAdminPassword");
+
+    if (savedPassword) {
+      setPagePassword(savedPassword);
+    }
+  }, []);
+    
   async function initMap() {
     const L = await import("leaflet");
 
