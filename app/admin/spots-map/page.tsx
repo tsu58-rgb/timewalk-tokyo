@@ -44,6 +44,8 @@ export default function AdminSpotsMapPage() {
   const allSpotsRef = useRef<any[]>([]);
   const selectedMarkerRef = useRef<any>(null);
   const newMarkerRef = useRef<any>(null);
+  const currentLocationMarkerRef = useRef<any>(null);
+  const currentAccuracyCircleRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [passwordInput, setPasswordInput] = useState("");
@@ -53,6 +55,7 @@ export default function AdminSpotsMapPage() {
   const [message, setMessage] = useState("");
   const [pendingMove, setPendingMove] = useState<{ lat: number; lng: number } | null>(null);
   const [allSpots, setAllSpots] = useState<any[]>([]);
+  const [searchKeyword, setSearchKeyword] = useState(""); 
 
   function login() {
     if (!passwordInput) {
@@ -82,6 +85,7 @@ export default function AdminSpotsMapPage() {
 
     markerLayerRef.current = L.layerGroup().addTo(map);
 
+    await flyToCurrentLocation(false);
 
     map.on("click", async (e: any) => {
       const lat = e.latlng.lat;
@@ -101,8 +105,6 @@ export default function AdminSpotsMapPage() {
       setPendingMove(null);
     setImageBase64("");
     if (fileInputRef.current) fileInputRef.current.value = "";
-      if (fileInputRef.current) fileInputRef.current.value = "";
-
       await placeSelectedMarker(lat, lng);
     });
 
@@ -327,7 +329,143 @@ await loadExistingSpots();
     });
   }
 
+  function getCurrentLocationIcon(L: any) {
+    return L.divIcon({
+      html: `
+        <div style="
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #1a73e8;
+          border: 3px solid #ffffff;
+          box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.25), 0 2px 6px rgba(0,0,0,0.35);
+          box-sizing: border-box;
+        "></div>
+      `,
+      className: "",
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+    });
+  }
 
+  async function renderCurrentLocation(lat: number, lng: number, accuracy?: number) {
+    const L = await import("leaflet");
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (currentLocationMarkerRef.current) {
+      map.removeLayer(currentLocationMarkerRef.current);
+    }
+
+    if (currentAccuracyCircleRef.current) {
+      map.removeLayer(currentAccuracyCircleRef.current);
+    }
+
+    currentLocationMarkerRef.current = L.marker([lat, lng], {
+      icon: getCurrentLocationIcon(L),
+      interactive: false,
+      zIndexOffset: 1000,
+    }).addTo(map);
+
+    if (accuracy) {
+      currentAccuracyCircleRef.current = L.circle([lat, lng], {
+        radius: accuracy,
+        color: "#1a73e8",
+        weight: 1,
+        fillColor: "#1a73e8",
+        fillOpacity: 0.12,
+        interactive: false,
+      }).addTo(map);
+    }
+  }
+
+  async function flyToCurrentLocation(showMessage = true): Promise<boolean> {
+    if (!navigator.geolocation) {
+      if (showMessage) setMessage("このブラウザでは現在地を取得できません。");
+      return false;
+    }
+
+    if (showMessage) setMessage("現在地を取得中...");
+
+    return new Promise(resolve => {
+      navigator.geolocation.getCurrentPosition(
+        async position => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
+
+          const map = mapRef.current;
+          if (!map) {
+            resolve(false);
+            return;
+          }
+
+          map.setView([lat, lng], Math.max(map.getZoom(), 16));
+
+          await renderCurrentLocation(lat, lng, accuracy);
+
+          if (showMessage) {
+            setMessage("現在地に移動しました。");
+          }
+
+          resolve(true);
+        },
+        error => {
+          console.warn(error);
+
+          if (showMessage) {
+            setMessage("現在地を取得できませんでした。ブラウザの位置情報許可を確認してください。");
+          }
+
+          resolve(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 30000,
+        }
+      );
+    });
+  }
+
+  async function searchPlace() {
+    const keyword = searchKeyword.trim();
+    if (!keyword) {
+      setMessage("検索する地点名を入力してください。");
+      return;
+    }
+
+    setMessage("地点を検索中...");
+
+    try {
+      const url =
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=ja&q=${encodeURIComponent(keyword)}`;
+
+      const res = await fetch(url);
+      const json = await res.json();
+
+      if (!Array.isArray(json) || json.length === 0) {
+        setMessage("地点が見つかりませんでした。");
+        return;
+      }
+
+      const lat = Number(json[0].lat);
+      const lng = Number(json[0].lon);
+
+      if (!lat || !lng) {
+        setMessage("地点の緯度経度を取得できませんでした。");
+        return;
+      }
+
+      mapRef.current.setView([lat, lng], 16);
+      await loadExistingSpots();
+
+      setMessage(`検索地点に移動しました：${keyword}`);
+    } catch (e) {
+      console.error(e);
+      setMessage("地点検索に失敗しました。");
+    }
+  }
   async function placeSelectedMarker(lat: number, lng: number) {
     const L = await import("leaflet");
 
@@ -545,6 +683,12 @@ await loadExistingSpots();
             height: 60vh !important;
             min-height: 360px !important;
           }
+
+          main > div {
+            width: 100vw !important;
+            height: 60vh !important;
+            min-height: 360px !important;
+          }
           section {
             width: 100vw !important;
             height: auto !important;
@@ -552,7 +696,80 @@ await loadExistingSpots();
           }
         }
       `}</style>
-      <div id="map" style={{ width: "100%", height: "100%", minHeight: 420 }} />
+
+      <div style={{ position: "relative", width: "100%", height: "100%", minHeight: 420 }}>
+        <div
+          style={{
+            position: "absolute",
+            top: 12,
+            left: 12,
+            right: 12,
+            zIndex: 1000,
+            display: "flex",
+            gap: 8,
+            alignItems: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <input
+            value={searchKeyword}
+            onChange={e => setSearchKeyword(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter") searchPlace();
+            }}
+            placeholder="地点を検索"
+            style={{
+              flex: 1,
+              minWidth: 0,
+              padding: "10px 12px",
+              borderRadius: 6,
+              border: "1px solid #ccc",
+              background: "#fff",
+              fontSize: 16,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              pointerEvents: "auto",
+            }}
+          />
+
+          <button
+            type="button"
+            onClick={searchPlace}
+            style={{
+              padding: "10px 12px",
+              borderRadius: 6,
+              border: "1px solid #111",
+              background: "#111",
+              color: "#fff",
+              fontWeight: "bold",
+              whiteSpace: "nowrap",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              pointerEvents: "auto",
+            }}
+          >
+            検索
+          </button>
+
+          <button
+            type="button"
+            onClick={() => flyToCurrentLocation(true)}
+            style={{
+              padding: "10px 12px",
+              borderRadius: 6,
+              border: "1px solid #ccc",
+              background: "#fff",
+              color: "#111",
+              fontWeight: "bold",
+              whiteSpace: "nowrap",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              pointerEvents: "auto",
+            }}
+          >
+            現在地
+          </button>
+        </div>
+
+        <div id="map" style={{ width: "100%", height: "100%", minHeight: 420 }} />
+      </div>
 
       <aside style={{ padding: 16, overflowY: "auto", borderLeft: "1px solid #ddd" }}>
         <h2>地点編集</h2>
