@@ -702,7 +702,7 @@ await loadExistingSpots();
           style={{
             position: "absolute",
             top: 12,
-            left: 12,
+            left: 64,
             right: 12,
             zIndex: 1000,
             display: "flex",
@@ -725,12 +725,12 @@ await loadExistingSpots();
               borderRadius: 6,
               border: "1px solid #ccc",
               background: "#fff",
+              color: "#111",
               fontSize: 16,
               boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
               pointerEvents: "auto",
             }}
           />
-
           <button
             type="button"
             onClick={searchPlace}
@@ -778,10 +778,10 @@ await loadExistingSpots();
         <input value={spot.id || "新規"} readOnly style={inputStyle} />
 
         <label>name</label>
-        <input value={spot.name} onChange={e => setSpot({ ...spot, name: e.target.value })} style={inputStyle} />
+        <input value={spot.name} onChange={e => setSpot({ ...spot, name: e.target.value })} style={editableInputStyle} />
 
         <label>kana</label>
-        <input value={spot.kana || ""} onChange={e => setSpot({ ...spot, kana: e.target.value })} style={inputStyle} />
+        <input value={spot.kana || ""} onChange={e => setSpot({ ...spot, kana: e.target.value })} style={editableInputStyle} />
 
         {pendingMove && (
           <div style={{
@@ -861,10 +861,10 @@ await loadExistingSpots();
         <input value={spot.area || ""} onChange={e => setSpot({ ...spot, area: e.target.value })} style={inputStyle} />
 
         <label>category</label>
-        <input value={spot.category || ""} onChange={e => setSpot({ ...spot, category: e.target.value })} style={inputStyle} />
+        <input value={spot.category || ""} onChange={e => setSpot({ ...spot, category: e.target.value })} style={editableInputStyle} />
 
         <label>mode</label>
-        <input value={spot.mode || ""} onChange={e => setSpot({ ...spot, mode: e.target.value })} style={inputStyle} />
+        <input value={spot.mode || ""} onChange={e => setSpot({ ...spot, mode: e.target.value })} style={editableInputStyle} />
 
         <label>spotsImage</label>
         <input ref={fileInputRef} type="file" accept="image/*" onChange={onImageChange} style={inputStyle} />
@@ -874,13 +874,13 @@ await loadExistingSpots();
         )}
 
         <label>description</label>
-        <textarea value={spot.description || ""} onChange={e => setSpot({ ...spot, description: e.target.value })} style={textareaStyle} />
+        <textarea value={spot.description || ""} onChange={e => setSpot({ ...spot, description: e.target.value })} style={editableTextareaStyle} />
 
         <label>trivia</label>
-        <textarea value={spot.trivia || ""} onChange={e => setSpot({ ...spot, trivia: e.target.value })} style={textareaStyle} />
+        <textarea value={spot.trivia || ""} onChange={e => setSpot({ ...spot, trivia: e.target.value })} style={editableTextareaStyle} />
 
         <label>characterIds</label>
-        <input value={spot.characterIds || ""} onChange={e => setSpot({ ...spot, characterIds: e.target.value })} style={inputStyle} />
+        <input value={spot.characterIds || ""} onChange={e => setSpot({ ...spot, characterIds: e.target.value })} style={editableInputStyle} />
 
         <button onClick={saveSpot} style={buttonStyle}>
           保存
@@ -898,6 +898,20 @@ const inputStyle: React.CSSProperties = {
   marginBottom: 10,
   padding: 8,
   boxSizing: "border-box",
+};
+
+const editableInputStyle: React.CSSProperties = {
+  ...inputStyle,
+  background: "#ffffff",
+  color: "#111111",
+  border: "2px solid #ffffff",
+  borderRadius: 6,
+};
+
+const editableTextareaStyle: React.CSSProperties = {
+  ...editableInputStyle,
+  height: 100,
+  resize: "vertical",
 };
 
 const textareaStyle: React.CSSProperties = {
