@@ -47,6 +47,7 @@ export default function AdminSpotsMapPage() {
   const currentLocationMarkerRef = useRef<any>(null);
   const currentAccuracyCircleRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const isSavingRef = useRef(false);
 
   const [passwordInput, setPasswordInput] = useState("");
   const [pagePassword, setPagePassword] = useState("");
@@ -55,7 +56,8 @@ export default function AdminSpotsMapPage() {
   const [message, setMessage] = useState("");
   const [pendingMove, setPendingMove] = useState<{ lat: number; lng: number } | null>(null);
   const [allSpots, setAllSpots] = useState<any[]>([]);
-  const [searchKeyword, setSearchKeyword] = useState(""); 
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   function login() {
     if (!passwordInput) {
@@ -88,6 +90,10 @@ export default function AdminSpotsMapPage() {
     await flyToCurrentLocation(false);
 
     map.on("click", async (e: any) => {
+      if (isSavingRef.current) {
+        return;
+      }
+
       const lat = e.latlng.lat;
       const lng = e.latlng.lng;
       const geo = await reverseGeocode(lat, lng);
@@ -103,21 +109,23 @@ export default function AdminSpotsMapPage() {
       });
 
       setPendingMove(null);
-    setImageBase64("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
+      setImageBase64("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+
       await placeSelectedMarker(lat, lng);
     });
 
-map.on("zoomend", () => {
-  loadExistingSpots();
-});
+    map.on("zoomend", () => {
+      if (isSavingRef.current) return;
+      loadExistingSpots();
+    });
 
-map.on("moveend", () => {
-  loadExistingSpots();
-});
+    map.on("moveend", () => {
+      if (isSavingRef.current) return;
+      loadExistingSpots();
+    });
 
-await loadExistingSpots();
-
+    await loadExistingSpots();
   }
 
   async function loadExistingSpots() {
@@ -213,6 +221,7 @@ await loadExistingSpots();
         .bindPopup(`${group.length}件`);
 
       marker.on("click", () => {
+        if (isSavingRef.current) return;
         map.setView([avgLat, avgLng], Math.min(map.getZoom() + 2, 20));
       });
     });
@@ -233,6 +242,10 @@ await loadExistingSpots();
       .bindPopup(`${s.name || ""}<br>${s.id || ""}`);
 
     marker.on("click", () => {
+      if (isSavingRef.current) {
+        return;
+      }
+
       setSpot({
         id: String(s.id || ""),
         name: String(s.name || ""),
@@ -258,6 +271,11 @@ await loadExistingSpots();
     });
 
     marker.on("dragend", (e: any) => {
+      if (isSavingRef.current) {
+        loadExistingSpots();
+        return;
+      }
+
       const p = e.target.getLatLng();
 
       setPendingMove({
@@ -429,6 +447,8 @@ await loadExistingSpots();
   }
 
   async function searchPlace() {
+    if (isSavingRef.current) return;
+
     const keyword = searchKeyword.trim();
     if (!keyword) {
       setMessage("検索する地点名を入力してください。");
@@ -466,11 +486,10 @@ await loadExistingSpots();
       setMessage("地点検索に失敗しました。");
     }
   }
+
   async function placeSelectedMarker(lat: number, lng: number) {
     const L = await import("leaflet");
 
-    // 既存ピンは絶対に動かさない。
-    // 地図クリック用の新規ピンだけを作り直す。
     if (newMarkerRef.current) {
       mapRef.current.removeLayer(newMarkerRef.current);
     }
@@ -494,6 +513,10 @@ await loadExistingSpots();
     }).addTo(mapRef.current);
 
     newMarkerRef.current.on("dragend", async (e: any) => {
+      if (isSavingRef.current) {
+        return;
+      }
+
       const p = e.target.getLatLng();
       const geo = await reverseGeocode(p.lat, p.lng);
 
@@ -583,51 +606,68 @@ await loadExistingSpots();
   }
 
   async function saveSpot() {
+    if (isSavingRef.current) return;
+
+    isSavingRef.current = true;
+    setIsSaving(true);
     setMessage("保存中...");
 
-    const payloadSpot = {
+    const savingSpot = {
       ...spot,
       id: spot.id === "新規" ? "" : spot.id,
       imageBase64,
     };
 
     console.log("保存データ", {
-      ...payloadSpot,
+      ...savingSpot,
       imageBase64: imageBase64 ? "画像あり" : "",
     });
 
-    if (!payloadSpot.name && !payloadSpot.description && !payloadSpot.lat && !payloadSpot.lng) {
+    if (!savingSpot.name && !savingSpot.description && !savingSpot.lat && !savingSpot.lng) {
       setMessage("保存する内容が空です");
+      isSavingRef.current = false;
+      setIsSaving(false);
       return;
     }
 
-    const res = await fetch("/api/admin/save-spot", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        pagePassword,
-        spot: payloadSpot,
-      }),
-    });
+    try {
+      const res = await fetch("/api/admin/save-spot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pagePassword,
+          spot: savingSpot,
+        }),
+      });
 
-    const json = await res.json();
+      const json = await res.json();
 
-    if (!json.ok) {
-      setMessage(json.error || "保存失敗");
-      return;
+      if (!json.ok) {
+        setMessage(json.error || "保存失敗");
+        return;
+      }
+
+      setMessage(`保存しました：${json.id}`);
+      setImageBase64("");
+
+      const { imageBase64: _unusedImageBase64, ...savedSpot } = savingSpot;
+
+      setSpot({
+        ...savedSpot,
+        id: json.id,
+        spotsImage: json.spotsImage || savedSpot.spotsImage || "",
+      });
+
+      await loadExistingSpots();
+    } catch (e) {
+      console.error(e);
+      setMessage("保存に失敗しました。");
+    } finally {
+      isSavingRef.current = false;
+      setIsSaving(false);
     }
-
-    setMessage(`保存しました：${json.id}`);
-    setImageBase64("");
-
-    setSpot(prev => ({
-      ...prev,
-      id: json.id,
-      spotsImage: json.spotsImage || prev.spotsImage || "",
-    }));
-await loadExistingSpots();
   }
 
   if (!pagePassword) {
@@ -656,7 +696,7 @@ await loadExistingSpots();
             background: "#111",
             color: "#fff",
             border: "1px solid #111",
-            borderRadius: 6
+            borderRadius: 6,
           }}
         >
           ログイン
@@ -718,6 +758,7 @@ await loadExistingSpots();
               if (e.key === "Enter") searchPlace();
             }}
             placeholder="地点を検索"
+            disabled={isSaving}
             style={{
               flex: 1,
               minWidth: 0,
@@ -731,9 +772,11 @@ await loadExistingSpots();
               pointerEvents: "auto",
             }}
           />
+
           <button
             type="button"
             onClick={searchPlace}
+            disabled={isSaving}
             style={{
               padding: "10px 12px",
               borderRadius: 6,
@@ -751,7 +794,11 @@ await loadExistingSpots();
 
           <button
             type="button"
-            onClick={() => flyToCurrentLocation(true)}
+            onClick={() => {
+              if (isSavingRef.current) return;
+              flyToCurrentLocation(true);
+            }}
+            disabled={isSaving}
             style={{
               padding: "10px 12px",
               borderRadius: 6,
@@ -769,6 +816,18 @@ await loadExistingSpots();
         </div>
 
         <div id="map" style={{ width: "100%", height: "100%", minHeight: 420 }} />
+
+        {isSaving && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 2000,
+              background: "rgba(255, 255, 255, 0.15)",
+              cursor: "wait",
+            }}
+          />
+        )}
       </div>
 
       <aside style={{ padding: 16, overflowY: "auto", borderLeft: "1px solid #ddd" }}>
@@ -788,7 +847,7 @@ await loadExistingSpots();
             border: "2px solid #b33a2f",
             padding: 12,
             margin: "12px 0",
-            background: "#fff7f5"
+            background: "#fff7f5",
           }}>
             <p style={{ margin: "0 0 8px", fontWeight: "bold" }}>移動候補</p>
             <p style={{ margin: "0 0 4px" }}>lat: {pendingMove.lat}</p>
@@ -797,6 +856,8 @@ await loadExistingSpots();
             <button
               type="button"
               onClick={async () => {
+                if (isSavingRef.current) return;
+
                 const geo = await reverseGeocode(pendingMove.lat, pendingMove.lng);
 
                 setSpot(prev => ({
@@ -825,6 +886,8 @@ await loadExistingSpots();
             <button
               type="button"
               onClick={() => {
+                if (isSavingRef.current) return;
+
                 setPendingMove(null);
                 loadExistingSpots();
                 setMessage("移動候補を取り消しました。");
@@ -849,16 +912,16 @@ await loadExistingSpots();
         <input value={spot.lng} readOnly style={inputStyle} />
 
         <label>country</label>
-        <input value={spot.country || ""} onChange={e => setSpot({ ...spot, country: e.target.value })} style={inputStyle} />
+        <input value={spot.country || ""} onChange={e => setSpot({ ...spot, country: e.target.value })} style={editableInputStyle} />
 
         <label>prefecture</label>
-        <input value={spot.prefecture || ""} onChange={e => setSpot({ ...spot, prefecture: e.target.value })} style={inputStyle} />
+        <input value={spot.prefecture || ""} onChange={e => setSpot({ ...spot, prefecture: e.target.value })} style={editableInputStyle} />
 
         <label>city</label>
-        <input value={spot.city || ""} onChange={e => setSpot({ ...spot, city: e.target.value })} style={inputStyle} />
+        <input value={spot.city || ""} onChange={e => setSpot({ ...spot, city: e.target.value })} style={editableInputStyle} />
 
         <label>area</label>
-        <input value={spot.area || ""} onChange={e => setSpot({ ...spot, area: e.target.value })} style={inputStyle} />
+        <input value={spot.area || ""} onChange={e => setSpot({ ...spot, area: e.target.value })} style={editableInputStyle} />
 
         <label>category</label>
         <input value={spot.category || ""} onChange={e => setSpot({ ...spot, category: e.target.value })} style={editableInputStyle} />
@@ -867,7 +930,7 @@ await loadExistingSpots();
         <input value={spot.mode || ""} onChange={e => setSpot({ ...spot, mode: e.target.value })} style={editableInputStyle} />
 
         <label>spotsImage</label>
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={onImageChange} style={inputStyle} />
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={onImageChange} style={editableInputStyle} />
 
         {spot.spotsImage && (
           <img src={spot.spotsImage} style={{ width: "100%", marginTop: 8, marginBottom: 8 }} />
@@ -882,8 +945,16 @@ await loadExistingSpots();
         <label>characterIds</label>
         <input value={spot.characterIds || ""} onChange={e => setSpot({ ...spot, characterIds: e.target.value })} style={editableInputStyle} />
 
-        <button onClick={saveSpot} style={buttonStyle}>
-          保存
+        <button
+          onClick={saveSpot}
+          disabled={isSaving}
+          style={{
+            ...buttonStyle,
+            opacity: isSaving ? 0.6 : 1,
+            cursor: isSaving ? "wait" : "pointer",
+          }}
+        >
+          {isSaving ? "保存中..." : "保存"}
         </button>
 
         <p>{message}</p>
@@ -912,11 +983,6 @@ const editableTextareaStyle: React.CSSProperties = {
   ...editableInputStyle,
   height: 100,
   resize: "vertical",
-};
-
-const textareaStyle: React.CSSProperties = {
-  ...inputStyle,
-  height: 100,
 };
 
 const buttonStyle: React.CSSProperties = {
