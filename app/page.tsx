@@ -673,10 +673,26 @@ export default function Home() {
 
         <button
           onClick={() => setScreen("today")}
-          className="mb-4 w-full bg-yellow-300 text-black py-3 rounded-xl font-bold"
+          className="mb-3 w-full bg-yellow-300 text-black py-3 rounded-xl font-bold"
         >
           今日は何の日？
         </button>
+
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          <a
+            href="/games"
+            className="block bg-blue-500 text-white text-center py-3 rounded-xl font-bold"
+          >
+            ゆる歴史散歩ゲーム
+          </a>
+
+          <a
+            href="/kentei"
+            className="block bg-purple-500 text-white text-center py-3 rounded-xl font-bold"
+          >
+            ゆる歴史散歩検定
+          </a>
+        </div>
 
         <p className="text-center text-xs text-yellow-300 mb-3">
           訪問済み：{visitedSpotIds.length}件
