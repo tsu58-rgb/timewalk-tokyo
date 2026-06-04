@@ -673,7 +673,6 @@ export default function Home() {
 
         <button
           onClick={() => setScreen("today")}
-          aria-label="今日は何の日を表示"
           className="mb-4 w-full bg-yellow-300 text-black py-3 rounded-xl font-bold"
         >
           今日は何の日？
