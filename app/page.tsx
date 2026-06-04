@@ -673,10 +673,17 @@ export default function Home() {
 
         <button
           onClick={() => setScreen("today")}
-          className="mb-4 w-full bg-yellow-300 text-black py-3 rounded-xl font-bold"
+          className="mb-3 w-full bg-yellow-300 text-black py-3 rounded-xl font-bold"
         >
           今日は何の日？
         </button>
+
+        <a
+          href="/shonen-yamada"
+          className="block mb-4 w-full bg-blue-500 text-white text-center py-3 rounded-xl font-bold"
+        >
+          少年山田の歴史年表チャレンジ
+        </a>
 
         <p className="text-center text-xs text-yellow-300 mb-3">
           訪問済み：{visitedSpotIds.length}件
