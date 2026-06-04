@@ -85,7 +85,7 @@ export default function KenteiQuiz() {
           <p className="text-xs text-slate-300 mb-1">Yuru Rekishi Sanpo</p>
           <h1 className="text-2xl font-bold">ゆる歴史散歩検定</h1>
           <p className="text-sm text-slate-300 leading-relaxed mt-3">
-            100問の歴史問題に挑戦できます。難易度を選ぶと20問ずつ練習できます。
+            {kenteiQuestions.length}問の歴史問題に挑戦できます。難易度を選ぶとレベル別に練習できます。
           </p>
         </header>
 

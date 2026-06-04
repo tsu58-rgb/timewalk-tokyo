@@ -1401,4 +1401,1404 @@ export const historyEvents: HistoryEvent[] = [
       color: "#22c55e",
     },
   },
+  {
+    id: "floating-exchange-rate",
+    title: "変動相場制へ移行",
+    year: 1973,
+    era: "昭和",
+    shortText: "円相場が固定制から変動制へ移った。",
+    description:
+      "変動相場制へ移行は1973年の出来事です。円相場が固定制から変動制へ移った。",
+    tags: ["経済"],
+    card: {
+      rarity: "common",
+      color: "#f97316",
+    },
+  },
+  {
+    id: "first-oil-shock",
+    title: "第一次オイルショック",
+    year: 1973,
+    era: "昭和",
+    shortText: "石油価格の高騰が日本経済と生活に大きく影響した。",
+    description:
+      "第一次オイルショックは1973年の出来事です。石油価格の高騰が日本経済と生活に大きく影響した。",
+    tags: ["経済"],
+    card: {
+      rarity: "common",
+      color: "#f97316",
+    },
+  },
+  {
+    id: "sato-nobel-peace-prize",
+    title: "佐藤栄作がノーベル平和賞受賞",
+    year: 1974,
+    era: "昭和",
+    shortText: "非核三原則などが評価され平和賞を受賞した。",
+    description:
+      "佐藤栄作がノーベル平和賞受賞は1974年の出来事です。非核三原則などが評価され平和賞を受賞した。",
+    tags: ["政治"],
+    card: {
+      rarity: "rare",
+      color: "#facc15",
+    },
+  },
+  {
+    id: "seven-eleven-first-store",
+    title: "セブン-イレブン日本1号店開店",
+    year: 1974,
+    era: "昭和",
+    shortText: "日本のコンビニ文化が広がるきっかけになった。",
+    description:
+      "セブン-イレブン日本1号店開店は1974年の出来事です。日本のコンビニ文化が広がるきっかけになった。",
+    tags: ["生活"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "okinawa-ocean-expo",
+    title: "沖縄国際海洋博覧会開催",
+    year: 1975,
+    era: "昭和",
+    shortText: "沖縄復帰後の大型イベントとして開催された。",
+    description:
+      "沖縄国際海洋博覧会開催は1975年の出来事です。沖縄復帰後の大型イベントとして開催された。",
+    tags: ["文化"],
+    card: {
+      rarity: "common",
+      color: "#f472b6",
+    },
+  },
+  {
+    id: "lockheed-scandal",
+    title: "ロッキード事件",
+    year: 1976,
+    era: "昭和",
+    shortText: "政治と金をめぐる大きな事件として社会を揺らした。",
+    description:
+      "ロッキード事件は1976年の出来事です。政治と金をめぐる大きな事件として社会を揺らした。",
+    tags: ["政治"],
+    card: {
+      rarity: "rare",
+      color: "#facc15",
+    },
+  },
+  {
+    id: "oh-756-homerun",
+    title: "王貞治が756号本塁打",
+    year: 1977,
+    era: "昭和",
+    shortText: "プロ野球で世界記録となる本塁打数を達成した。",
+    description:
+      "王貞治が756号本塁打は1977年の出来事です。プロ野球で世界記録となる本塁打数を達成した。",
+    tags: ["スポーツ"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "narita-airport-open",
+    title: "成田空港開港",
+    year: 1978,
+    era: "昭和",
+    shortText: "国際線の主要空港として成田空港が開港した。",
+    description:
+      "成田空港開港は1978年の出来事です。国際線の主要空港として成田空港が開港した。",
+    tags: ["交通"],
+    card: {
+      rarity: "common",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "japan-china-peace-treaty",
+    title: "日中平和友好条約締結",
+    year: 1978,
+    era: "昭和",
+    shortText: "日本と中国の友好関係を確認する条約が結ばれた。",
+    description:
+      "日中平和友好条約締結は1978年の出来事です。日本と中国の友好関係を確認する条約が結ばれた。",
+    tags: ["外交"],
+    card: {
+      rarity: "rare",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "pc-8001-release",
+    title: "NEC PC-8001発売",
+    year: 1979,
+    era: "昭和",
+    shortText: "日本のパソコン普及のきっかけとなった。",
+    description:
+      "NEC PC-8001発売は1979年の出来事です。日本のパソコン普及のきっかけとなった。",
+    tags: ["技術"],
+    card: {
+      rarity: "common",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "moscow-olympics-boycott",
+    title: "日本がモスクワ五輪不参加",
+    year: 1980,
+    era: "昭和",
+    shortText: "国際情勢を受けて日本選手団の派遣を見送った。",
+    description:
+      "日本がモスクワ五輪不参加は1980年の出来事です。国際情勢を受けて日本選手団の派遣を見送った。",
+    tags: ["スポーツ"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "portopia-expo",
+    title: "神戸ポートアイランド博覧会開催",
+    year: 1981,
+    era: "昭和",
+    shortText: "神戸の新しい都市開発を示す博覧会が開かれた。",
+    description:
+      "神戸ポートアイランド博覧会開催は1981年の出来事です。神戸の新しい都市開発を示す博覧会が開かれた。",
+    tags: ["文化"],
+    card: {
+      rarity: "common",
+      color: "#f472b6",
+    },
+  },
+  {
+    id: "tohoku-shinkansen",
+    title: "東北新幹線開業",
+    year: 1982,
+    era: "昭和",
+    shortText: "東北地方と首都圏を結ぶ新幹線が走り始めた。",
+    description:
+      "東北新幹線開業は1982年の出来事です。東北地方と首都圏を結ぶ新幹線が走り始めた。",
+    tags: ["交通"],
+    card: {
+      rarity: "common",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "joetsu-shinkansen",
+    title: "上越新幹線開業",
+    year: 1982,
+    era: "昭和",
+    shortText: "新潟方面へ向かう新幹線が開業した。",
+    description:
+      "上越新幹線開業は1982年の出来事です。新潟方面へ向かう新幹線が開業した。",
+    tags: ["交通"],
+    card: {
+      rarity: "common",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "tokyo-disneyland-open",
+    title: "東京ディズニーランド開園",
+    year: 1983,
+    era: "昭和",
+    shortText: "大型テーマパークとして多くの人に親しまれた。",
+    description:
+      "東京ディズニーランド開園は1983年の出来事です。大型テーマパークとして多くの人に親しまれた。",
+    tags: ["文化"],
+    card: {
+      rarity: "common",
+      color: "#f472b6",
+    },
+  },
+  {
+    id: "new-banknotes-1984",
+    title: "新一万円札発行",
+    year: 1984,
+    era: "昭和",
+    shortText: "福沢諭吉の一万円札など新紙幣が発行された。",
+    description:
+      "新一万円札発行は1984年の出来事です。福沢諭吉の一万円札など新紙幣が発行された。",
+    tags: ["経済"],
+    card: {
+      rarity: "common",
+      color: "#f97316",
+    },
+  },
+  {
+    id: "glico-morinaga-case",
+    title: "グリコ・森永事件発生",
+    year: 1984,
+    era: "昭和",
+    shortText: "食品会社を狙った脅迫事件が社会不安を広げた。",
+    description:
+      "グリコ・森永事件発生は1984年の出来事です。食品会社を狙った脅迫事件が社会不安を広げた。",
+    tags: ["社会"],
+    card: {
+      rarity: "common",
+      color: "#64748b",
+    },
+  },
+  {
+    id: "plaza-accord",
+    title: "プラザ合意",
+    year: 1985,
+    era: "昭和",
+    shortText: "円高が進み、日本経済に大きな影響を与えた。",
+    description:
+      "プラザ合意は1985年の出来事です。円高が進み、日本経済に大きな影響を与えた。",
+    tags: ["経済"],
+    card: {
+      rarity: "common",
+      color: "#f97316",
+    },
+  },
+  {
+    id: "jal-123-crash",
+    title: "日本航空123便墜落事故",
+    year: 1985,
+    era: "昭和",
+    shortText: "単独機として世界最大規模の航空事故となった。",
+    description:
+      "日本航空123便墜落事故は1985年の出来事です。単独機として世界最大規模の航空事故となった。",
+    tags: ["災害"],
+    card: {
+      rarity: "rare",
+      color: "#fb7185",
+    },
+  },
+  {
+    id: "equal-employment-law",
+    title: "男女雇用機会均等法施行",
+    year: 1986,
+    era: "昭和",
+    shortText: "雇用での男女の機会均等をめざす法律が施行された。",
+    description:
+      "男女雇用機会均等法施行は1986年の出来事です。雇用での男女の機会均等をめざす法律が施行された。",
+    tags: ["社会"],
+    card: {
+      rarity: "common",
+      color: "#64748b",
+    },
+  },
+  {
+    id: "jnr-privatization",
+    title: "国鉄分割民営化",
+    year: 1987,
+    era: "昭和",
+    shortText: "国鉄がJR各社に分かれて民営化された。",
+    description:
+      "国鉄分割民営化は1987年の出来事です。国鉄がJR各社に分かれて民営化された。",
+    tags: ["交通"],
+    card: {
+      rarity: "common",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "seikan-tunnel-open",
+    title: "青函トンネル開業",
+    year: 1988,
+    era: "昭和",
+    shortText: "本州と北海道を鉄道で結ぶ海底トンネルが開業した。",
+    description:
+      "青函トンネル開業は1988年の出来事です。本州と北海道を鉄道で結ぶ海底トンネルが開業した。",
+    tags: ["交通"],
+    card: {
+      rarity: "common",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "seto-ohashi-open",
+    title: "瀬戸大橋開通",
+    year: 1988,
+    era: "昭和",
+    shortText: "本州と四国を道路と鉄道で結ぶ橋が開通した。",
+    description:
+      "瀬戸大橋開通は1988年の出来事です。本州と四国を道路と鉄道で結ぶ橋が開通した。",
+    tags: ["交通"],
+    card: {
+      rarity: "common",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "heisei-start",
+    title: "平成開始",
+    year: 1989,
+    era: "平成",
+    shortText: "昭和が終わり、新しい元号の平成が始まった。",
+    description:
+      "平成開始は1989年の出来事です。昭和が終わり、新しい元号の平成が始まった。",
+    tags: ["元号"],
+    card: {
+      rarity: "legend",
+      color: "#facc15",
+    },
+  },
+  {
+    id: "consumption-tax-start",
+    title: "消費税導入",
+    year: 1989,
+    era: "平成",
+    shortText: "日本で消費税制度が始まった。",
+    description:
+      "消費税導入は1989年の出来事です。日本で消費税制度が始まった。",
+    tags: ["経済"],
+    card: {
+      rarity: "common",
+      color: "#f97316",
+    },
+  },
+  {
+    id: "flower-green-expo",
+    title: "国際花と緑の博覧会開催",
+    year: 1990,
+    era: "平成",
+    shortText: "大阪で花と緑をテーマにした国際博覧会が開かれた。",
+    description:
+      "国際花と緑の博覧会開催は1990年の出来事です。大阪で花と緑をテーマにした国際博覧会が開かれた。",
+    tags: ["文化"],
+    card: {
+      rarity: "common",
+      color: "#f472b6",
+    },
+  },
+  {
+    id: "bubble-collapse",
+    title: "バブル経済崩壊が進む",
+    year: 1991,
+    era: "平成",
+    shortText: "地価や株価が下落し、長い不況につながった。",
+    description:
+      "バブル経済崩壊が進むは1991年の出来事です。地価や株価が下落し、長い不況につながった。",
+    tags: ["経済"],
+    card: {
+      rarity: "common",
+      color: "#f97316",
+    },
+  },
+  {
+    id: "unzen-pyroclastic-flow",
+    title: "雲仙普賢岳火砕流",
+    year: 1991,
+    era: "平成",
+    shortText: "火山災害により大きな被害が出た。",
+    description:
+      "雲仙普賢岳火砕流は1991年の出来事です。火山災害により大きな被害が出た。",
+    tags: ["災害"],
+    card: {
+      rarity: "rare",
+      color: "#fb7185",
+    },
+  },
+  {
+    id: "pko-law",
+    title: "PKO協力法成立",
+    year: 1992,
+    era: "平成",
+    shortText: "国際平和協力活動への参加を定める法律が成立した。",
+    description:
+      "PKO協力法成立は1992年の出来事です。国際平和協力活動への参加を定める法律が成立した。",
+    tags: ["外交"],
+    card: {
+      rarity: "rare",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "mohri-space-shuttle",
+    title: "毛利衛が宇宙へ",
+    year: 1992,
+    era: "平成",
+    shortText: "日本人科学者がスペースシャトルで宇宙へ行った。",
+    description:
+      "毛利衛が宇宙へは1992年の出来事です。日本人科学者がスペースシャトルで宇宙へ行った。",
+    tags: ["科学"],
+    card: {
+      rarity: "rare",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "j-league-start",
+    title: "Jリーグ開幕",
+    year: 1993,
+    era: "平成",
+    shortText: "日本のプロサッカーリーグが始まった。",
+    description:
+      "Jリーグ開幕は1993年の出来事です。日本のプロサッカーリーグが始まった。",
+    tags: ["スポーツ"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "hosokawa-cabinet",
+    title: "細川内閣成立",
+    year: 1993,
+    era: "平成",
+    shortText: "非自民連立政権が成立した。",
+    description:
+      "細川内閣成立は1993年の出来事です。非自民連立政権が成立した。",
+    tags: ["政治"],
+    card: {
+      rarity: "rare",
+      color: "#facc15",
+    },
+  },
+  {
+    id: "kansai-airport-open",
+    title: "関西国際空港開港",
+    year: 1994,
+    era: "平成",
+    shortText: "海上空港として関西国際空港が開港した。",
+    description:
+      "関西国際空港開港は1994年の出来事です。海上空港として関西国際空港が開港した。",
+    tags: ["交通"],
+    card: {
+      rarity: "common",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "matsumoto-sarin",
+    title: "松本サリン事件",
+    year: 1994,
+    era: "平成",
+    shortText: "長野県松本市でサリンによる事件が起きた。",
+    description:
+      "松本サリン事件は1994年の出来事です。長野県松本市でサリンによる事件が起きた。",
+    tags: ["社会"],
+    card: {
+      rarity: "common",
+      color: "#64748b",
+    },
+  },
+  {
+    id: "hanshin-awaji-earthquake",
+    title: "阪神・淡路大震災",
+    year: 1995,
+    era: "平成",
+    shortText: "都市部を襲った大地震で大きな被害が出た。",
+    description:
+      "阪神・淡路大震災は1995年の出来事です。都市部を襲った大地震で大きな被害が出た。",
+    tags: ["災害"],
+    card: {
+      rarity: "rare",
+      color: "#fb7185",
+    },
+  },
+  {
+    id: "subway-sarin",
+    title: "地下鉄サリン事件",
+    year: 1995,
+    era: "平成",
+    shortText: "東京の地下鉄でサリンが使われた事件。",
+    description:
+      "地下鉄サリン事件は1995年の出来事です。東京の地下鉄でサリンが使われた事件。",
+    tags: ["社会"],
+    card: {
+      rarity: "common",
+      color: "#64748b",
+    },
+  },
+  {
+    id: "windows-95-japan",
+    title: "Windows 95日本語版発売",
+    year: 1995,
+    era: "平成",
+    shortText: "家庭や職場のパソコン利用が広がるきっかけとなった。",
+    description:
+      "Windows 95日本語版発売は1995年の出来事です。家庭や職場のパソコン利用が広がるきっかけとなった。",
+    tags: ["技術"],
+    card: {
+      rarity: "common",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "yahoo-japan-start",
+    title: "Yahoo! JAPANサービス開始",
+    year: 1996,
+    era: "平成",
+    shortText: "日本のインターネット利用を広げる入口となった。",
+    description:
+      "Yahoo! JAPANサービス開始は1996年の出来事です。日本のインターネット利用を広げる入口となった。",
+    tags: ["技術"],
+    card: {
+      rarity: "common",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "consumption-tax-5",
+    title: "消費税率5%へ引き上げ",
+    year: 1997,
+    era: "平成",
+    shortText: "消費税率が3%から5%へ上がった。",
+    description:
+      "消費税率5%へ引き上げは1997年の出来事です。消費税率が3%から5%へ上がった。",
+    tags: ["経済"],
+    card: {
+      rarity: "common",
+      color: "#f97316",
+    },
+  },
+  {
+    id: "kyoto-protocol",
+    title: "京都議定書採択",
+    year: 1997,
+    era: "平成",
+    shortText: "温室効果ガス削減をめざす国際合意が採択された。",
+    description:
+      "京都議定書採択は1997年の出来事です。温室効果ガス削減をめざす国際合意が採択された。",
+    tags: ["環境"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "nagano-olympics",
+    title: "長野冬季オリンピック開催",
+    year: 1998,
+    era: "平成",
+    shortText: "長野で冬季オリンピックが開かれた。",
+    description:
+      "長野冬季オリンピック開催は1998年の出来事です。長野で冬季オリンピックが開かれた。",
+    tags: ["スポーツ"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "akashi-kaikyo-bridge",
+    title: "明石海峡大橋開通",
+    year: 1998,
+    era: "平成",
+    shortText: "本州と淡路島を結ぶ大橋が開通した。",
+    description:
+      "明石海峡大橋開通は1998年の出来事です。本州と淡路島を結ぶ大橋が開通した。",
+    tags: ["交通"],
+    card: {
+      rarity: "common",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "i-mode-start",
+    title: "iモード開始",
+    year: 1999,
+    era: "平成",
+    shortText: "携帯電話でインターネットを使う文化が広がった。",
+    description:
+      "iモード開始は1999年の出来事です。携帯電話でインターネットを使う文化が広がった。",
+    tags: ["技術"],
+    card: {
+      rarity: "common",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "jco-criticality",
+    title: "東海村JCO臨界事故",
+    year: 1999,
+    era: "平成",
+    shortText: "原子力施設で重大な臨界事故が起きた。",
+    description:
+      "東海村JCO臨界事故は1999年の出来事です。原子力施設で重大な臨界事故が起きた。",
+    tags: ["災害"],
+    card: {
+      rarity: "rare",
+      color: "#fb7185",
+    },
+  },
+  {
+    id: "long-term-care-insurance",
+    title: "介護保険制度開始",
+    year: 2000,
+    era: "平成",
+    shortText: "高齢者介護を社会で支える制度が始まった。",
+    description:
+      "介護保険制度開始は2000年の出来事です。高齢者介護を社会で支える制度が始まった。",
+    tags: ["制度"],
+    card: {
+      rarity: "common",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "kyushu-okinawa-summit",
+    title: "九州・沖縄サミット開催",
+    year: 2000,
+    era: "平成",
+    shortText: "沖縄などで主要国首脳会議が開かれた。",
+    description:
+      "九州・沖縄サミット開催は2000年の出来事です。沖縄などで主要国首脳会議が開かれた。",
+    tags: ["外交"],
+    card: {
+      rarity: "rare",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "central-government-reform",
+    title: "中央省庁再編",
+    year: 2001,
+    era: "平成",
+    shortText: "国の行政組織が大きく再編された。",
+    description:
+      "中央省庁再編は2001年の出来事です。国の行政組織が大きく再編された。",
+    tags: ["政治"],
+    card: {
+      rarity: "rare",
+      color: "#facc15",
+    },
+  },
+  {
+    id: "koizumi-cabinet",
+    title: "小泉内閣成立",
+    year: 2001,
+    era: "平成",
+    shortText: "構造改革を掲げた内閣が発足した。",
+    description:
+      "小泉内閣成立は2001年の出来事です。構造改革を掲げた内閣が発足した。",
+    tags: ["政治"],
+    card: {
+      rarity: "rare",
+      color: "#facc15",
+    },
+  },
+  {
+    id: "japan-korea-world-cup",
+    title: "日韓ワールドカップ開催",
+    year: 2002,
+    era: "平成",
+    shortText: "日本と韓国がサッカーW杯を共同開催した。",
+    description:
+      "日韓ワールドカップ開催は2002年の出来事です。日本と韓国がサッカーW杯を共同開催した。",
+    tags: ["スポーツ"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "abductees-return",
+    title: "拉致被害者5人帰国",
+    year: 2002,
+    era: "平成",
+    shortText: "北朝鮮による拉致被害者の一部が帰国した。",
+    description:
+      "拉致被害者5人帰国は2002年の出来事です。北朝鮮による拉致被害者の一部が帰国した。",
+    tags: ["外交"],
+    card: {
+      rarity: "rare",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "terrestrial-digital-start",
+    title: "地上デジタル放送開始",
+    year: 2003,
+    era: "平成",
+    shortText: "テレビ放送のデジタル化が始まった。",
+    description:
+      "地上デジタル放送開始は2003年の出来事です。テレビ放送のデジタル化が始まった。",
+    tags: ["技術"],
+    card: {
+      rarity: "common",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "sdf-iraq-dispatch",
+    title: "自衛隊イラク派遣",
+    year: 2004,
+    era: "平成",
+    shortText: "自衛隊が復興支援のためイラクへ派遣された。",
+    description:
+      "自衛隊イラク派遣は2004年の出来事です。自衛隊が復興支援のためイラクへ派遣された。",
+    tags: ["外交"],
+    card: {
+      rarity: "rare",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "niigata-chuetsu-earthquake",
+    title: "新潟県中越地震",
+    year: 2004,
+    era: "平成",
+    shortText: "新潟県中越地方で大きな地震が起きた。",
+    description:
+      "新潟県中越地震は2004年の出来事です。新潟県中越地方で大きな地震が起きた。",
+    tags: ["災害"],
+    card: {
+      rarity: "rare",
+      color: "#fb7185",
+    },
+  },
+  {
+    id: "new-banknotes-2004",
+    title: "新紙幣発行",
+    year: 2004,
+    era: "平成",
+    shortText: "野口英世などの新しい紙幣が発行された。",
+    description:
+      "新紙幣発行は2004年の出来事です。野口英世などの新しい紙幣が発行された。",
+    tags: ["経済"],
+    card: {
+      rarity: "common",
+      color: "#f97316",
+    },
+  },
+  {
+    id: "expo-aichi",
+    title: "愛・地球博開催",
+    year: 2005,
+    era: "平成",
+    shortText: "愛知県で自然との共生をテーマにした万博が開かれた。",
+    description:
+      "愛・地球博開催は2005年の出来事です。愛知県で自然との共生をテーマにした万博が開かれた。",
+    tags: ["文化"],
+    card: {
+      rarity: "common",
+      color: "#f472b6",
+    },
+  },
+  {
+    id: "postal-privatization-law",
+    title: "郵政民営化法成立",
+    year: 2005,
+    era: "平成",
+    shortText: "郵政事業の民営化に向けた法律が成立した。",
+    description:
+      "郵政民営化法成立は2005年の出来事です。郵政事業の民営化に向けた法律が成立した。",
+    tags: ["政治"],
+    card: {
+      rarity: "rare",
+      color: "#facc15",
+    },
+  },
+  {
+    id: "basic-education-law-revision",
+    title: "教育基本法改正",
+    year: 2006,
+    era: "平成",
+    shortText: "戦後教育の基本法が大きく改正された。",
+    description:
+      "教育基本法改正は2006年の出来事です。戦後教育の基本法が大きく改正された。",
+    tags: ["教育"],
+    card: {
+      rarity: "common",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "postal-privatization",
+    title: "郵政民営化",
+    year: 2007,
+    era: "平成",
+    shortText: "日本郵政グループが発足した。",
+    description:
+      "郵政民営化は2007年の出来事です。日本郵政グループが発足した。",
+    tags: ["制度"],
+    card: {
+      rarity: "common",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "tokyo-marathon-first",
+    title: "第1回東京マラソン開催",
+    year: 2007,
+    era: "平成",
+    shortText: "市民参加型の大規模マラソン大会が始まった。",
+    description:
+      "第1回東京マラソン開催は2007年の出来事です。市民参加型の大規模マラソン大会が始まった。",
+    tags: ["スポーツ"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "iphone-japan",
+    title: "iPhone日本発売",
+    year: 2008,
+    era: "平成",
+    shortText: "スマートフォン普及の大きなきっかけになった。",
+    description:
+      "iPhone日本発売は2008年の出来事です。スマートフォン普及の大きなきっかけになった。",
+    tags: ["技術"],
+    card: {
+      rarity: "common",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "lehman-shock-japan",
+    title: "リーマンショックの影響",
+    year: 2008,
+    era: "平成",
+    shortText: "世界的金融危機が日本経済にも影響した。",
+    description:
+      "リーマンショックの影響は2008年の出来事です。世界的金融危機が日本経済にも影響した。",
+    tags: ["経済"],
+    card: {
+      rarity: "common",
+      color: "#f97316",
+    },
+  },
+  {
+    id: "dpj-government",
+    title: "民主党政権成立",
+    year: 2009,
+    era: "平成",
+    shortText: "衆議院選挙の結果、政権交代が起きた。",
+    description:
+      "民主党政権成立は2009年の出来事です。衆議院選挙の結果、政権交代が起きた。",
+    tags: ["政治"],
+    card: {
+      rarity: "rare",
+      color: "#facc15",
+    },
+  },
+  {
+    id: "hayabusa-return",
+    title: "はやぶさ帰還",
+    year: 2010,
+    era: "平成",
+    shortText: "小惑星探査機が地球へ帰還した。",
+    description:
+      "はやぶさ帰還は2010年の出来事です。小惑星探査機が地球へ帰還した。",
+    tags: ["科学"],
+    card: {
+      rarity: "rare",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "senkaku-collision",
+    title: "尖閣諸島沖衝突事件",
+    year: 2010,
+    era: "平成",
+    shortText: "尖閣諸島沖で巡視船と漁船が衝突した。",
+    description:
+      "尖閣諸島沖衝突事件は2010年の出来事です。尖閣諸島沖で巡視船と漁船が衝突した。",
+    tags: ["外交"],
+    card: {
+      rarity: "rare",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "great-east-japan-earthquake",
+    title: "東日本大震災",
+    year: 2011,
+    era: "平成",
+    shortText: "東北地方太平洋沖地震と津波が大きな被害をもたらした。",
+    description:
+      "東日本大震災は2011年の出来事です。東北地方太平洋沖地震と津波が大きな被害をもたらした。",
+    tags: ["災害"],
+    card: {
+      rarity: "legend",
+      color: "#fb7185",
+    },
+  },
+  {
+    id: "fukushima-nuclear-accident",
+    title: "福島第一原発事故",
+    year: 2011,
+    era: "平成",
+    shortText: "原子力発電所で重大事故が発生した。",
+    description:
+      "福島第一原発事故は2011年の出来事です。原子力発電所で重大事故が発生した。",
+    tags: ["災害"],
+    card: {
+      rarity: "legend",
+      color: "#fb7185",
+    },
+  },
+  {
+    id: "nadeshiko-world-cup",
+    title: "なでしこジャパンW杯優勝",
+    year: 2011,
+    era: "平成",
+    shortText: "女子サッカー日本代表が世界一になった。",
+    description:
+      "なでしこジャパンW杯優勝は2011年の出来事です。女子サッカー日本代表が世界一になった。",
+    tags: ["スポーツ"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "tokyo-skytree-open",
+    title: "東京スカイツリー開業",
+    year: 2012,
+    era: "平成",
+    shortText: "東京の新しい電波塔・観光名所が開業した。",
+    description:
+      "東京スカイツリー開業は2012年の出来事です。東京の新しい電波塔・観光名所が開業した。",
+    tags: ["文化"],
+    card: {
+      rarity: "common",
+      color: "#f472b6",
+    },
+  },
+  {
+    id: "yamanaka-nobel",
+    title: "山中伸弥がノーベル賞受賞",
+    year: 2012,
+    era: "平成",
+    shortText: "iPS細胞研究でノーベル生理学・医学賞を受賞した。",
+    description:
+      "山中伸弥がノーベル賞受賞は2012年の出来事です。iPS細胞研究でノーベル生理学・医学賞を受賞した。",
+    tags: ["科学"],
+    card: {
+      rarity: "rare",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "fuji-world-heritage",
+    title: "富士山が世界文化遺産登録",
+    year: 2013,
+    era: "平成",
+    shortText: "信仰と芸術の対象として富士山が評価された。",
+    description:
+      "富士山が世界文化遺産登録は2013年の出来事です。信仰と芸術の対象として富士山が評価された。",
+    tags: ["文化"],
+    card: {
+      rarity: "common",
+      color: "#f472b6",
+    },
+  },
+  {
+    id: "washoku-unesco",
+    title: "和食がユネスコ無形文化遺産登録",
+    year: 2013,
+    era: "平成",
+    shortText: "日本の食文化が国際的に評価された。",
+    description:
+      "和食がユネスコ無形文化遺産登録は2013年の出来事です。日本の食文化が国際的に評価された。",
+    tags: ["文化"],
+    card: {
+      rarity: "common",
+      color: "#f472b6",
+    },
+  },
+  {
+    id: "consumption-tax-8",
+    title: "消費税率8%へ引き上げ",
+    year: 2014,
+    era: "平成",
+    shortText: "消費税率が5%から8%へ上がった。",
+    description:
+      "消費税率8%へ引き上げは2014年の出来事です。消費税率が5%から8%へ上がった。",
+    tags: ["経済"],
+    card: {
+      rarity: "common",
+      color: "#f97316",
+    },
+  },
+  {
+    id: "tomioka-world-heritage",
+    title: "富岡製糸場が世界遺産登録",
+    year: 2014,
+    era: "平成",
+    shortText: "近代日本の産業化を伝える遺産が登録された。",
+    description:
+      "富岡製糸場が世界遺産登録は2014年の出来事です。近代日本の産業化を伝える遺産が登録された。",
+    tags: ["産業"],
+    card: {
+      rarity: "common",
+      color: "#f97316",
+    },
+  },
+  {
+    id: "hokuriku-shinkansen-kanazawa",
+    title: "北陸新幹線金沢開業",
+    year: 2015,
+    era: "平成",
+    shortText: "北陸への移動が大きく便利になった。",
+    description:
+      "北陸新幹線金沢開業は2015年の出来事です。北陸への移動が大きく便利になった。",
+    tags: ["交通"],
+    card: {
+      rarity: "common",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "my-number-start",
+    title: "マイナンバー制度開始",
+    year: 2015,
+    era: "平成",
+    shortText: "社会保障・税・災害対策で使う番号制度が始まった。",
+    description:
+      "マイナンバー制度開始は2015年の出来事です。社会保障・税・災害対策で使う番号制度が始まった。",
+    tags: ["制度"],
+    card: {
+      rarity: "common",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "kumamoto-earthquake",
+    title: "熊本地震",
+    year: 2016,
+    era: "平成",
+    shortText: "熊本県を中心に強い地震が発生した。",
+    description:
+      "熊本地震は2016年の出来事です。熊本県を中心に強い地震が発生した。",
+    tags: ["災害"],
+    card: {
+      rarity: "rare",
+      color: "#fb7185",
+    },
+  },
+  {
+    id: "voting-age-18",
+    title: "選挙権年齢18歳へ",
+    year: 2016,
+    era: "平成",
+    shortText: "18歳以上が国政選挙で投票できるようになった。",
+    description:
+      "選挙権年齢18歳へは2016年の出来事です。18歳以上が国政選挙で投票できるようになった。",
+    tags: ["政治"],
+    card: {
+      rarity: "rare",
+      color: "#facc15",
+    },
+  },
+  {
+    id: "ise-shima-summit",
+    title: "伊勢志摩サミット開催",
+    year: 2016,
+    era: "平成",
+    shortText: "三重県で主要国首脳会議が開かれた。",
+    description:
+      "伊勢志摩サミット開催は2016年の出来事です。三重県で主要国首脳会議が開かれた。",
+    tags: ["外交"],
+    card: {
+      rarity: "rare",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "okinoshima-world-heritage",
+    title: "宗像・沖ノ島が世界遺産登録",
+    year: 2017,
+    era: "平成",
+    shortText: "古代の信仰を伝える遺産が世界遺産に登録された。",
+    description:
+      "宗像・沖ノ島が世界遺産登録は2017年の出来事です。古代の信仰を伝える遺産が世界遺産に登録された。",
+    tags: ["文化"],
+    card: {
+      rarity: "common",
+      color: "#f472b6",
+    },
+  },
+  {
+    id: "abdication-special-law",
+    title: "天皇退位特例法成立",
+    year: 2017,
+    era: "平成",
+    shortText: "天皇退位を可能にする特例法が成立した。",
+    description:
+      "天皇退位特例法成立は2017年の出来事です。天皇退位を可能にする特例法が成立した。",
+    tags: ["政治"],
+    card: {
+      rarity: "rare",
+      color: "#facc15",
+    },
+  },
+  {
+    id: "osaka-north-earthquake",
+    title: "大阪北部地震",
+    year: 2018,
+    era: "平成",
+    shortText: "大阪府北部で強い地震が発生した。",
+    description:
+      "大阪北部地震は2018年の出来事です。大阪府北部で強い地震が発生した。",
+    tags: ["災害"],
+    card: {
+      rarity: "rare",
+      color: "#fb7185",
+    },
+  },
+  {
+    id: "meiji-150",
+    title: "明治150年",
+    year: 2018,
+    era: "平成",
+    shortText: "明治元年から150年の節目を迎えた。",
+    description:
+      "明治150年は2018年の出来事です。明治元年から150年の節目を迎えた。",
+    tags: ["文化"],
+    card: {
+      rarity: "common",
+      color: "#f472b6",
+    },
+  },
+  {
+    id: "toyosu-market-open",
+    title: "築地市場が豊洲へ移転",
+    year: 2018,
+    era: "平成",
+    shortText: "東京の中央卸売市場が豊洲に移った。",
+    description:
+      "築地市場が豊洲へ移転は2018年の出来事です。東京の中央卸売市場が豊洲に移った。",
+    tags: ["生活"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "reiwa-start",
+    title: "令和開始",
+    year: 2019,
+    era: "令和",
+    shortText: "平成が終わり、新しい元号の令和が始まった。",
+    description:
+      "令和開始は2019年の出来事です。平成が終わり、新しい元号の令和が始まった。",
+    tags: ["元号"],
+    card: {
+      rarity: "legend",
+      color: "#facc15",
+    },
+  },
+  {
+    id: "rugby-world-cup-japan",
+    title: "ラグビーワールドカップ日本大会",
+    year: 2019,
+    era: "令和",
+    shortText: "日本でラグビーW杯が開催された。",
+    description:
+      "ラグビーワールドカップ日本大会は2019年の出来事です。日本でラグビーW杯が開催された。",
+    tags: ["スポーツ"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "consumption-tax-10",
+    title: "消費税率10%へ引き上げ",
+    year: 2019,
+    era: "令和",
+    shortText: "消費税率が10%になった。",
+    description:
+      "消費税率10%へ引き上げは2019年の出来事です。消費税率が10%になった。",
+    tags: ["経済"],
+    card: {
+      rarity: "common",
+      color: "#f97316",
+    },
+  },
+  {
+    id: "shuri-castle-fire",
+    title: "首里城火災",
+    year: 2019,
+    era: "令和",
+    shortText: "沖縄の象徴的な建物が火災で焼失した。",
+    description:
+      "首里城火災は2019年の出来事です。沖縄の象徴的な建物が火災で焼失した。",
+    tags: ["災害"],
+    card: {
+      rarity: "rare",
+      color: "#fb7185",
+    },
+  },
+  {
+    id: "covid-school-closure",
+    title: "新型コロナ全国一斉休校",
+    year: 2020,
+    era: "令和",
+    shortText: "感染拡大を受けて学校生活が大きく変わった。",
+    description:
+      "新型コロナ全国一斉休校は2020年の出来事です。感染拡大を受けて学校生活が大きく変わった。",
+    tags: ["教育"],
+    card: {
+      rarity: "common",
+      color: "#a78bfa",
+    },
+  },
+  {
+    id: "tokyo-olympics-postponed",
+    title: "東京五輪延期",
+    year: 2020,
+    era: "令和",
+    shortText: "感染症の影響で東京大会が延期された。",
+    description:
+      "東京五輪延期は2020年の出来事です。感染症の影響で東京大会が延期された。",
+    tags: ["スポーツ"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "plastic-bag-fee",
+    title: "レジ袋有料化",
+    year: 2020,
+    era: "令和",
+    shortText: "プラスチックごみ削減をめざし有料化が始まった。",
+    description:
+      "レジ袋有料化は2020年の出来事です。プラスチックごみ削減をめざし有料化が始まった。",
+    tags: ["環境"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "tokyo-olympics-2021",
+    title: "東京2020オリンピック開催",
+    year: 2021,
+    era: "令和",
+    shortText: "延期された東京大会が開催された。",
+    description:
+      "東京2020オリンピック開催は2021年の出来事です。延期された東京大会が開催された。",
+    tags: ["スポーツ"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "tokyo-paralympics-2021",
+    title: "東京パラリンピック開催",
+    year: 2021,
+    era: "令和",
+    shortText: "東京でパラリンピックが開催された。",
+    description:
+      "東京パラリンピック開催は2021年の出来事です。東京でパラリンピックが開催された。",
+    tags: ["スポーツ"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "digital-agency",
+    title: "デジタル庁発足",
+    year: 2021,
+    era: "令和",
+    shortText: "行政のデジタル化を進める新しい組織ができた。",
+    description:
+      "デジタル庁発足は2021年の出来事です。行政のデジタル化を進める新しい組織ができた。",
+    tags: ["政治"],
+    card: {
+      rarity: "rare",
+      color: "#facc15",
+    },
+  },
+  {
+    id: "adult-age-18",
+    title: "成人年齢18歳へ",
+    year: 2022,
+    era: "令和",
+    shortText: "民法上の成人年齢が20歳から18歳になった。",
+    description:
+      "成人年齢18歳へは2022年の出来事です。民法上の成人年齢が20歳から18歳になった。",
+    tags: ["法律"],
+    card: {
+      rarity: "common",
+      color: "#facc15",
+    },
+  },
+  {
+    id: "okinawa-reversion-50",
+    title: "沖縄復帰50年",
+    year: 2022,
+    era: "令和",
+    shortText: "沖縄の日本復帰から50年の節目を迎えた。",
+    description:
+      "沖縄復帰50年は2022年の出来事です。沖縄の日本復帰から50年の節目を迎えた。",
+    tags: ["地域"],
+    card: {
+      rarity: "common",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "nishi-kyushu-shinkansen",
+    title: "西九州新幹線開業",
+    year: 2022,
+    era: "令和",
+    shortText: "長崎方面へ向かう新幹線が開業した。",
+    description:
+      "西九州新幹線開業は2022年の出来事です。長崎方面へ向かう新幹線が開業した。",
+    tags: ["交通"],
+    card: {
+      rarity: "common",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "g7-hiroshima-summit",
+    title: "G7広島サミット開催",
+    year: 2023,
+    era: "令和",
+    shortText: "広島で主要国首脳会議が開かれた。",
+    description:
+      "G7広島サミット開催は2023年の出来事です。広島で主要国首脳会議が開かれた。",
+    tags: ["外交"],
+    card: {
+      rarity: "rare",
+      color: "#38bdf8",
+    },
+  },
+  {
+    id: "covid-category-5",
+    title: "新型コロナ5類移行",
+    year: 2023,
+    era: "令和",
+    shortText: "感染症法上の位置づけが5類へ移行した。",
+    description:
+      "新型コロナ5類移行は2023年の出来事です。感染症法上の位置づけが5類へ移行した。",
+    tags: ["医療"],
+    card: {
+      rarity: "common",
+      color: "#64748b",
+    },
+  },
+  {
+    id: "wbc-japan-2023",
+    title: "WBC日本優勝",
+    year: 2023,
+    era: "令和",
+    shortText: "野球日本代表が世界一になった。",
+    description:
+      "WBC日本優勝は2023年の出来事です。野球日本代表が世界一になった。",
+    tags: ["スポーツ"],
+    card: {
+      rarity: "common",
+      color: "#22c55e",
+    },
+  },
+  {
+    id: "kodomo-agency-start",
+    title: "こども家庭庁発足",
+    year: 2023,
+    era: "令和",
+    shortText: "こども政策を担当する新しい行政機関が発足した。",
+    description:
+      "こども家庭庁発足は2023年の出来事です。こども政策を担当する新しい行政機関が発足した。",
+    tags: ["政治"],
+    card: {
+      rarity: "rare",
+      color: "#facc15",
+    },
+  },
 ];

@@ -69,7 +69,7 @@ export default function GamesPage() {
           </div>
 
           <p className="text-sm text-slate-300 leading-relaxed mb-4">
-            100枚の歴史カードから出題。カードを古い順に並べて、時代の流れをつかむゲームです。
+            {historyEvents.length}枚の歴史カードから出題。カードを古い順に並べて、時代の流れをつかむゲームです。
           </p>
 
           <Link
@@ -87,7 +87,7 @@ export default function GamesPage() {
               <h2 className="text-xl font-bold">ゆる歴史散歩検定</h2>
             </div>
             <span className="text-xs bg-purple-300 text-black px-2 py-1 rounded-full font-bold">
-              100問
+              {kenteiQuestions.length}問
             </span>
           </div>
 

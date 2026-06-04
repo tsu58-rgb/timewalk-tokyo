@@ -155,7 +155,7 @@ export default function TimeFlowGame() {
             <div>
               <p className="text-sm text-yellow-300 font-bold mb-1">TimeFlow</p>
               <p className="text-sm text-slate-100 leading-relaxed">
-                100枚の歴史カードから出題。古い順に並べて、時代の流れをつかもう。
+                {historyEvents.length}枚の歴史カードから出題。古い順に並べて、時代の流れをつかもう。
               </p>
             </div>
           </div>
