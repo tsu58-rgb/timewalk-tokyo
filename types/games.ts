@@ -1,6 +1,6 @@
 import type { HistoryEventId } from "./history";
 
-export type GameDifficulty = "easy" | "normal" | "hard";
+export type GameDifficulty = 1 | 2 | 3 | 4 | 5;
 
 export type TimeFlowChallenge = {
   id: string;

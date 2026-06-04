@@ -14,9 +14,11 @@ type AnswerResult = {
 };
 
 const difficultyLabels: Record<TimeFlowChallenge["difficulty"], string> = {
-  easy: "入門",
-  normal: "ふつう",
-  hard: "むずかしい",
+  1: "レベル1",
+  2: "レベル2",
+  3: "レベル3",
+  4: "レベル4",
+  5: "レベル5",
 };
 
 function getEventsByIds(eventIds: string[]) {
@@ -153,7 +155,7 @@ export default function TimeFlowGame() {
             <div>
               <p className="text-sm text-yellow-300 font-bold mb-1">TimeFlow</p>
               <p className="text-sm text-slate-100 leading-relaxed">
-                歴史カードを古い順に並べて、時代の流れをつかもう。カードをタップすると流れに入るよ。
+                100枚の歴史カードから出題。古い順に並べて、時代の流れをつかもう。
               </p>
             </div>
           </div>

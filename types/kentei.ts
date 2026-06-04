@@ -1,7 +1,7 @@
 import type { HistoryEventId } from "./history";
 
 export type KenteiQuestionFormat = "choice" | "input";
-export type KenteiLevel = "beginner" | "intermediate" | "advanced";
+export type KenteiLevel = 1 | 2 | 3 | 4 | 5;
 
 export type KenteiQuestion = {
   id: string;
