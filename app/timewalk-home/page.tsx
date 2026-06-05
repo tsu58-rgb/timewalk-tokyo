@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Papa from "papaparse";
 
-const MapPicker = dynamic(() => import("./components/MapPicker"), {
+const MapPicker = dynamic(() => import("../components/MapPicker"), {
   ssr: false,
 });
 
@@ -673,7 +673,7 @@ export default function Home() {
 
         <button
           onClick={() => setScreen("today")}
-          className="mb-3 w-full bg-yellow-300 text-black py-3 rounded-xl font-bold"
+          className="mb-4 w-full bg-yellow-300 text-black py-3 rounded-xl font-bold"
         >
           今日は何の日？
         </button>
