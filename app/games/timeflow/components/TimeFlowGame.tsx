@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type TouchEvent } from "react";
 import Link from "next/link";
 
 import { timeFlowChallenges } from "@/data/games/timeflow/challenges";
@@ -124,17 +124,39 @@ export default function TimeFlowGame() {
     if (firstIndex >= 0) setChallengeIndex(firstIndex);
   }
 
-  function reorderByDrag(targetEventId: string) {
-    if (!draggingEventId || draggingEventId === targetEventId || result?.correct) return;
+  function reorderCard(sourceEventId: string, targetEventId: string) {
+    if (sourceEventId === targetEventId || result?.correct) return;
 
     setOrderedEventIds((current) =>
       moveItem(
         current,
-        current.indexOf(draggingEventId),
+        current.indexOf(sourceEventId),
         current.indexOf(targetEventId)
       )
     );
     setResult(null);
+  }
+
+  function reorderByDrag(targetEventId: string) {
+    if (!draggingEventId) return;
+    reorderCard(draggingEventId, targetEventId);
+  }
+
+  function reorderByTouch(event: TouchEvent<HTMLElement>, sourceEventId: string) {
+    if (result?.correct) return;
+
+    const touch = event.touches[0];
+    if (!touch) return;
+
+    const target = document
+      .elementFromPoint(touch.clientX, touch.clientY)
+      ?.closest<HTMLElement>("[data-event-id]");
+    const targetEventId = target?.dataset.eventId;
+
+    if (!targetEventId || targetEventId === sourceEventId) return;
+
+    event.preventDefault();
+    reorderCard(sourceEventId, targetEventId);
   }
 
   function moveCard(eventId: string, direction: -1 | 1) {
@@ -240,7 +262,6 @@ export default function TimeFlowGame() {
         </header>
 
         <section className="mb-4">
-          <h2 className="text-sm font-bold text-slate-200 mb-2">レベル選択</h2>
           <div className="flex flex-wrap gap-2">
             {availableDifficulties.map((difficulty) => (
               <button
@@ -262,24 +283,26 @@ export default function TimeFlowGame() {
         {renderTopicCard()}
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <h2 className="font-bold mb-2">歴史カードを並び替え</h2>
           <p className="text-xs text-slate-400 leading-relaxed mb-3">
-            カードをドラッグして、古い出来事から順番に並べてください。スマホで動かしにくい場合は、カード右下の上下ボタンでも調整できます。
+            カードをドラッグして、古い出来事から順番に並べてください。スマホではカードを押したまま上下に動かせます。動かしにくい場合は、カード右下の上下ボタンでも調整できます。
           </p>
 
           <div className="space-y-3">
             {orderedEvents.map((event, index) => (
               <article
                 key={event.id}
+                data-event-id={event.id}
                 draggable={!result?.correct}
                 onDragStart={() => setDraggingEventId(event.id)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => reorderByDrag(event.id)}
                 onDragEnd={() => setDraggingEventId(null)}
-                className={`rounded-2xl p-3 border active:scale-[0.99] ${getCardResultClass(
-                  event.id,
-                  index
-                )}`}
+                onTouchStart={() => setDraggingEventId(event.id)}
+                onTouchMove={(e) => reorderByTouch(e, event.id)}
+                onTouchEnd={() => setDraggingEventId(null)}
+                className={`rounded-2xl p-3 border active:scale-[0.99] select-none ${
+                  draggingEventId === event.id ? "opacity-80" : ""
+                } ${getCardResultClass(event.id, index)}`}
               >
                 <div className="flex items-start gap-3">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-400 bg-white/10 text-[10px] font-bold text-slate-200">
