@@ -673,10 +673,11 @@ export default function Home() {
 
         <button
           onClick={() => setScreen("today")}
-          className="mb-4 w-full bg-yellow-300 text-black py-3 rounded-xl font-bold"
+          className="mb-3 w-full bg-yellow-300 text-black py-3 rounded-xl font-bold"
         >
           今日は何の日？
         </button>
+
 
         <p className="text-center text-xs text-yellow-300 mb-3">
           訪問済み：{visitedSpotIds.length}件
