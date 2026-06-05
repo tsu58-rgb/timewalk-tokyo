@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="壬申の乱のイメージ画像">
+  <rect width="400" height="400" fill="#dbeafe"/>
+  <path d="M0 230 C80 160 150 190 210 140 C275 95 330 120 400 90 L400 400 L0 400 Z" fill="#86efac"/>
+  <path d="M0 280 C85 245 135 270 205 235 C285 195 335 220 400 190 L400 400 L0 400 Z" fill="#65a30d" opacity=".75"/>
+  <path d="M100 74 V285" stroke="#78350f" stroke-width="8"/>
+  <path d="M108 82 H195 V150 H108 Z" fill="#fefefe"/>
+  <circle cx="152" cy="116" r="23" fill="#312e81"/>
+  <path d="M300 80 V285" stroke="#78350f" stroke-width="8"/>
+  <path d="M214 88 H292 V158 H214 Z" fill="#dc2626"/>
+  <path d="M247 112 L262 139 L232 139 Z" fill="#111827"/>
+  <circle cx="111" cy="234" r="25" fill="#111827"/>
+  <path d="M75 292 C79 250 105 234 132 246 C158 258 168 286 160 318 H69 Z" fill="#fef3c7"/>
+  <path d="M61 318 H169 L180 372 H51 Z" fill="#7c2d12"/>
+  <circle cx="286" cy="238" r="25" fill="#111827"/>
+  <path d="M251 296 C254 254 281 238 308 250 C335 262 345 290 337 322 H246 Z" fill="#7c3aed"/>
+  <path d="M238 322 H346 L357 374 H228 Z" fill="#6d28d9"/>
+  <path d="M51 211 L174 331" stroke="#92400e" stroke-width="9" stroke-linecap="round"/>
+  <path d="M350 215 L230 333" stroke="#92400e" stroke-width="9" stroke-linecap="round"/>
+</svg>
