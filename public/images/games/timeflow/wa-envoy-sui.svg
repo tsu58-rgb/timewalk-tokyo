@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="小野妹子を隋へ派遣のイメージ画像">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#93c5fd"/>
+      <stop offset="1" stop-color="#fef3c7"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#sky)"/>
+  <path d="M0 255 C70 230 140 245 210 225 C280 205 335 220 400 195 L400 400 L0 400 Z" fill="#2563eb" opacity=".75"/>
+  <path d="M0 295 C80 270 160 290 240 265 C310 245 355 260 400 240 L400 400 L0 400 Z" fill="#1e40af" opacity=".65"/>
+  <path d="M245 120 L360 98 L354 205 L245 205 Z" fill="#facc15" opacity=".95"/>
+  <path d="M248 205 L358 205 L378 235 L228 235 Z" fill="#92400e"/>
+  <path d="M260 98 L260 235" stroke="#78350f" stroke-width="8"/>
+  <path d="M95 315 L132 118 L164 315 Z" fill="#78350f" opacity=".25"/>
+  <circle cx="130" cy="102" r="36" fill="#111827"/>
+  <path d="M92 178 C92 136 118 120 146 130 C178 142 188 178 181 219 L84 219 C80 203 82 190 92 178 Z" fill="#7c3aed"/>
+  <path d="M90 220 L182 220 L205 360 L64 360 Z" fill="#6d28d9"/>
+  <path d="M145 128 C134 150 112 153 101 137 C106 162 127 178 153 168 C170 160 171 143 145 128 Z" fill="#f3c78a"/>
+  <rect x="145" y="202" width="28" height="88" rx="8" fill="#f8e0a4" transform="rotate(-8 159 246)"/>
+  <path d="M230 105 C270 65 330 62 375 92" stroke="#92400e" stroke-width="8" fill="none"/>
+  <path d="M235 112 L370 112 L360 148 L245 148 Z" fill="#fef3c7"/>
+  <path d="M255 75 L255 160" stroke="#7c2d12" stroke-width="5"/>
+</svg>
