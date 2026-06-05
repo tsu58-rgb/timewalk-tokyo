@@ -284,7 +284,7 @@ export default function TimeFlowGame() {
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
           <p className="text-xs text-slate-400 leading-relaxed mb-3">
-            カードをドラッグして、古い出来事から順番に並べてください。スマホではカードを押したまま上下に動かせます。動かしにくい場合は、カード右下の上下ボタンでも調整できます。
+            カードを1秒ほど押したままにすると上下に動かせます。動かしにくい場合は、カード右上の上下ボタンでも調整できます。
           </p>
 
           <div className="space-y-3">
@@ -300,42 +300,27 @@ export default function TimeFlowGame() {
                 onTouchStart={() => setDraggingEventId(event.id)}
                 onTouchMove={(e) => reorderByTouch(e, event.id)}
                 onTouchEnd={() => setDraggingEventId(null)}
-                className={`rounded-2xl p-3 border active:scale-[0.99] select-none ${
-                  draggingEventId === event.id ? "opacity-80" : ""
+                className={`relative rounded-2xl p-3 border select-none transition-transform duration-150 ${
+                  draggingEventId === event.id
+                    ? "z-10 scale-[1.03] shadow-2xl shadow-black/70 ring-2 ring-yellow-300"
+                    : "active:scale-[0.99]"
                 } ${getCardResultClass(event.id, index)}`}
               >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-400 bg-white/10 text-[10px] font-bold text-slate-200">
-                    画像枠
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex items-baseline gap-2">
+                    <span className="shrink-0 text-xs font-bold text-slate-300">{index + 1}</span>
+                    <h3 className="font-bold leading-snug">{event.title}</h3>
                   </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-xs font-bold text-slate-300">{index + 1}</p>
-                        <h3 className="font-bold leading-snug">{event.title}</h3>
-                      </div>
-
-                      {result && (
-                        <span className="shrink-0 rounded-full bg-yellow-300 px-2 py-1 text-xs font-bold text-black">
-                          {event.year}年
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="text-xs leading-relaxed opacity-90 mt-1">{event.shortText}</p>
-
+                  <div className="flex shrink-0 items-center gap-2">
                     {result && (
-                      <div className="mt-3 rounded-xl bg-white/15 p-3 text-xs leading-relaxed">
-                        <p className="font-bold mb-1">解説枠</p>
-                        <p>
-                          解説サンプル：{event.title}は、時代の流れを考えるうえで重要な出来事です。ここに各カードごとの解説を追加できます。
-                        </p>
-                      </div>
+                      <span className="rounded-full bg-yellow-300 px-2 py-1 text-xs font-bold text-black">
+                        {event.year}年
+                      </span>
                     )}
 
                     {!result?.correct && (
-                      <div className="mt-3 flex justify-end gap-2">
+                      <>
                         <button
                           type="button"
                           onClick={() => moveCard(event.id, -1)}
@@ -352,6 +337,25 @@ export default function TimeFlowGame() {
                         >
                           ↓
                         </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-400 bg-white/10 text-[10px] font-bold text-slate-200">
+                    画像枠
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs leading-relaxed opacity-90">{event.shortText}</p>
+
+                    {result && (
+                      <div className="mt-3 rounded-xl bg-white/15 p-3 text-xs leading-relaxed">
+                        <p className="font-bold mb-1">解説枠</p>
+                        <p>
+                          解説サンプル：{event.title}は、時代の流れを考えるうえで重要な出来事です。ここに各カードごとの解説を追加できます。
+                        </p>
                       </div>
                     )}
                   </div>
