@@ -145,21 +145,10 @@ export default function TimeFlowGame() {
             <br />
             歴史の流れチャレンジ
           </h1>
+          <p className="mt-3 text-sm text-slate-300 leading-relaxed">
+            {historyEvents.length}枚の歴史カードから出題。古い順に並べて、時代の流れをつかもう。
+          </p>
         </header>
-
-        <section className="bg-slate-800 rounded-2xl p-4 mb-4 border border-slate-700">
-          <div className="flex gap-3 items-start">
-            <div className="shrink-0 w-14 h-14 rounded-full bg-yellow-300 text-black flex items-center justify-center text-2xl font-bold border-2 border-white">
-              流
-            </div>
-            <div>
-              <p className="text-sm text-yellow-300 font-bold mb-1">TimeFlow</p>
-              <p className="text-sm text-slate-100 leading-relaxed">
-                {historyEvents.length}枚の歴史カードから出題。古い順に並べて、時代の流れをつかもう。
-              </p>
-            </div>
-          </div>
-        </section>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
           <div className="flex flex-wrap items-center gap-2 mb-2">
