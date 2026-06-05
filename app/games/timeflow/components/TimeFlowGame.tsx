@@ -75,6 +75,14 @@ export default function TimeFlowGame() {
     [challengeEvents]
   );
 
+  const availableDifficulties = useMemo(
+    () =>
+      Array.from(new Set(timeFlowChallenges.map((item) => item.difficulty))).sort(
+        (a, b) => a - b
+      ),
+    []
+  );
+
   const isLastChallenge = challengeIndex === timeFlowChallenges.length - 1;
 
   useEffect(() => {
@@ -82,12 +90,6 @@ export default function TimeFlowGame() {
     setDraggingEventId(null);
     setResult(null);
   }, [shuffledEvents]);
-
-  function resetChallenge() {
-    setOrderedEventIds(shuffledEvents.map((event) => event.id));
-    setDraggingEventId(null);
-    setResult(null);
-  }
 
   function checkAnswer() {
     const correct = orderedEventIds.every((id, index) => id === correctIds[index]);
@@ -117,8 +119,9 @@ export default function TimeFlowGame() {
     setChallengeIndex((current) => Math.max(current - 1, 0));
   }
 
-  function chooseChallenge(index: number) {
-    setChallengeIndex(index);
+  function chooseLevel(difficulty: TimeFlowChallenge["difficulty"]) {
+    const firstIndex = timeFlowChallenges.findIndex((item) => item.difficulty === difficulty);
+    if (firstIndex >= 0) setChallengeIndex(firstIndex);
   }
 
   function reorderByDrag(targetEventId: string) {
@@ -152,6 +155,46 @@ export default function TimeFlowGame() {
       : "bg-red-900 border-red-500 text-white";
   }
 
+  function renderTopicSelector() {
+    return (
+      <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+        <h2 className="font-bold mb-3">お題選択</h2>
+        <div className="rounded-2xl bg-slate-950 p-4 border border-slate-600">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <span className="text-xs bg-yellow-300 text-black px-2 py-1 rounded-full font-bold">
+              {difficultyLabels[challenge.difficulty]}
+            </span>
+            <span className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full font-bold">
+              {challengeIndex + 1}/{timeFlowChallenges.length}問目
+            </span>
+          </div>
+
+          <h3 className="text-xl font-bold mb-2">{challenge.title}</h3>
+          <p className="text-sm text-slate-300 leading-relaxed mb-4">{challenge.description}</p>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={goToPreviousChallenge}
+              disabled={challengeIndex === 0}
+              className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30"
+            >
+              前のお題
+            </button>
+            <button
+              type="button"
+              onClick={goToNextChallenge}
+              disabled={isLastChallenge}
+              className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30"
+            >
+              次のお題
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
       <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
@@ -176,19 +219,27 @@ export default function TimeFlowGame() {
           </p>
         </header>
 
-        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="text-xs bg-yellow-300 text-black px-2 py-1 rounded-full font-bold">
-              {difficultyLabels[challenge.difficulty]}
-            </span>
-            <span className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full font-bold">
-              {challengeIndex + 1}/{timeFlowChallenges.length}問目
-            </span>
+        <section className="mb-4">
+          <h2 className="text-sm font-bold text-slate-200 mb-2">レベル選択</h2>
+          <div className="flex flex-wrap gap-2">
+            {availableDifficulties.map((difficulty) => (
+              <button
+                key={difficulty}
+                type="button"
+                onClick={() => chooseLevel(difficulty)}
+                className={`rounded-full px-3 py-2 text-xs font-bold ${
+                  challenge.difficulty === difficulty
+                    ? "bg-yellow-300 text-black"
+                    : "bg-slate-700 text-slate-200"
+                }`}
+              >
+                {difficultyLabels[difficulty]}
+              </button>
+            ))}
           </div>
-
-          <h2 className="text-xl font-bold mb-2">{challenge.title}</h2>
-          <p className="text-sm text-slate-300 leading-relaxed">{challenge.description}</p>
         </section>
+
+        {renderTopicSelector()}
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
           <h2 className="font-bold mb-2">歴史カードを並び替え</h2>
@@ -280,75 +331,15 @@ export default function TimeFlowGame() {
           </section>
         )}
 
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          <button
-            type="button"
-            onClick={checkAnswer}
-            className="bg-yellow-300 text-black py-3 rounded-xl font-bold"
-          >
-            答え合わせ
-          </button>
-          <button
-            type="button"
-            onClick={resetChallenge}
-            className="bg-slate-700 text-white py-3 rounded-xl font-bold"
-          >
-            リセット
-          </button>
-          <button
-            type="button"
-            onClick={goToPreviousChallenge}
-            disabled={challengeIndex === 0}
-            className="bg-slate-700 text-white py-3 rounded-xl font-bold disabled:opacity-30"
-          >
-            前へ
-          </button>
-          <button
-            type="button"
-            onClick={goToNextChallenge}
-            disabled={!result?.correct || isLastChallenge}
-            className={`py-3 rounded-xl font-bold ${
-              result?.correct && !isLastChallenge
-                ? "bg-blue-500 text-white"
-                : "bg-slate-800 text-slate-500"
-            }`}
-          >
-            次へ
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={checkAnswer}
+          className="w-full bg-yellow-300 text-black py-3 rounded-xl font-bold mb-4"
+        >
+          答え合わせ
+        </button>
 
-        <section className="bg-slate-800 rounded-2xl p-4">
-          <h2 className="font-bold mb-3">チャレンジ移動</h2>
-          <div className="flex items-center justify-between gap-3 rounded-2xl bg-slate-950 p-3 border border-slate-600">
-            <button
-              type="button"
-              onClick={goToPreviousChallenge}
-              disabled={challengeIndex === 0}
-              className="rounded-xl bg-slate-700 px-3 py-2 text-sm font-bold disabled:opacity-30"
-            >
-              −
-            </button>
-            <button
-              type="button"
-              onClick={() => chooseChallenge((challengeIndex + 1) % timeFlowChallenges.length)}
-              className="min-w-0 flex-1 text-center"
-            >
-              <span className="block text-xs text-slate-400">現在のチャレンジ</span>
-              <span className="block text-lg font-bold text-white">
-                {challengeIndex + 1}/{timeFlowChallenges.length}
-              </span>
-              <span className="block truncate text-sm text-slate-300">{challenge.title}</span>
-            </button>
-            <button
-              type="button"
-              onClick={goToNextChallenge}
-              disabled={isLastChallenge}
-              className="rounded-xl bg-slate-700 px-3 py-2 text-sm font-bold disabled:opacity-30"
-            >
-              ＋
-            </button>
-          </div>
-        </section>
+        {renderTopicSelector()}
       </div>
     </main>
   );
