@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="大化の改新のイメージ画像">
+  <rect width="400" height="400" fill="#fef3c7"/>
+  <path d="M0 250 L400 250 L400 400 L0 400 Z" fill="#a16207" opacity=".22"/>
+  <path d="M40 170 L200 70 L360 170 L340 190 L60 190 Z" fill="#b45309"/>
+  <path d="M70 190 H330 V320 H70 Z" fill="#fff7ed"/>
+  <path d="M90 210 H310 V320 H90 Z" fill="#fed7aa"/>
+  <path d="M70 190 H330" stroke="#7c2d12" stroke-width="10"/>
+  <circle cx="126" cy="142" r="24" fill="#111827"/>
+  <path d="M96 194 C96 164 116 150 138 156 C160 163 172 188 168 218 H94 Z" fill="#7c3aed"/>
+  <path d="M86 218 H176 L192 333 H70 Z" fill="#6d28d9"/>
+  <circle cx="255" cy="150" r="24" fill="#111827"/>
+  <path d="M225 202 C225 170 248 158 270 166 C294 174 304 196 300 224 H222 Z" fill="#eab308"/>
+  <path d="M214 224 H310 L330 333 H196 Z" fill="#ca8a04"/>
+  <path d="M96 310 H304 L285 360 H115 Z" fill="#7c2d12"/>
+  <path d="M120 290 C150 265 184 270 205 245 C232 268 260 260 286 290" fill="none" stroke="#2563eb" stroke-width="10" stroke-linecap="round"/>
+  <rect x="137" y="274" width="126" height="58" rx="8" fill="#fef9c3" stroke="#92400e" stroke-width="4"/>
+</svg>
