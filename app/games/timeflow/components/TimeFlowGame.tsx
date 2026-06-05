@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { timeFlowChallenges } from "@/data/games/timeflow/challenges";
@@ -37,10 +37,20 @@ function getCorrectOrder(events: HistoryEvent[]) {
   return [...events].sort((a, b) => a.year - b.year);
 }
 
+function moveItem(items: string[], fromIndex: number, toIndex: number) {
+  if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return items;
+  if (fromIndex >= items.length || toIndex >= items.length) return items;
+
+  const next = [...items];
+  const [movedItem] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, movedItem);
+  return next;
+}
+
 export default function TimeFlowGame() {
   const [challengeIndex, setChallengeIndex] = useState(0);
-  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
-  const [showHint, setShowHint] = useState(false);
+  const [orderedEventIds, setOrderedEventIds] = useState<string[]>([]);
+  const [draggingEventId, setDraggingEventId] = useState<string | null>(null);
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [clearedChallengeIds, setClearedChallengeIds] = useState<string[]>([]);
 
@@ -56,47 +66,31 @@ export default function TimeFlowGame() {
     [challengeEvents, challengeIndex]
   );
 
-  const selectedEvents = selectedEventIds
+  const orderedEvents = orderedEventIds
     .map((id) => challengeEvents.find((event) => event.id === id))
     .filter((event): event is HistoryEvent => Boolean(event));
 
-  const remainingEvents = shuffledEvents.filter(
-    (event) => !selectedEventIds.includes(event.id)
+  const correctIds = useMemo(
+    () => getCorrectOrder(challengeEvents).map((event) => event.id),
+    [challengeEvents]
   );
 
   const isLastChallenge = challengeIndex === timeFlowChallenges.length - 1;
 
-  function selectEvent(eventId: string) {
-    if (selectedEventIds.includes(eventId) || result?.correct) return;
-
-    setSelectedEventIds((current) => [...current, eventId]);
+  useEffect(() => {
+    setOrderedEventIds(shuffledEvents.map((event) => event.id));
+    setDraggingEventId(null);
     setResult(null);
-  }
-
-  function removeSelectedEvent(eventId: string) {
-    if (result?.correct) return;
-
-    setSelectedEventIds((current) => current.filter((id) => id !== eventId));
-    setResult(null);
-  }
+  }, [shuffledEvents]);
 
   function resetChallenge() {
-    setSelectedEventIds([]);
-    setShowHint(false);
+    setOrderedEventIds(shuffledEvents.map((event) => event.id));
+    setDraggingEventId(null);
     setResult(null);
   }
 
   function checkAnswer() {
-    if (selectedEventIds.length !== challengeEvents.length) {
-      setResult({
-        correct: false,
-        message: "まだ歴史の流れが完成していないよ。すべてのカードを選んでね。",
-      });
-      return;
-    }
-
-    const correctIds = getCorrectOrder(challengeEvents).map((event) => event.id);
-    const correct = selectedEventIds.every((id, index) => id === correctIds[index]);
+    const correct = orderedEventIds.every((id, index) => id === correctIds[index]);
 
     if (correct) {
       setClearedChallengeIds((current) =>
@@ -106,24 +100,56 @@ export default function TimeFlowGame() {
         correct: true,
         message: challenge.clearMessage,
       });
-      setShowHint(false);
       return;
     }
 
     setResult({
       correct: false,
-      message: "惜しい！年代の小さい出来事から順番に、歴史の流れを見直してみよう。",
+      message: "惜しい！赤いカードの位置を見直して、古い出来事から順番に並べ直してみよう。",
     });
   }
 
   function goToNextChallenge() {
     setChallengeIndex((current) => Math.min(current + 1, timeFlowChallenges.length - 1));
-    resetChallenge();
+  }
+
+  function goToPreviousChallenge() {
+    setChallengeIndex((current) => Math.max(current - 1, 0));
   }
 
   function chooseChallenge(index: number) {
     setChallengeIndex(index);
-    resetChallenge();
+  }
+
+  function reorderByDrag(targetEventId: string) {
+    if (!draggingEventId || draggingEventId === targetEventId || result?.correct) return;
+
+    setOrderedEventIds((current) =>
+      moveItem(
+        current,
+        current.indexOf(draggingEventId),
+        current.indexOf(targetEventId)
+      )
+    );
+    setResult(null);
+  }
+
+  function moveCard(eventId: string, direction: -1 | 1) {
+    if (result?.correct) return;
+
+    setOrderedEventIds((current) => {
+      const currentIndex = current.indexOf(eventId);
+      const nextIndex = currentIndex + direction;
+      return moveItem(current, currentIndex, nextIndex);
+    });
+    setResult(null);
+  }
+
+  function getCardResultClass(eventId: string, index: number) {
+    if (!result) return "bg-slate-950 border-slate-600 text-white";
+    return correctIds[index] === eventId
+      ? "bg-green-500 border-green-300 text-white"
+      : "bg-red-900 border-red-500 text-white";
   }
 
   return (
@@ -164,76 +190,82 @@ export default function TimeFlowGame() {
           <p className="text-sm text-slate-300 leading-relaxed">{challenge.description}</p>
         </section>
 
-        <section className="mb-4">
-          <h2 className="font-bold mb-2">あなたの歴史の流れ</h2>
-          <div className="space-y-2">
-            {Array.from({ length: challengeEvents.length }).map((_, index) => {
-              const event = selectedEvents[index];
+        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+          <h2 className="font-bold mb-2">歴史カードを並び替え</h2>
+          <p className="text-xs text-slate-400 leading-relaxed mb-3">
+            カードをドラッグして、古い出来事から順番に並べてください。スマホで動かしにくい場合は、カード右下の上下ボタンでも調整できます。
+          </p>
 
-              return (
-                <button
-                  key={`${challenge.id}-slot-${index}`}
-                  type="button"
-                  onClick={() => event && removeSelectedEvent(event.id)}
-                  className={`w-full text-left rounded-2xl p-3 border ${
-                    event
-                      ? "bg-blue-500 border-blue-300 text-white"
-                      : "bg-slate-800 border-dashed border-slate-600 text-slate-400"
-                  }`}
-                >
-                  <span className="text-xs font-bold mr-2">{index + 1}</span>
-                  {event ? (
-                    <>
-                      <span className="font-bold">{event.title}</span>
-                      <span className="block text-xs opacity-90 mt-1">
-                        タップで外す
-                      </span>
-                    </>
-                  ) : (
-                    <span>カードを選択</span>
-                  )}
-                </button>
-              );
-            })}
+          <div className="space-y-3">
+            {orderedEvents.map((event, index) => (
+              <article
+                key={event.id}
+                draggable={!result?.correct}
+                onDragStart={() => setDraggingEventId(event.id)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => reorderByDrag(event.id)}
+                onDragEnd={() => setDraggingEventId(null)}
+                className={`rounded-2xl p-3 border active:scale-[0.99] ${getCardResultClass(
+                  event.id,
+                  index
+                )}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-400 bg-white/10 text-[10px] font-bold text-slate-200">
+                    画像枠
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-xs font-bold text-slate-300">{index + 1}</p>
+                        <h3 className="font-bold leading-snug">{event.title}</h3>
+                      </div>
+
+                      {result && (
+                        <span className="shrink-0 rounded-full bg-yellow-300 px-2 py-1 text-xs font-bold text-black">
+                          {event.year}年
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-xs leading-relaxed opacity-90 mt-1">{event.shortText}</p>
+
+                    {result && (
+                      <div className="mt-3 rounded-xl bg-white/15 p-3 text-xs leading-relaxed">
+                        <p className="font-bold mb-1">解説枠</p>
+                        <p>
+                          解説サンプル：{event.title}は、時代の流れを考えるうえで重要な出来事です。ここに各カードごとの解説を追加できます。
+                        </p>
+                      </div>
+                    )}
+
+                    {!result?.correct && (
+                      <div className="mt-3 flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => moveCard(event.id, -1)}
+                          disabled={index === 0}
+                          className="rounded-lg bg-slate-700 px-3 py-1 text-xs font-bold text-white disabled:opacity-30"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveCard(event.id, 1)}
+                          disabled={index === orderedEvents.length - 1}
+                          className="rounded-lg bg-slate-700 px-3 py-1 text-xs font-bold text-white disabled:opacity-30"
+                        >
+                          ↓
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
         </section>
-
-        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <h2 className="font-bold mb-3">歴史カード</h2>
-          {remainingEvents.length === 0 ? (
-            <p className="text-sm text-slate-400">すべてのカードを歴史の流れに入れたよ。</p>
-          ) : (
-            <div className="space-y-2">
-              {remainingEvents.map((event) => (
-                <button
-                  key={event.id}
-                  type="button"
-                  onClick={() => selectEvent(event.id)}
-                  className="w-full text-left bg-slate-950 rounded-2xl p-3 border border-slate-600 active:scale-[0.99]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-bold">{event.title}</p>
-                      <p className="text-xs text-slate-300 leading-relaxed mt-1">
-                        {event.shortText}
-                      </p>
-                    </div>
-                    <span className="text-xs bg-yellow-300 text-black px-2 py-1 rounded-full font-bold whitespace-nowrap">
-                      {event.era}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {showHint && (
-          <section className="bg-yellow-100 text-black rounded-2xl p-4 mb-4">
-            <h2 className="font-bold mb-2">TimeFlow ヒント</h2>
-            <p className="text-sm leading-relaxed">{challenge.hint}</p>
-          </section>
-        )}
 
         {result && (
           <section
@@ -245,19 +277,6 @@ export default function TimeFlowGame() {
               {result.correct ? "正解！" : "もう一度チャレンジ"}
             </h2>
             <p className="text-sm leading-relaxed">{result.message}</p>
-
-            {result.correct && (
-              <div className="mt-3 bg-white/15 rounded-xl p-3">
-                <p className="text-sm font-bold mb-2">正しい歴史の流れ</p>
-                <ol className="space-y-1 text-sm">
-                  {getCorrectOrder(challengeEvents).map((event) => (
-                    <li key={`${event.id}-answer`}>
-                      {event.year}年：{event.title}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
           </section>
         )}
 
@@ -271,17 +290,18 @@ export default function TimeFlowGame() {
           </button>
           <button
             type="button"
-            onClick={() => setShowHint((current) => !current)}
-            className="bg-slate-700 text-white py-3 rounded-xl font-bold"
-          >
-            {showHint ? "ヒントを隠す" : "ヒント"}
-          </button>
-          <button
-            type="button"
             onClick={resetChallenge}
             className="bg-slate-700 text-white py-3 rounded-xl font-bold"
           >
             リセット
+          </button>
+          <button
+            type="button"
+            onClick={goToPreviousChallenge}
+            disabled={challengeIndex === 0}
+            className="bg-slate-700 text-white py-3 rounded-xl font-bold disabled:opacity-30"
+          >
+            前へ
           </button>
           <button
             type="button"
@@ -298,23 +318,35 @@ export default function TimeFlowGame() {
         </div>
 
         <section className="bg-slate-800 rounded-2xl p-4">
-          <h2 className="font-bold mb-3">チャレンジ選択</h2>
-          <div className="space-y-2">
-            {timeFlowChallenges.map((item, index) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => chooseChallenge(index)}
-                className={`w-full text-left px-3 py-3 rounded-xl font-bold ${
-                  index === challengeIndex
-                    ? "bg-blue-500 text-white"
-                    : "bg-slate-700 text-slate-200"
-                }`}
-              >
-                {clearedChallengeIds.includes(item.id) ? "✅ " : ""}
-                {item.title}
-              </button>
-            ))}
+          <h2 className="font-bold mb-3">チャレンジ移動</h2>
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-slate-950 p-3 border border-slate-600">
+            <button
+              type="button"
+              onClick={goToPreviousChallenge}
+              disabled={challengeIndex === 0}
+              className="rounded-xl bg-slate-700 px-3 py-2 text-sm font-bold disabled:opacity-30"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              onClick={() => chooseChallenge((challengeIndex + 1) % timeFlowChallenges.length)}
+              className="min-w-0 flex-1 text-center"
+            >
+              <span className="block text-xs text-slate-400">現在のチャレンジ</span>
+              <span className="block text-lg font-bold text-white">
+                {challengeIndex + 1}/{timeFlowChallenges.length}
+              </span>
+              <span className="block truncate text-sm text-slate-300">{challenge.title}</span>
+            </button>
+            <button
+              type="button"
+              onClick={goToNextChallenge}
+              disabled={isLastChallenge}
+              className="rounded-xl bg-slate-700 px-3 py-2 text-sm font-bold disabled:opacity-30"
+            >
+              ＋
+            </button>
           </div>
         </section>
       </div>
