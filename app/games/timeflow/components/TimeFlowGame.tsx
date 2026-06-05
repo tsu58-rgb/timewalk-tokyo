@@ -155,43 +155,63 @@ export default function TimeFlowGame() {
       : "bg-red-900 border-red-500 text-white";
   }
 
-  function renderTopicSelector() {
+  function renderTopicCard() {
     return (
-      <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-        <h2 className="font-bold mb-3">お題選択</h2>
-        <div className="rounded-2xl bg-slate-950 p-4 border border-slate-600">
-          <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className="text-xs bg-yellow-300 text-black px-2 py-1 rounded-full font-bold">
-              {difficultyLabels[challenge.difficulty]}
-            </span>
-            <span className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full font-bold">
-              {challengeIndex + 1}/{timeFlowChallenges.length}問目
-            </span>
-          </div>
+      <section className="rounded-2xl bg-slate-800 p-4 mb-4">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <span className="text-xs bg-yellow-300 text-black px-2 py-1 rounded-full font-bold">
+            {difficultyLabels[challenge.difficulty]}
+          </span>
+          <span className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full font-bold">
+            {challengeIndex + 1}/{timeFlowChallenges.length}問目
+          </span>
+        </div>
 
-          <h3 className="text-xl font-bold mb-2">{challenge.title}</h3>
-          <p className="text-sm text-slate-300 leading-relaxed mb-4">{challenge.description}</p>
+        <h2 className="text-xl font-bold mb-2">{challenge.title}</h2>
+        <p className="text-sm text-slate-300 leading-relaxed mb-4">{challenge.description}</p>
 
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={goToPreviousChallenge}
-              disabled={challengeIndex === 0}
-              className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30"
-            >
-              前のお題
-            </button>
-            <button
-              type="button"
-              onClick={goToNextChallenge}
-              disabled={isLastChallenge}
-              className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30"
-            >
-              次のお題
-            </button>
-          </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={goToPreviousChallenge}
+            disabled={challengeIndex === 0}
+            className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30"
+          >
+            前のお題
+          </button>
+          <button
+            type="button"
+            onClick={goToNextChallenge}
+            disabled={isLastChallenge}
+            className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30"
+          >
+            次のお題
+          </button>
         </div>
       </section>
+    );
+  }
+
+  function renderBottomTopicButtons() {
+    return (
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={goToPreviousChallenge}
+          disabled={challengeIndex === 0}
+          className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30"
+        >
+          前のお題
+        </button>
+        <button
+          type="button"
+          onClick={goToNextChallenge}
+          disabled={isLastChallenge}
+          className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30"
+        >
+          次のお題
+        </button>
+      </div>
     );
   }
 
@@ -239,7 +259,7 @@ export default function TimeFlowGame() {
           </div>
         </section>
 
-        {renderTopicSelector()}
+        {renderTopicCard()}
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
           <h2 className="font-bold mb-2">歴史カードを並び替え</h2>
@@ -318,19 +338,6 @@ export default function TimeFlowGame() {
           </div>
         </section>
 
-        {result && (
-          <section
-            className={`rounded-2xl p-4 mb-4 ${
-              result.correct ? "bg-green-500 text-white" : "bg-red-900 text-white"
-            }`}
-          >
-            <h2 className="font-bold mb-2">
-              {result.correct ? "正解！" : "もう一度チャレンジ"}
-            </h2>
-            <p className="text-sm leading-relaxed">{result.message}</p>
-          </section>
-        )}
-
         <button
           type="button"
           onClick={checkAnswer}
@@ -339,7 +346,7 @@ export default function TimeFlowGame() {
           答え合わせ
         </button>
 
-        {renderTopicSelector()}
+        {renderBottomTopicButtons()}
       </div>
     </main>
   );
