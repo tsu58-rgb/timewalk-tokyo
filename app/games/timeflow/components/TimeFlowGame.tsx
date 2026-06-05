@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { timeFlowChallenges } from "@/data/games/timeflow/challenges";
 import { historyEvents } from "@/data/history/events";
+import { getHistoryCardImage } from "@/lib/historyCards";
 import type { TimeFlowChallenge } from "@/types/games";
 import type { HistoryEvent } from "@/types/history";
 
@@ -37,12 +38,84 @@ function getCorrectOrder(events: HistoryEvent[]) {
   return [...events].sort((a, b) => a.year - b.year);
 }
 
+function HistoryCardImage({ event }: { event: HistoryEvent }) {
+  const image = getHistoryCardImage(event);
+
+  return (
+    <div
+      role="img"
+      aria-label={image.alt}
+      className="h-24 w-full rounded-xl border border-white/20 bg-slate-900 bg-cover bg-center"
+      style={{ backgroundImage: `url("${image.src}")` }}
+    />
+  );
+}
+
+function HistoryCardFront({ event }: { event: HistoryEvent }) {
+  return (
+    <div className="space-y-2">
+      <HistoryCardImage event={event} />
+      <div>
+        <p className="font-bold leading-tight">{event.title}</p>
+        <p className="text-xs text-slate-300 leading-relaxed mt-1">{event.shortText}</p>
+      </div>
+    </div>
+  );
+}
+
+function HistoryCardBack({ event }: { event: HistoryEvent }) {
+  return (
+    <div className="space-y-2">
+      <div className="rounded-xl border border-yellow-300/50 bg-yellow-300 text-black p-3 text-center">
+        <p className="text-xs font-bold">カード裏面</p>
+        <p className="text-2xl font-black">{event.year}年</p>
+      </div>
+      <div>
+        <p className="font-bold leading-tight">{event.title}</p>
+        <p className="text-xs text-slate-200 leading-relaxed mt-1">{event.description}</p>
+      </div>
+    </div>
+  );
+}
+
+function HistoryCard({
+  event,
+  side,
+  onClick,
+  disabled,
+  label,
+}: {
+  event: HistoryEvent;
+  side: "front" | "back";
+  onClick?: () => void;
+  disabled?: boolean;
+  label?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || !onClick}
+      className={`w-full text-left rounded-2xl p-3 border transition active:scale-[0.99] ${
+        side === "back"
+          ? "bg-slate-900 border-yellow-300/70 text-white"
+          : "bg-slate-950 border-slate-600 text-white"
+      } ${onClick ? "hover:border-blue-300" : "cursor-default"}`}
+    >
+      {label && <p className="text-xs font-bold text-blue-200 mb-2">{label}</p>}
+      {side === "back" ? <HistoryCardBack event={event} /> : <HistoryCardFront event={event} />}
+    </button>
+  );
+}
+
 export default function TimeFlowGame() {
   const [challengeIndex, setChallengeIndex] = useState(0);
   const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
-  const [showHint, setShowHint] = useState(false);
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [clearedChallengeIds, setClearedChallengeIds] = useState<string[]>([]);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<TimeFlowChallenge["difficulty"] | "all">(
+    "all"
+  );
 
   const challenge = timeFlowChallenges[challengeIndex];
 
@@ -56,6 +129,14 @@ export default function TimeFlowGame() {
     [challengeEvents, challengeIndex]
   );
 
+  const filteredChallenges = useMemo(
+    () =>
+      selectedDifficulty === "all"
+        ? timeFlowChallenges
+        : timeFlowChallenges.filter((item) => item.difficulty === selectedDifficulty),
+    [selectedDifficulty]
+  );
+
   const selectedEvents = selectedEventIds
     .map((id) => challengeEvents.find((event) => event.id === id))
     .filter((event): event is HistoryEvent => Boolean(event));
@@ -65,16 +146,17 @@ export default function TimeFlowGame() {
   );
 
   const isLastChallenge = challengeIndex === timeFlowChallenges.length - 1;
+  const answerRevealed = Boolean(result);
 
   function selectEvent(eventId: string) {
-    if (selectedEventIds.includes(eventId) || result?.correct) return;
+    if (selectedEventIds.includes(eventId) || result) return;
 
     setSelectedEventIds((current) => [...current, eventId]);
     setResult(null);
   }
 
   function removeSelectedEvent(eventId: string) {
-    if (result?.correct) return;
+    if (result) return;
 
     setSelectedEventIds((current) => current.filter((id) => id !== eventId));
     setResult(null);
@@ -82,7 +164,6 @@ export default function TimeFlowGame() {
 
   function resetChallenge() {
     setSelectedEventIds([]);
-    setShowHint(false);
     setResult(null);
   }
 
@@ -90,7 +171,7 @@ export default function TimeFlowGame() {
     if (selectedEventIds.length !== challengeEvents.length) {
       setResult({
         correct: false,
-        message: "まだ歴史の流れが完成していないよ。すべてのカードを選んでね。",
+        message: "まだ歴史の流れが完成していません。すべてのカードを選んでください。",
       });
       return;
     }
@@ -106,13 +187,12 @@ export default function TimeFlowGame() {
         correct: true,
         message: challenge.clearMessage,
       });
-      setShowHint(false);
       return;
     }
 
     setResult({
       correct: false,
-      message: "惜しい！年代の小さい出来事から順番に、歴史の流れを見直してみよう。",
+      message: "不正解です。カード裏面で年号と解説を確認して、もう一度挑戦してください。",
     });
   }
 
@@ -124,6 +204,11 @@ export default function TimeFlowGame() {
   function chooseChallenge(index: number) {
     setChallengeIndex(index);
     resetChallenge();
+  }
+
+  function chooseRandomChallenge() {
+    const nextIndex = (challengeIndex * 7 + clearedChallengeIds.length + 3) % timeFlowChallenges.length;
+    chooseChallenge(nextIndex === challengeIndex ? (nextIndex + 1) % timeFlowChallenges.length : nextIndex);
   }
 
   return (
@@ -155,7 +240,7 @@ export default function TimeFlowGame() {
             <div>
               <p className="text-sm text-yellow-300 font-bold mb-1">TimeFlow</p>
               <p className="text-sm text-slate-100 leading-relaxed">
-                {historyEvents.length}枚の歴史カードから出題。古い順に並べて、時代の流れをつかもう。
+                カード表面の説明と画像だけを見て、歴史カードを古い順に並べます。答え合わせ後にカード裏面で年号と解説を確認できます。
               </p>
             </div>
           </div>
@@ -169,6 +254,9 @@ export default function TimeFlowGame() {
             <span className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full font-bold">
               {challengeIndex + 1}/{timeFlowChallenges.length}問目
             </span>
+            <span className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full font-bold">
+              表面だけで挑戦
+            </span>
           </div>
 
           <h2 className="text-xl font-bold mb-2">{challenge.title}</h2>
@@ -181,29 +269,23 @@ export default function TimeFlowGame() {
             {Array.from({ length: challengeEvents.length }).map((_, index) => {
               const event = selectedEvents[index];
 
-              return (
-                <button
+              return event ? (
+                <HistoryCard
+                  key={`${challenge.id}-slot-${event.id}`}
+                  event={event}
+                  side={answerRevealed ? "back" : "front"}
+                  onClick={() => removeSelectedEvent(event.id)}
+                  disabled={answerRevealed}
+                  label={`${index + 1}番目${answerRevealed ? "・裏面" : "・タップで外す"}`}
+                />
+              ) : (
+                <div
                   key={`${challenge.id}-slot-${index}`}
-                  type="button"
-                  onClick={() => event && removeSelectedEvent(event.id)}
-                  className={`w-full text-left rounded-2xl p-3 border ${
-                    event
-                      ? "bg-blue-500 border-blue-300 text-white"
-                      : "bg-slate-800 border-dashed border-slate-600 text-slate-400"
-                  }`}
+                  className="w-full rounded-2xl p-4 border border-dashed border-slate-600 bg-slate-800 text-slate-400"
                 >
                   <span className="text-xs font-bold mr-2">{index + 1}</span>
-                  {event ? (
-                    <>
-                      <span className="font-bold">{event.title}</span>
-                      <span className="block text-xs opacity-90 mt-1">
-                        タップで外す
-                      </span>
-                    </>
-                  ) : (
-                    <span>カードを選択</span>
-                  )}
-                </button>
+                  カードを選択
+                </div>
               );
             })}
           </div>
@@ -212,39 +294,21 @@ export default function TimeFlowGame() {
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
           <h2 className="font-bold mb-3">歴史カード</h2>
           {remainingEvents.length === 0 ? (
-            <p className="text-sm text-slate-400">すべてのカードを歴史の流れに入れたよ。</p>
+            <p className="text-sm text-slate-400">すべてのカードを歴史の流れに入れました。</p>
           ) : (
             <div className="space-y-2">
               {remainingEvents.map((event) => (
-                <button
+                <HistoryCard
                   key={event.id}
-                  type="button"
+                  event={event}
+                  side="front"
                   onClick={() => selectEvent(event.id)}
-                  className="w-full text-left bg-slate-950 rounded-2xl p-3 border border-slate-600 active:scale-[0.99]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-bold">{event.title}</p>
-                      <p className="text-xs text-slate-300 leading-relaxed mt-1">
-                        {event.shortText}
-                      </p>
-                    </div>
-                    <span className="text-xs bg-yellow-300 text-black px-2 py-1 rounded-full font-bold whitespace-nowrap">
-                      {event.era}
-                    </span>
-                  </div>
-                </button>
+                  disabled={answerRevealed}
+                />
               ))}
             </div>
           )}
         </section>
-
-        {showHint && (
-          <section className="bg-yellow-100 text-black rounded-2xl p-4 mb-4">
-            <h2 className="font-bold mb-2">TimeFlow ヒント</h2>
-            <p className="text-sm leading-relaxed">{challenge.hint}</p>
-          </section>
-        )}
 
         {result && (
           <section
@@ -257,18 +321,19 @@ export default function TimeFlowGame() {
             </h2>
             <p className="text-sm leading-relaxed">{result.message}</p>
 
-            {result.correct && (
-              <div className="mt-3 bg-white/15 rounded-xl p-3">
-                <p className="text-sm font-bold mb-2">正しい歴史の流れ</p>
-                <ol className="space-y-1 text-sm">
-                  {getCorrectOrder(challengeEvents).map((event) => (
-                    <li key={`${event.id}-answer`}>
-                      {event.year}年：{event.title}
-                    </li>
-                  ))}
-                </ol>
+            <div className="mt-3 bg-white/15 rounded-xl p-3">
+              <p className="text-sm font-bold mb-2">正しい歴史の流れ</p>
+              <div className="space-y-2">
+                {getCorrectOrder(challengeEvents).map((event, index) => (
+                  <HistoryCard
+                    key={`${event.id}-answer`}
+                    event={event}
+                    side="back"
+                    label={`${index + 1}番目`}
+                  />
+                ))}
               </div>
-            )}
+            </div>
           </section>
         )}
 
@@ -276,16 +341,14 @@ export default function TimeFlowGame() {
           <button
             type="button"
             onClick={checkAnswer}
-            className="bg-yellow-300 text-black py-3 rounded-xl font-bold"
+            disabled={selectedEventIds.length !== challengeEvents.length || answerRevealed}
+            className={`py-3 rounded-xl font-bold ${
+              selectedEventIds.length === challengeEvents.length && !answerRevealed
+                ? "bg-yellow-300 text-black"
+                : "bg-slate-800 text-slate-500"
+            }`}
           >
             答え合わせ
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowHint((current) => !current)}
-            className="bg-slate-700 text-white py-3 rounded-xl font-bold"
-          >
-            {showHint ? "ヒントを隠す" : "ヒント"}
           </button>
           <button
             type="button"
@@ -293,6 +356,13 @@ export default function TimeFlowGame() {
             className="bg-slate-700 text-white py-3 rounded-xl font-bold"
           >
             リセット
+          </button>
+          <button
+            type="button"
+            onClick={chooseRandomChallenge}
+            className="bg-slate-700 text-white py-3 rounded-xl font-bold"
+          >
+            ランダム
           </button>
           <button
             type="button"
@@ -310,22 +380,50 @@ export default function TimeFlowGame() {
 
         <section className="bg-slate-800 rounded-2xl p-4">
           <h2 className="font-bold mb-3">チャレンジ選択</h2>
-          <div className="space-y-2">
-            {timeFlowChallenges.map((item, index) => (
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <button
+              type="button"
+              onClick={() => setSelectedDifficulty("all")}
+              className={`py-2 rounded-xl text-xs font-bold ${
+                selectedDifficulty === "all" ? "bg-blue-500 text-white" : "bg-slate-700 text-slate-200"
+              }`}
+            >
+              全部
+            </button>
+            {([1, 2, 3, 4, 5] as TimeFlowChallenge["difficulty"][]).map((difficulty) => (
               <button
-                key={item.id}
+                key={difficulty}
                 type="button"
-                onClick={() => chooseChallenge(index)}
-                className={`w-full text-left px-3 py-3 rounded-xl font-bold ${
-                  index === challengeIndex
+                onClick={() => setSelectedDifficulty(difficulty)}
+                className={`py-2 rounded-xl text-xs font-bold ${
+                  selectedDifficulty === difficulty
                     ? "bg-blue-500 text-white"
                     : "bg-slate-700 text-slate-200"
                 }`}
               >
-                {clearedChallengeIds.includes(item.id) ? "✅ " : ""}
-                {item.title}
+                Lv.{difficulty}
               </button>
             ))}
+          </div>
+          <div className="space-y-2">
+            {filteredChallenges.map((item) => {
+              const index = timeFlowChallenges.findIndex((challengeItem) => challengeItem.id === item.id);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => chooseChallenge(index)}
+                  className={`w-full text-left px-3 py-3 rounded-xl font-bold ${
+                    index === challengeIndex
+                      ? "bg-blue-500 text-white"
+                      : "bg-slate-700 text-slate-200"
+                  }`}
+                >
+                  {clearedChallengeIds.includes(item.id) ? "✅ " : ""}
+                  {item.title}
+                </button>
+              );
+            })}
           </div>
         </section>
       </div>

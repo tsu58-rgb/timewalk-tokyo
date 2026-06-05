@@ -8,6 +8,5 @@ export type TimeFlowChallenge = {
   description: string;
   difficulty: GameDifficulty;
   eventIds: HistoryEventId[];
-  hint: string;
   clearMessage: string;
 };
