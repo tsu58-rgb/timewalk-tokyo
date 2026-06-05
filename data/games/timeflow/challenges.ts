@@ -13,7 +13,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "taiho-code",
       "heijo-kyo",
     ],
-    clearMessage: "正解！607年から710年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-02",
@@ -27,7 +27,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "heian-kyo",
       "kukai-shingon",
     ],
-    clearMessage: "正解！712年から816年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-03",
@@ -41,7 +41,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "hogen-rebellion",
       "heiji-rebellion",
     ],
-    clearMessage: "正解！939年から1159年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-04",
@@ -55,7 +55,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "kamakura-shogunate",
       "jokyu-war",
     ],
-    clearMessage: "正解！1167年から1221年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-05",
@@ -69,7 +69,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "kamakura-fall",
       "kenmu-restoration",
     ],
-    clearMessage: "正解！1232年から1334年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-06",
@@ -83,7 +83,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "onin-war",
       "ginkaku",
     ],
-    clearMessage: "正解！1338年から1489年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-07",
@@ -97,7 +97,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "muromachi-fall",
       "nagashino",
     ],
-    clearMessage: "正解！1543年から1575年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-08",
@@ -111,7 +111,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "sword-hunt",
       "odawara",
     ],
-    clearMessage: "正解！1576年から1590年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-09",
@@ -125,7 +125,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "osaka-siege",
       "bukeshohatto",
     ],
-    clearMessage: "正解！1592年から1615年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-10",
@@ -139,7 +139,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "meireki-fire",
       "genroku-culture",
     ],
-    clearMessage: "正解！1635年から1688年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-11",
@@ -153,7 +153,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "tenmei-famine",
       "kansei-reforms",
     ],
-    clearMessage: "正解！1703年から1787年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-12",
@@ -167,7 +167,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "kanagawa-treaty",
       "ansei-treaties",
     ],
-    clearMessage: "正解！1800年から1858年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-13",
@@ -181,7 +181,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "meiji-restoration",
       "boshin-war",
     ],
-    clearMessage: "正解！1860年から1868年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-14",
@@ -195,7 +195,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "land-tax",
       "seinan-war",
     ],
-    clearMessage: "正解！1871年から1877年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-15",
@@ -209,7 +209,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "treaty-shimonoseki",
       "anglo-japanese",
     ],
-    clearMessage: "正解！1889年から1902年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-16",
@@ -223,7 +223,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "taisho-democracy",
       "ww1-japan",
     ],
-    clearMessage: "正解！1904年から1914年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-17",
@@ -237,7 +237,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "universal-suffrage",
       "showa-start",
     ],
-    clearMessage: "正解！1918年から1926年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-18",
@@ -251,7 +251,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "sino-japanese-war-1937",
       "pacific-war",
     ],
-    clearMessage: "正解！1931年から1941年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-19",
@@ -265,7 +265,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "san-francisco",
       "sovereignty-restored",
     ],
-    clearMessage: "正解！1945年から1952年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-20",
@@ -279,7 +279,7 @@ export const timeFlowChallenges: TimeFlowChallenge[] = [
       "osaka-expo",
       "okinawa-return",
     ],
-    clearMessage: "正解！1956年から1972年までの流れをつかめたね。",
+    clearMessage: "正解！説明と画像だけで歴史の流れをつかめました。",
   },
   {
     id: "timeflow-review-1",

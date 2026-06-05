@@ -240,7 +240,7 @@ export default function TimeFlowGame() {
             <div>
               <p className="text-sm text-yellow-300 font-bold mb-1">TimeFlow</p>
               <p className="text-sm text-slate-100 leading-relaxed">
-                表面の説明と画像だけを見て、歴史カードを古い順に並べます。答え合わせ後に裏面の年号と解説を確認できます。
+                カード表面の説明と画像だけを見て、歴史カードを古い順に並べます。答え合わせ後にカード裏面で年号と解説を確認できます。
               </p>
             </div>
           </div>
@@ -255,7 +255,7 @@ export default function TimeFlowGame() {
               {challengeIndex + 1}/{timeFlowChallenges.length}問目
             </span>
             <span className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full font-bold">
-              年号非表示
+              表面だけで挑戦
             </span>
           </div>
 
