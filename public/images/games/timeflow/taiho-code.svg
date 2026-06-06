@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="大宝律令が完成のイメージ画像">
+  <rect width="400" height="400" fill="#fef3c7"/>
+  <path d="M35 95 H365 V330 H35 Z" fill="#fed7aa" stroke="#92400e" stroke-width="10"/>
+  <path d="M55 115 H345 V150 H55 Z" fill="#b45309" opacity=".85"/>
+  <circle cx="205" cy="90" r="28" fill="#111827"/>
+  <path d="M165 152 C170 116 198 102 226 116 C254 130 264 158 258 190 H160 Z" fill="#ca8a04"/>
+  <path d="M150 190 H270 L292 302 H128 Z" fill="#eab308"/>
+  <rect x="92" y="236" width="216" height="82" rx="8" fill="#fffbeb" stroke="#a16207" stroke-width="5"/>
+  <path d="M125 258 H275 M125 278 H275 M125 298 H238" stroke="#92400e" stroke-width="5" stroke-linecap="round"/>
+  <rect x="67" y="186" width="70" height="116" rx="10" fill="#f5deb3" stroke="#92400e" stroke-width="5"/>
+  <path d="M90 210 H118 M90 232 H118 M90 254 H118" stroke="#92400e" stroke-width="4"/>
+  <rect x="275" y="176" width="60" height="126" rx="10" fill="#f5deb3" stroke="#92400e" stroke-width="5"/>
+  <path d="M292 205 H318 M292 229 H318 M292 253 H318" stroke="#92400e" stroke-width="4"/>
+  <path d="M183 229 L220 204" stroke="#111827" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="224" cy="201" r="8" fill="#111827"/>
+</svg>
