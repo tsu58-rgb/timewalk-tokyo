@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import { kenteiQuestions } from "@/data/kentei/questions";
 import type { KenteiLevel, KenteiQuestion } from "@/types/kentei";
-
-const SESSION_QUESTION_COUNT = 10;
 
 const levelLabels: Record<KenteiLevel, string> = {
   1: "レベル1 入門",
@@ -14,13 +12,6 @@ const levelLabels: Record<KenteiLevel, string> = {
   3: "レベル3 標準",
   4: "レベル4 発展",
   5: "レベル5 達人",
-};
-
-type QuizPhase = "start" | "quiz" | "results";
-
-type QuestionResponse = {
-  answer: string;
-  correct: boolean;
 };
 
 function normalizeAnswer(value: string) {
@@ -32,104 +23,56 @@ function isCorrect(question: KenteiQuestion, answer: string) {
   return answers.some((item) => normalizeAnswer(item) === normalizeAnswer(answer));
 }
 
-function shuffle<T>(items: readonly T[]) {
-  const shuffled = [...items];
-
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
-  }
-
-  return shuffled;
-}
-
-function createSessionQuestions(allQuestions: KenteiQuestion[]) {
-  return shuffle(allQuestions)
-    .slice(0, SESSION_QUESTION_COUNT)
-    .map((question) => ({
-      ...question,
-      choices: question.choices ? shuffle(question.choices) : undefined,
-    }));
-}
-
 export default function KenteiQuiz() {
-  const [phase, setPhase] = useState<QuizPhase>("start");
-  const [sessionQuestions, setSessionQuestions] = useState<KenteiQuestion[]>([]);
+  const [selectedLevel, setSelectedLevel] = useState<KenteiLevel | "all">("all");
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [draftAnswers, setDraftAnswers] = useState<Record<string, string>>({});
-  const [responses, setResponses] = useState<Record<string, QuestionResponse>>({});
+  const [answer, setAnswer] = useState("");
+  const [checked, setChecked] = useState(false);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [answeredQuestionIds, setAnsweredQuestionIds] = useState<string[]>([]);
 
-  const question = sessionQuestions[questionIndex];
-  const answer = question ? (draftAnswers[question.id] ?? "") : "";
-  const response = question ? responses[question.id] : undefined;
-  const checked = response !== undefined;
-  const correctCount = Object.values(responses).filter((item) => item.correct).length;
-  const scoreRate =
-    sessionQuestions.length > 0
-      ? Math.round((correctCount / sessionQuestions.length) * 100)
-      : 0;
+  const questions = useMemo(() => {
+    const filtered =
+      selectedLevel === "all"
+        ? kenteiQuestions
+        : kenteiQuestions.filter((question) => question.level === selectedLevel);
+    return filtered;
+  }, [selectedLevel]);
 
-  function startQuiz() {
-    const questions = createSessionQuestions(kenteiQuestions);
-    setSessionQuestions(questions);
+  const question = questions[questionIndex];
+  const currentCorrect = question ? isCorrect(question, answer) : false;
+  const progressText = `${Math.min(questionIndex + 1, questions.length)}/${questions.length}`;
+
+  function resetQuiz(nextLevel = selectedLevel) {
+    setSelectedLevel(nextLevel);
     setQuestionIndex(0);
-    setDraftAnswers({});
-    setResponses({});
-    setPhase(questions.length > 0 ? "quiz" : "start");
+    setAnswer("");
+    setChecked(false);
+    setCorrectCount(0);
+    setAnsweredQuestionIds([]);
   }
 
-  function endQuiz() {
-    setPhase("start");
-    setSessionQuestions([]);
-    setQuestionIndex(0);
-    setDraftAnswers({});
-    setResponses({});
-  }
+  function checkAnswer() {
+    if (!question || checked || !answer.trim()) return;
 
-  function updateDraftAnswer(value: string) {
-    if (!question || checked) return;
+    if (isCorrect(question, answer)) {
+      setCorrectCount((current) => current + 1);
+    }
 
-    setDraftAnswers((current) => ({
-      ...current,
-      [question.id]: value,
-    }));
-  }
-
-  function checkAnswer(nextAnswer = answer) {
-    if (!question || checked || !nextAnswer.trim()) return;
-
-    setDraftAnswers((current) => ({
-      ...current,
-      [question.id]: nextAnswer,
-    }));
-    setResponses((current) => ({
-      ...current,
-      [question.id]: {
-        answer: nextAnswer,
-        correct: isCorrect(question, nextAnswer),
-      },
-    }));
-  }
-
-  function selectChoice(choice: string) {
-    if (checked) return;
-    checkAnswer(choice);
-  }
-
-  function previousQuestion() {
-    setQuestionIndex((current) => Math.max(current - 1, 0));
+    setAnsweredQuestionIds((current) =>
+      current.includes(question.id) ? current : [...current, question.id]
+    );
+    setChecked(true);
   }
 
   function nextQuestion() {
-    if (!checked) return;
-
-    if (questionIndex >= sessionQuestions.length - 1) {
-      setPhase("results");
-      return;
-    }
-
-    setQuestionIndex((current) => current + 1);
+    setQuestionIndex((current) => Math.min(current + 1, questions.length));
+    setAnswer("");
+    setChecked(false);
   }
+
+  const finished = questionIndex >= questions.length;
+  const scoreRate = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
 
   return (
     <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
@@ -142,48 +85,61 @@ export default function KenteiQuiz() {
           <p className="text-xs text-slate-300 mb-1">Yuru Rekishi Sanpo</p>
           <h1 className="text-2xl font-bold">ゆる歴史散歩検定</h1>
           <p className="text-sm text-slate-300 leading-relaxed mt-3">
-            全{kenteiQuestions.length}問からランダムに選ばれた10問に挑戦しよう。
+            {kenteiQuestions.length}問の歴史問題に挑戦できます。難易度を選ぶとレベル別に練習できます。
           </p>
         </header>
 
-        {phase === "start" ? (
-          <section className="bg-slate-800 rounded-2xl p-5 border border-slate-700 text-center">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-yellow-300 text-3xl">
-              問
-            </div>
-            <h2 className="text-xl font-bold mb-2">10問検定に挑戦</h2>
-            <p className="text-sm text-slate-300 leading-relaxed mb-5">
-              開始するたびに、読み込んだ全問題から新しく10問を選んで出題する。
-            </p>
+        <section className="bg-slate-800 rounded-2xl p-4 mb-4 border border-slate-700">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <h2 className="font-bold">難易度</h2>
+            <span className="text-xs bg-yellow-300 text-black px-2 py-1 rounded-full font-bold">
+              全{kenteiQuestions.length}問
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={startQuiz}
-              disabled={kenteiQuestions.length === 0}
-              className="w-full bg-yellow-300 text-black py-3 rounded-xl font-bold disabled:bg-slate-700 disabled:text-slate-400"
+              onClick={() => resetQuiz("all")}
+              className={`py-2 rounded-xl text-sm font-bold ${
+                selectedLevel === "all" ? "bg-blue-500 text-white" : "bg-slate-700 text-slate-200"
+              }`}
             >
-              開始
+              全レベル
             </button>
-          </section>
-        ) : phase === "results" ? (
-          <section className="bg-slate-800 rounded-2xl p-5 mb-4 text-center">
-            <h2 className="text-xl font-bold mb-4">結果発表</h2>
-            <p className="text-sm text-slate-300 mb-1">正解数</p>
-            <p className="text-4xl font-bold text-yellow-300 mb-3">{correctCount}問</p>
-            <p className="text-lg font-bold mb-1">
-              {sessionQuestions.length}問中{correctCount}問正解
+            {([1, 2, 3, 4, 5] as KenteiLevel[]).map((level) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => resetQuiz(level)}
+                className={`py-2 rounded-xl text-sm font-bold ${
+                  selectedLevel === level ? "bg-blue-500 text-white" : "bg-slate-700 text-slate-200"
+                }`}
+              >
+                Lv.{level}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {finished ? (
+          <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+            <h2 className="text-xl font-bold mb-2">結果発表</h2>
+            <p className="text-3xl font-bold text-yellow-300 mb-2">
+              {correctCount}/{questions.length}問 正解
             </p>
             <p className="text-sm text-slate-300 mb-4">正答率 {scoreRate}%</p>
-            <p className="text-sm leading-relaxed mb-5">
+            <p className="text-sm leading-relaxed mb-4">
               {scoreRate >= 80
                 ? "合格！ゆる歴史散歩マスターに近づいています。"
                 : "もう一度挑戦して、解説を読みながら復習してみよう。"}
             </p>
             <button
               type="button"
-              onClick={endQuiz}
+              onClick={() => resetQuiz()}
               className="w-full bg-yellow-300 text-black py-3 rounded-xl font-bold"
             >
-              初期画面へ
+              もう一度挑戦
             </button>
           </section>
         ) : question ? (
@@ -197,7 +153,7 @@ export default function KenteiQuiz() {
                   {question.format === "choice" ? "選択式" : "入力式"}
                 </span>
                 <span className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full font-bold">
-                  {sessionQuestions.length}問中{questionIndex + 1}問目
+                  {progressText}
                 </span>
               </div>
 
@@ -212,9 +168,8 @@ export default function KenteiQuiz() {
                     <button
                       key={choice}
                       type="button"
-                      onClick={() => selectChoice(choice)}
-                      disabled={checked}
-                      className={`w-full text-left px-4 py-3 rounded-xl font-bold border disabled:cursor-default ${
+                      onClick={() => !checked && setAnswer(choice)}
+                      className={`w-full text-left px-4 py-3 rounded-xl font-bold border ${
                         answer === choice
                           ? "bg-blue-500 text-white border-blue-300"
                           : "bg-slate-950 text-slate-200 border-slate-600"
@@ -227,7 +182,7 @@ export default function KenteiQuiz() {
               ) : (
                 <input
                   value={answer}
-                  onChange={(event) => updateDraftAnswer(event.target.value)}
+                  onChange={(event) => setAnswer(event.target.value)}
                   disabled={checked}
                   placeholder="答えを入力"
                   className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-600 text-white"
@@ -238,37 +193,26 @@ export default function KenteiQuiz() {
             {checked && (
               <section
                 className={`rounded-2xl p-4 mb-4 ${
-                  response.correct ? "bg-green-500 text-white" : "bg-red-900 text-white"
+                  currentCorrect ? "bg-green-500 text-white" : "bg-red-900 text-white"
                 }`}
               >
-                <h2 className="font-bold mb-2">{response.correct ? "正解！" : "不正解"}</h2>
+                <h2 className="font-bold mb-2">{currentCorrect ? "正解！" : "不正解"}</h2>
                 <p className="text-sm leading-relaxed">{question.explanation}</p>
               </section>
             )}
 
-            {question.format === "input" && (
+            <div className="grid grid-cols-2 gap-2 mb-4">
               <button
                 type="button"
-                onClick={() => checkAnswer()}
+                onClick={checkAnswer}
                 disabled={checked || !answer.trim()}
-                className={`w-full py-3 rounded-xl font-bold mb-2 ${
+                className={`py-3 rounded-xl font-bold ${
                   checked || !answer.trim()
                     ? "bg-slate-800 text-slate-500"
                     : "bg-yellow-300 text-black"
                 }`}
               >
                 答え合わせ
-              </button>
-            )}
-
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <button
-                type="button"
-                onClick={previousQuestion}
-                disabled={questionIndex === 0}
-                className="py-3 rounded-xl bg-slate-700 font-bold disabled:bg-slate-800 disabled:text-slate-500"
-              >
-                前へ
               </button>
               <button
                 type="button"
@@ -278,23 +222,15 @@ export default function KenteiQuiz() {
                   checked ? "bg-blue-500 text-white" : "bg-slate-800 text-slate-500"
                 }`}
               >
-                {questionIndex === sessionQuestions.length - 1 ? "結果を見る" : "次へ"}
+                次へ
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={endQuiz}
-              className="w-full py-3 rounded-xl border border-red-400 text-red-300 font-bold mb-4"
-            >
-              終了
-            </button>
-
-            <p className="text-xs text-slate-500 text-center">
-              回答済み：{Object.keys(responses).length}問 / 全{sessionQuestions.length}問
-            </p>
           </>
         ) : null}
+
+        <p className="text-xs text-slate-500 text-center">
+          回答済み：{answeredQuestionIds.length}問 / 表示中：{questions.length}問
+        </p>
       </div>
     </main>
   );
