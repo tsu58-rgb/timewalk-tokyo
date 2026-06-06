@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="平城京に都を移すのイメージ画像">
+  <rect width="400" height="400" fill="#bfdbfe"/>
+  <path d="M0 185 C75 150 125 165 185 130 C260 85 325 110 400 80 L400 400 L0 400 Z" fill="#86efac"/>
+  <path d="M45 120 H355 L340 155 H60 Z" fill="#92400e"/>
+  <path d="M75 155 H325 V235 H75 Z" fill="#fff7ed" stroke="#b45309" stroke-width="6"/>
+  <path d="M45 235 H355 L370 270 H30 Z" fill="#7c2d12"/>
+  <path d="M95 270 H305 V340 H95 Z" fill="#fed7aa" stroke="#b45309" stroke-width="6"/>
+  <path d="M0 342 H400 V400 H0 Z" fill="#eab308" opacity=".45"/>
+  <path d="M80 348 H320 M80 380 H320 M120 300 V400 M200 270 V400 M280 300 V400" stroke="#92400e" stroke-width="4" opacity=".65"/>
+  <rect x="35" y="300" width="54" height="45" fill="#fff7ed" stroke="#78350f" stroke-width="4"/>
+  <path d="M30 300 H94 L84 282 H40 Z" fill="#78350f"/>
+  <rect x="310" y="302" width="54" height="43" fill="#fff7ed" stroke="#78350f" stroke-width="4"/>
+  <path d="M305 302 H369 L359 284 H315 Z" fill="#78350f"/>
+  <circle cx="205" cy="360" r="12" fill="#1f2937"/>
+  <path d="M193 372 H217 L223 398 H187 Z" fill="#2563eb"/>
+  <circle cx="150" cy="365" r="10" fill="#1f2937"/>
+  <path d="M140 376 H160 L165 398 H135 Z" fill="#16a34a"/>
+</svg>
