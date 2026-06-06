@@ -326,7 +326,7 @@ export default function TimeFlowGame() {
                         </span>
                       )}
 
-                      {!result?.correct && (
+                      {!result && (
                         <>
                           <button
                             type="button"
