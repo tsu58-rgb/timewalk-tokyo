@@ -13,10 +13,7 @@ export type SpotQuiz = {
   memo?: string;
 };
 
-export const spotQuizzes: SpotQuiz[] = [
-  {
-    quizId: "quiz_tw_000000014_001",
-    spotId: "tw_000000014",
-    level: 1,
-    format: "choice",
-    question: "明治座の起源となった、明治6年（1873）に
+// TimeWalk検定の出題データは、Googleスプレッドシートの
+// spot_quizzes シートから読み込みます。
+// このファイルは過去の静的データ定義の互換用として残しています。
+export const spotQuizzes: SpotQuiz[] = [];
