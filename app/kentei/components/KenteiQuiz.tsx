@@ -17,4 +17,6 @@ type SpotQuiz = {
   isActive: boolean;
 };
 
-type QuizMode = "idle" | "
+type QuizMode = "idle" | "playing" | "finished";
+
+type Answer
