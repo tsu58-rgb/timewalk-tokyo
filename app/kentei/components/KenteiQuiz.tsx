@@ -19,4 +19,5 @@ type SpotQuiz = {
 
 type QuizMode = "idle" | "playing" | "finished";
 
-type Answer
+type AnswerRecord = {
+  quizId
