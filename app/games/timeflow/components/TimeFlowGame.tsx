@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type TouchEvent } from "react";
 import Link from "next/link";
 
 import { timeFlowChallenges } from "@/data/games/timeflow/challenges";
+import { timeFlowEventDetails } from "@/data/games/timeflow/eventDetails";
 import { historyEvents } from "@/data/history/events";
 import type { TimeFlowChallenge } from "@/types/games";
 import type { HistoryEvent } from "@/types/history";
@@ -288,80 +289,93 @@ export default function TimeFlowGame() {
           </p>
 
           <div className="space-y-3">
-            {orderedEvents.map((event, index) => (
-              <article
-                key={event.id}
-                data-event-id={event.id}
-                draggable={!result?.correct}
-                onDragStart={() => setDraggingEventId(event.id)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => reorderByDrag(event.id)}
-                onDragEnd={() => setDraggingEventId(null)}
-                onTouchStart={() => setDraggingEventId(event.id)}
-                onTouchMove={(e) => reorderByTouch(e, event.id)}
-                onTouchEnd={() => setDraggingEventId(null)}
-                className={`relative rounded-2xl p-3 border select-none transition-transform duration-150 ${
-                  draggingEventId === event.id
-                    ? "z-10 scale-[1.03] shadow-2xl shadow-black/70 ring-2 ring-yellow-300"
-                    : "active:scale-[0.99]"
-                } ${getCardResultClass(event.id, index)}`}
-              >
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex items-baseline gap-2">
-                    <span className="shrink-0 text-xs font-bold text-slate-300">{index + 1}</span>
-                    <h3 className="font-bold leading-snug">{event.title}</h3>
+            {orderedEvents.map((event, index) => {
+              const eventDetail = timeFlowEventDetails[event.id];
+              const imageUrl = eventDetail?.imageUrl ?? event.imageUrl;
+              const imageAlt = eventDetail?.imageAlt ?? event.imageAlt ?? event.title;
+              const detailText = eventDetail?.detailText ?? event.detailText ?? event.description;
+
+              return (
+                <article
+                  key={event.id}
+                  data-event-id={event.id}
+                  draggable={!result?.correct}
+                  onDragStart={() => setDraggingEventId(event.id)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => reorderByDrag(event.id)}
+                  onDragEnd={() => setDraggingEventId(null)}
+                  onTouchStart={() => setDraggingEventId(event.id)}
+                  onTouchMove={(e) => reorderByTouch(e, event.id)}
+                  onTouchEnd={() => setDraggingEventId(null)}
+                  className={`relative rounded-2xl p-3 border select-none transition-transform duration-150 ${
+                    draggingEventId === event.id
+                      ? "z-10 scale-[1.03] shadow-2xl shadow-black/70 ring-2 ring-yellow-300"
+                      : "active:scale-[0.99]"
+                  } ${getCardResultClass(event.id, index)}`}
+                >
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex items-baseline gap-2">
+                      <span className="shrink-0 text-xs font-bold text-slate-300">{index + 1}</span>
+                      <h3 className="font-bold leading-snug">{event.title}</h3>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-2">
+                      {result && (
+                        <span className="rounded-full bg-yellow-300 px-2 py-1 text-xs font-bold text-black">
+                          {event.year}年
+                        </span>
+                      )}
+
+                      {!result?.correct && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => moveCard(event.id, -1)}
+                            disabled={index === 0}
+                            className="rounded-lg bg-slate-700 px-3 py-1 text-xs font-bold text-white disabled:opacity-30"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveCard(event.id, 1)}
+                            disabled={index === orderedEvents.length - 1}
+                            className="rounded-lg bg-slate-700 px-3 py-1 text-xs font-bold text-white disabled:opacity-30"
+                          >
+                            ↓
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-2">
-                    {result && (
-                      <span className="rounded-full bg-yellow-300 px-2 py-1 text-xs font-bold text-black">
-                        {event.year}年
-                      </span>
-                    )}
-
-                    {!result?.correct && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => moveCard(event.id, -1)}
-                          disabled={index === 0}
-                          className="rounded-lg bg-slate-700 px-3 py-1 text-xs font-bold text-white disabled:opacity-30"
-                        >
-                          ↑
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moveCard(event.id, 1)}
-                          disabled={index === orderedEvents.length - 1}
-                          className="rounded-lg bg-slate-700 px-3 py-1 text-xs font-bold text-white disabled:opacity-30"
-                        >
-                          ↓
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-400 bg-white/10 text-[10px] font-bold text-slate-200">
-                    画像枠
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs leading-relaxed opacity-90">{event.shortText}</p>
-
-                    {result && (
-                      <div className="mt-3 rounded-xl bg-white/15 p-3 text-xs leading-relaxed">
-                        <p className="font-bold mb-1">解説枠</p>
-                        <p>
-                          解説サンプル：{event.title}は、時代の流れを考えるうえで重要な出来事です。ここに各カードごとの解説を追加できます。
-                        </p>
+                  <div className="flex items-start gap-3">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={imageAlt}
+                        className="h-16 w-16 shrink-0 rounded-xl border border-slate-600 bg-white/10 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-400 bg-white/10 text-[10px] font-bold text-slate-200">
+                        画像枠
                       </div>
                     )}
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs leading-relaxed opacity-90">{event.shortText}</p>
+
+                      {result && (
+                        <div className="mt-3 rounded-xl bg-white/15 p-3 text-xs leading-relaxed">
+                          <p className="font-bold mb-1">詳しい説明</p>
+                          <p>{detailText}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         </section>
 
