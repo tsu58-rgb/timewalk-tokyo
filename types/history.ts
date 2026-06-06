@@ -24,6 +24,9 @@ export type HistoryEvent = {
   era: HistoryEra;
   shortText: string;
   description: string;
+  detailText?: string;
+  imageUrl?: string;
+  imageAlt?: string;
   tags: string[];
   characterIds?: string[];
   card?: {
