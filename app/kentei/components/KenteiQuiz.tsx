@@ -40,10 +40,7 @@ const SPOT_QUIZZES_URL = `${BASE_URL}?gid=987654321&single=true&output=csv`;
 const SPOTS_URL = `${BASE_URL}?gid=1242477641&single=true&output=csv`;
 
 function parseCsvObjects(text: string) {
-  const parsed = Papa.parse<Record<string, string>>(text, {
-    header: true,
-    skipEmptyLines: true,
-  });
+  const parsed = Papa.parse<Record<string, string>>(text, { header: true, skipEmptyLines: true });
   return parsed.data;
 }
 
@@ -77,14 +74,9 @@ function convertRow(row: Record<string, string>): SpotQuiz | null {
     format: row.format?.trim() === "input" ? "input" : "choice",
     question,
     correctAnswer,
-    wrongAnswers: [
-      row.wrongAnswer1,
-      row.wrongAnswer2,
-      row.wrongAnswer3,
-      row.wrongAnswer4,
-      row.wrongAnswer5,
-      row.wrongAnswer6,
-    ].filter((item): item is string => Boolean(item?.trim())),
+    wrongAnswers: [row.wrongAnswer1, row.wrongAnswer2, row.wrongAnswer3, row.wrongAnswer4, row.wrongAnswer5, row.wrongAnswer6].filter(
+      (item): item is string => Boolean(item?.trim())
+    ),
     explanation: row.explanation?.trim() ?? "",
     sourceField: row.sourceField?.trim() ?? "",
     tags: row.tags?.trim() ?? "",
@@ -164,16 +156,12 @@ export default function KenteiQuiz() {
         ]);
         if (!quizResponse.ok) throw new Error(`spot_quizzesを取得できませんでした: ${quizResponse.status}`);
 
-        const questions = parseCsvObjects(await quizResponse.text())
-          .map(convertRow)
-          .filter((item): item is SpotQuiz => Boolean(item));
+        const questions = parseCsvObjects(await quizResponse.text()).map(convertRow).filter((item): item is SpotQuiz => Boolean(item));
         if (questions.length === 0) throw new Error("spot_quizzesに有効な問題がありません。");
         setAllQuestions(questions);
 
         if (spotsResponse.ok) {
-          const loadedSpots = parseCsvObjects(await spotsResponse.text())
-            .map(convertSpotRow)
-            .filter((item): item is SpotInfo => Boolean(item));
+          const loadedSpots = parseCsvObjects(await spotsResponse.text()).map(convertSpotRow).filter((item): item is SpotInfo => Boolean(item));
           setSpots(loadedSpots);
           setSpotMap(Object.fromEntries(loadedSpots.map((spot) => [spot.id, spot])));
         }
@@ -234,6 +222,59 @@ export default function KenteiQuiz() {
     setChecked(false);
   }
 
+  const answerArea = question && (
+    <div className="mt-5">
+      {question.format === "choice" ? (
+        <div className="space-y-2">
+          {choices.map((choice) => {
+            const isSelected = answer === choice;
+            const isCorrectChoice = isCorrect(question, choice);
+            return (
+              <button
+                key={choice}
+                type="button"
+                onClick={() => {
+                  if (!checked) {
+                    setAnswer(choice);
+                    recordAnswer(choice);
+                  }
+                }}
+                disabled={checked}
+                className={`w-full text-left px-4 py-3 rounded-xl font-bold border ${
+                  checked && isCorrectChoice
+                    ? "bg-green-500 text-white border-green-300"
+                    : checked && isSelected
+                      ? "bg-red-900 text-white border-red-500"
+                      : "bg-slate-950 text-slate-200 border-slate-600"
+                }`}
+              >
+                {choice}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <>
+          <input
+            value={answer}
+            onChange={(event) => setAnswer(event.target.value)}
+            disabled={checked}
+            placeholder="答えを入力"
+            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-600 text-white"
+          />
+          <button
+            type="button"
+            onClick={() => recordAnswer(answer)}
+            disabled={checked || !answer.trim()}
+            className={`mt-3 w-full py-3 rounded-xl font-bold ${checked || !answer.trim() ? "bg-slate-800 text-slate-500" : "bg-yellow-300 text-black"}`}
+          >
+            答え合わせ
+          </button>
+        </>
+      )}
+    </div>
+  );
+
   return (
     <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
       <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
@@ -264,34 +305,16 @@ export default function KenteiQuiz() {
               </div>
               <p className="text-xs text-slate-400 mb-2">カテゴリ：{category}</p>
               <h2 className="text-lg font-bold leading-relaxed">{question.question}</h2>
+              {answerArea}
             </section>
 
-            <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-              {question.format === "choice" ? (
-                <div className="space-y-2">
-                  {choices.map((choice) => {
-                    const isSelected = answer === choice;
-                    const isCorrectChoice = isCorrect(question, choice);
-                    return (
-                      <button key={choice} type="button" onClick={() => { if (!checked) { setAnswer(choice); recordAnswer(choice); } }} disabled={checked} className={`w-full text-left px-4 py-3 rounded-xl font-bold border ${checked && isCorrectChoice ? "bg-green-500 text-white border-green-300" : checked && isSelected ? "bg-red-900 text-white border-red-500" : "bg-slate-950 text-slate-200 border-slate-600"}`}>{choice}</button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <>
-                  <input value={answer} onChange={(event) => setAnswer(event.target.value)} disabled={checked} placeholder="答えを入力" className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-600 text-white" />
-                  <button type="button" onClick={() => recordAnswer(answer)} disabled={checked || !answer.trim()} className={`mt-3 w-full py-3 rounded-xl font-bold ${checked || !answer.trim() ? "bg-slate-800 text-slate-500" : "bg-yellow-300 text-black"}`}>答え合わせ</button>
-                </>
-              )}
-            </section>
-
-            <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+            <div className="mb-4">
               <div className="grid grid-cols-2 gap-2">
                 <button type="button" onClick={() => { setQuestionIndex((current) => Math.max(current - 1, 0)); setAnswer(""); setChecked(false); }} disabled={questionIndex === 0} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">前へ</button>
                 <button type="button" onClick={goToNextQuestion} disabled={!checked} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">次へ</button>
               </div>
               <button type="button" onClick={endQuiz} className="mt-2 w-full rounded-xl bg-slate-600 px-3 py-3 text-sm font-bold text-white">終了</button>
-            </section>
+            </div>
 
             {checked && (
               <section className={`rounded-2xl p-4 mb-4 ${currentCorrect ? "bg-green-500 text-white" : "bg-red-900 text-white"}`}>
