@@ -275,6 +275,16 @@ export default function KenteiQuiz() {
     </div>
   );
 
+  const navigationArea = (
+    <div className="mb-4">
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => { setQuestionIndex((current) => Math.max(current - 1, 0)); setAnswer(""); setChecked(false); }} disabled={questionIndex === 0} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">前へ</button>
+        <button type="button" onClick={goToNextQuestion} disabled={!checked} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">次へ</button>
+      </div>
+      <button type="button" onClick={endQuiz} className="mt-2 w-full rounded-xl bg-slate-600 px-3 py-3 text-sm font-bold text-white">終了</button>
+    </div>
+  );
+
   return (
     <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
       <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
@@ -308,14 +318,6 @@ export default function KenteiQuiz() {
               {answerArea}
             </section>
 
-            <div className="mb-4">
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => { setQuestionIndex((current) => Math.max(current - 1, 0)); setAnswer(""); setChecked(false); }} disabled={questionIndex === 0} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">前へ</button>
-                <button type="button" onClick={goToNextQuestion} disabled={!checked} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">次へ</button>
-              </div>
-              <button type="button" onClick={endQuiz} className="mt-2 w-full rounded-xl bg-slate-600 px-3 py-3 text-sm font-bold text-white">終了</button>
-            </div>
-
             {checked && (
               <section className={`rounded-2xl p-4 mb-4 ${currentCorrect ? "bg-green-500 text-white" : "bg-red-900 text-white"}`}>
                 <h2 className="font-bold mb-2">{currentCorrect ? "正解！" : "不正解"}</h2>
@@ -328,6 +330,8 @@ export default function KenteiQuiz() {
                 )}
               </section>
             )}
+
+            {navigationArea}
           </>
         )}
 
