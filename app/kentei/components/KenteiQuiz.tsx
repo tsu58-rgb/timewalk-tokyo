@@ -17,6 +17,11 @@ type SpotQuiz = {
   isActive: boolean;
 };
 
+type SpotInfo = {
+  id: string;
+  name: string;
+};
+
 type QuizMode = "idle" | "playing" | "finished";
 
 type AnswerRecord = {
@@ -27,6 +32,25 @@ type AnswerRecord = {
 
 const SPOT_QUIZZES_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=987654321&single=true&output=csv";
+
+const SPOTS_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=1242477641&single=true&output=csv";
+
+const QUIZ_CATEGORIES = [
+  "建築・文化施設",
+  "寺社・信仰",
+  "人物・文化",
+  "江戸・東京史",
+  "近代史",
+  "産業・交通",
+  "自然・地形",
+  "考古・遺跡",
+  "地名・地域史",
+  "年中行事・祭礼",
+  "地域史・史跡",
+] as const;
+
+type QuizCategory = (typeof QUIZ_CATEGORIES)[number];
 
 function parseCsv(text: string) {
   const rows: string[][] = [];
@@ -126,6 +150,61 @@ function convertRow(row: Record<string, string>): SpotQuiz | null {
   };
 }
 
+function convertSpotRow(row: Record<string, string>): SpotInfo | null {
+  const id = row.id?.trim();
+  const name = row.name?.trim();
+
+  if (!id || !name) return null;
+
+  return { id, name };
+}
+
+function getQuestionCategory(question: SpotQuiz): QuizCategory {
+  const text = `${question.question} ${question.sourceField} ${question.tags}`;
+
+  if (/寺|神社|社|宮|不動|稲荷|観音|地蔵|墓|霊園|信仰|祭神|本尊/.test(text)) {
+    return "寺社・信仰";
+  }
+
+  if (/竣工|建築|建物|館|博物館|美術館|邸|住宅|庁舎|橋|塔|重要文化財/.test(text)) {
+    return "建築・文化施設";
+  }
+
+  if (/人物|作家|歌人|俳人|学者|武将|藩主|将軍|銅像|生誕|終焉|ゆかり/.test(text)) {
+    return "人物・文化";
+  }
+
+  if (/江戸|幕府|徳川|大名|藩|宿場|街道|見附|御門|屋敷/.test(text)) {
+    return "江戸・東京史";
+  }
+
+  if (/明治|大正|昭和|近代|戦争|震災|復興|軍|師団|空襲/.test(text)) {
+    return "近代史";
+  }
+
+  if (/鉄道|駅|線路|橋梁|工場|産業|会社|創業|発祥|市場|水道|運河/.test(text)) {
+    return "産業・交通";
+  }
+
+  if (/川|池|山|谷|坂|崖|台地|湧水|樹|桜|梅|自然|庭園/.test(text)) {
+    return "自然・地形";
+  }
+
+  if (/古墳|遺跡|貝塚|土器|縄文|弥生|中世|城跡/.test(text)) {
+    return "考古・遺跡";
+  }
+
+  if (/地名|町名|村|由来|地域|丁目/.test(text)) {
+    return "地名・地域史";
+  }
+
+  if (/祭|祭礼|行事|年中行事|盆踊り|七夕|例大祭/.test(text)) {
+    return "年中行事・祭礼";
+  }
+
+  return "地域史・史跡";
+}
+
 function shuffle<T>(items: T[]) {
   const next = [...items];
 
@@ -149,6 +228,7 @@ function buildChoices(question: SpotQuiz) {
 export default function KenteiQuiz() {
   const [allQuestions, setAllQuestions] = useState<SpotQuiz[]>([]);
   const [sessionQuestions, setSessionQuestions] = useState<SpotQuiz[]>([]);
+  const [spotMap, setSpotMap] = useState<Record<string, SpotInfo>>({});
   const [mode, setMode] = useState<QuizMode>("idle");
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState("");
@@ -189,7 +269,30 @@ export default function KenteiQuiz() {
       }
     }
 
+    async function loadSpots() {
+      try {
+        const response = await fetch(`${SPOTS_URL}&cacheBust=${Date.now()}`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const csvText = await response.text();
+        const rows = csvToObjects(csvText);
+        const spots = rows
+          .map(convertSpotRow)
+          .filter((item): item is SpotInfo => Boolean(item));
+
+        setSpotMap(
+          Object.fromEntries(spots.map((spot) => [spot.id, spot]))
+        );
+      } catch (err) {
+        console.error("スポットデータの取得に失敗しました。", err);
+      }
+    }
+
     loadQuestions();
+    loadSpots();
   }, []);
 
   const question = sessionQuestions[questionIndex];
@@ -198,6 +301,8 @@ export default function KenteiQuiz() {
   const correctCount = answerRecords.filter((record) => record.correct).length;
   const scoreRate =
     sessionQuestions.length > 0 ? Math.round((correctCount / sessionQuestions.length) * 100) : 0;
+  const relatedSpot = question?.spotId ? spotMap[question.spotId] : undefined;
+  const category = question ? getQuestionCategory(question) : "地域史・史跡";
 
   function startQuiz() {
     const selected = shuffle(allQuestions).slice(0, 10);
@@ -324,7 +429,7 @@ export default function KenteiQuiz() {
               </div>
 
               <p className="text-xs text-slate-400 mb-2">
-                カテゴリ：{question.tags || question.sourceField}
+                カテゴリ：{category}
               </p>
               <h2 className="text-lg font-bold leading-relaxed mb-4">{question.question}</h2>
 
@@ -417,6 +522,17 @@ export default function KenteiQuiz() {
                 <p className="text-sm leading-relaxed">
                   {question.explanation || `正解は「${question.correctAnswer}」です。`}
                 </p>
+                {relatedSpot && (
+                  <p className="text-sm leading-relaxed mt-3">
+                    関連スポット：
+                    <Link
+                      href={`/spot/${encodeURIComponent(relatedSpot.id)}`}
+                      className="font-bold underline"
+                    >
+                      {relatedSpot.name}
+                    </Link>
+                  </p>
+                )}
               </section>
             )}
           </>
