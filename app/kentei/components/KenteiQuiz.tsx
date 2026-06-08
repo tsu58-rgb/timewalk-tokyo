@@ -263,12 +263,7 @@ export default function KenteiQuiz() {
                 <span className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full font-bold">10問中{questionIndex + 1}問目</span>
               </div>
               <p className="text-xs text-slate-400 mb-2">カテゴリ：{category}</p>
-              <h2 className="text-lg font-bold leading-relaxed mb-4">{question.question}</h2>
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => { setQuestionIndex((current) => Math.max(current - 1, 0)); setAnswer(""); setChecked(false); }} disabled={questionIndex === 0} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">前へ</button>
-                <button type="button" onClick={goToNextQuestion} disabled={!checked} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">次へ</button>
-              </div>
-              <button type="button" onClick={endQuiz} className="mt-2 w-full rounded-xl bg-slate-600 px-3 py-3 text-sm font-bold text-white">終了</button>
+              <h2 className="text-lg font-bold leading-relaxed">{question.question}</h2>
             </section>
 
             <section className="bg-slate-800 rounded-2xl p-4 mb-4">
@@ -288,6 +283,14 @@ export default function KenteiQuiz() {
                   <button type="button" onClick={() => recordAnswer(answer)} disabled={checked || !answer.trim()} className={`mt-3 w-full py-3 rounded-xl font-bold ${checked || !answer.trim() ? "bg-slate-800 text-slate-500" : "bg-yellow-300 text-black"}`}>答え合わせ</button>
                 </>
               )}
+            </section>
+
+            <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => { setQuestionIndex((current) => Math.max(current - 1, 0)); setAnswer(""); setChecked(false); }} disabled={questionIndex === 0} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">前へ</button>
+                <button type="button" onClick={goToNextQuestion} disabled={!checked} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">次へ</button>
+              </div>
+              <button type="button" onClick={endQuiz} className="mt-2 w-full rounded-xl bg-slate-600 px-3 py-3 text-sm font-bold text-white">終了</button>
             </section>
 
             {checked && (
