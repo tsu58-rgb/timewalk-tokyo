@@ -105,15 +105,14 @@ function getQuestionCategory(question: SpotQuiz): QuizCategory {
   return "地域史・史跡";
 }
 
-function findRelatedSpot(question: SpotQuiz, spotsById: Record<string, SpotInfo>, spots: SpotInfo[]) {
+function findRelatedSpot(question: SpotQuiz, spots: SpotInfo[]) {
   const text = normalizeSearchText(`${question.question} ${question.explanation} ${question.tags}`);
-  const textMatch = spots
+  return spots
     .filter((spot) => {
       const name = normalizeSearchText(spot.name);
       return name.length >= 2 && text.includes(name);
     })
     .sort((a, b) => normalizeSearchText(b.name).length - normalizeSearchText(a.name).length)[0];
-  return textMatch ?? (question.spotId ? spotsById[question.spotId] : undefined);
 }
 
 function shuffle<T>(items: T[]) {
@@ -136,7 +135,6 @@ export default function KenteiQuiz() {
   const [allQuestions, setAllQuestions] = useState<SpotQuiz[]>([]);
   const [sessionQuestions, setSessionQuestions] = useState<SpotQuiz[]>([]);
   const [spots, setSpots] = useState<SpotInfo[]>([]);
-  const [spotMap, setSpotMap] = useState<Record<string, SpotInfo>>({});
   const [mode, setMode] = useState<QuizMode>("idle");
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState("");
@@ -163,7 +161,6 @@ export default function KenteiQuiz() {
         if (spotsResponse.ok) {
           const loadedSpots = parseCsvObjects(await spotsResponse.text()).map(convertSpotRow).filter((item): item is SpotInfo => Boolean(item));
           setSpots(loadedSpots);
-          setSpotMap(Object.fromEntries(loadedSpots.map((spot) => [spot.id, spot])));
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "問題の読み込みに失敗しました。");
@@ -179,7 +176,7 @@ export default function KenteiQuiz() {
   const currentCorrect = question ? isCorrect(question, answer) : false;
   const correctCount = answerRecords.filter((record) => record.correct).length;
   const scoreRate = sessionQuestions.length > 0 ? Math.round((correctCount / sessionQuestions.length) * 100) : 0;
-  const relatedSpot = question ? findRelatedSpot(question, spotMap, spots) : undefined;
+  const relatedSpot = question ? findRelatedSpot(question, spots) : undefined;
   const category = question ? getQuestionCategory(question) : "地域史・史跡";
 
   function startQuiz() {
