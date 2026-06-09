@@ -48,13 +48,6 @@ function normalizeAnswer(value: string) {
   return value.trim().toLowerCase().replace(/[\s　]/g, "");
 }
 
-function normalizeSearchText(value: string) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[\s　「」『』（）()・･,、。\.]/g, "");
-}
-
 function isCorrect(question: SpotQuiz, answer: string) {
   return normalizeAnswer(question.correctAnswer) === normalizeAnswer(answer);
 }
@@ -106,13 +99,7 @@ function getQuestionCategory(question: SpotQuiz): QuizCategory {
 }
 
 function findRelatedSpot(question: SpotQuiz, spots: SpotInfo[]) {
-  const text = normalizeSearchText(`${question.question} ${question.explanation} ${question.tags}`);
-  return spots
-    .filter((spot) => {
-      const name = normalizeSearchText(spot.name);
-      return name.length >= 2 && text.includes(name);
-    })
-    .sort((a, b) => normalizeSearchText(b.name).length - normalizeSearchText(a.name).length)[0];
+  return spots.find((spot) => spot.id === question.spotId);
 }
 
 function shuffle<T>(items: T[]) {
