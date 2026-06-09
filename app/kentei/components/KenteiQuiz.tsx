@@ -24,6 +24,7 @@ type SpotInfo = {
   name: string;
   lat: number | null;
   lng: number | null;
+  country: string;
   prefecture: string;
   city: string;
 };
@@ -113,6 +114,7 @@ function convertSpotRow(row: Record<string, string>): SpotInfo | null {
     name,
     lat: toNumber(row.lat),
     lng: toNumber(row.lng),
+    country: getFirstValue(row, ["country", "国"]),
     prefecture: getFirstValue(row, ["prefecture", "都道府県"]),
     city: getFirstValue(row, ["city", "市区町村", "municipality", "ward"]),
   };
@@ -258,9 +260,12 @@ export default function KenteiQuiz() {
     };
   }, [filterMode]);
 
-  const spotsById = useMemo(() => new Map(spots.map((spot) => [spot.id, spot])), [spots]);
-  const questionSpotIds = useMemo(() => new Set(allQuestions.map((questionItem) => questionItem.spotId).filter(Boolean)), [allQuestions]);
-  const quizSpots = useMemo(() => spots.filter((spot) => questionSpotIds.has(spot.id)), [questionSpotIds, spots]);
+  const jpSpots = useMemo(() => spots.filter((spot) => spot.country.toUpperCase() === "JP"), [spots]);
+  const jpSpotIds = useMemo(() => new Set(jpSpots.map((spot) => spot.id)), [jpSpots]);
+  const jpQuestions = useMemo(() => allQuestions.filter((questionItem) => jpSpotIds.has(questionItem.spotId)), [allQuestions, jpSpotIds]);
+  const spotsById = useMemo(() => new Map(jpSpots.map((spot) => [spot.id, spot])), [jpSpots]);
+  const questionSpotIds = useMemo(() => new Set(jpQuestions.map((questionItem) => questionItem.spotId).filter(Boolean)), [jpQuestions]);
+  const quizSpots = useMemo(() => jpSpots.filter((spot) => questionSpotIds.has(spot.id)), [questionSpotIds, jpSpots]);
   const prefectures = useMemo(() => getUniqueSorted(quizSpots.map((spot) => spot.prefecture)), [quizSpots]);
   const cities = useMemo(
     () => getUniqueSorted(quizSpots.filter((spot) => spot.prefecture === selectedPrefecture).map((spot) => spot.city)),
@@ -276,7 +281,7 @@ export default function KenteiQuiz() {
   const category = question ? getQuestionCategory(question) : "地域史・史跡";
 
   function getQuestionsBySpotIds(spotIds: Set<string>) {
-    return allQuestions.filter((questionItem) => spotIds.has(questionItem.spotId));
+    return jpQuestions.filter((questionItem) => spotIds.has(questionItem.spotId));
   }
 
   function getPointSourceLabel(center: Point) {
@@ -320,7 +325,7 @@ export default function KenteiQuiz() {
     let sourceLabel = "全問題から出題";
 
     if (filterMode === "all") {
-      candidates = allQuestions;
+      candidates = jpQuestions;
       sourceLabel = "全問題から出題";
       statusMessage = `${sourceLabel}。対象：${candidates.length}問`;
     }
@@ -570,9 +575,9 @@ export default function KenteiQuiz() {
               </div>
             )}
 
-            <p className="text-sm text-slate-300 leading-relaxed mb-4">選択した条件に該当するスポットの問題からランダムに10問を出題します。</p>
+            <p className="text-sm text-slate-300 leading-relaxed mb-4">選択した条件に該当する日本国内スポットの問題からランダムに10問を出題します。</p>
             {filterStatus && <p className="text-sm text-yellow-200 leading-relaxed mb-4">{filterStatus}</p>}
-            <button type="button" onClick={startQuiz} disabled={allQuestions.length === 0} className="w-full bg-yellow-300 text-black py-3 rounded-xl font-bold disabled:opacity-40">開始</button>
+            <button type="button" onClick={startQuiz} disabled={jpQuestions.length === 0} className="w-full bg-yellow-300 text-black py-3 rounded-xl font-bold disabled:opacity-40">開始</button>
           </section>
         )}
 
