@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type * as Leaflet from "leaflet";
 import Link from "next/link";
 import Papa from "papaparse";
 
@@ -18,9 +19,19 @@ type SpotQuiz = {
   isActive: boolean;
 };
 
-type SpotInfo = { id: string; name: string };
+type SpotInfo = {
+  id: string;
+  name: string;
+  lat: number | null;
+  lng: number | null;
+  prefecture: string;
+  city: string;
+};
+
 type QuizMode = "idle" | "playing" | "finished";
 type AnswerRecord = { quizId: string; answer: string; correct: boolean };
+type QuizFilterMode = "current" | "map" | "address" | "all";
+type Point = { lat: number; lng: number };
 type QuizCategory =
   | "建築・文化施設"
   | "寺社・信仰"
@@ -38,6 +49,8 @@ const BASE_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub";
 const SPOT_QUIZZES_URL = `${BASE_URL}?gid=987654321&single=true&output=csv`;
 const SPOTS_URL = `${BASE_URL}?gid=1242477641&single=true&output=csv`;
+const POINT_RADII_KM = [2, 5, 10];
+const MAP_DEFAULT_CENTER: Point = { lat: 35.681236, lng: 139.767125 };
 
 function parseCsvObjects(text: string) {
   const parsed = Papa.parse<Record<string, string>>(text, { header: true, skipEmptyLines: true });
@@ -50,6 +63,19 @@ function normalizeAnswer(value: string) {
 
 function isCorrect(question: SpotQuiz, answer: string) {
   return normalizeAnswer(question.correctAnswer) === normalizeAnswer(answer);
+}
+
+function toNumber(value: string | undefined) {
+  const numberValue = Number(value?.trim());
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function getFirstValue(row: Record<string, string>, keys: string[]) {
+  for (const key of keys) {
+    const value = row[key]?.trim();
+    if (value) return value;
+  }
+  return "";
 }
 
 function convertRow(row: Record<string, string>): SpotQuiz | null {
@@ -80,7 +106,16 @@ function convertRow(row: Record<string, string>): SpotQuiz | null {
 function convertSpotRow(row: Record<string, string>): SpotInfo | null {
   const id = row.id?.trim();
   const name = row.name?.trim();
-  return id && name ? { id, name } : null;
+  if (!id || !name) return null;
+
+  return {
+    id,
+    name,
+    lat: toNumber(row.lat),
+    lng: toNumber(row.lng),
+    prefecture: getFirstValue(row, ["prefecture", "都道府県"]),
+    city: getFirstValue(row, ["city", "市区町村", "municipality", "ward"]),
+  };
 }
 
 function getQuestionCategory(question: SpotQuiz): QuizCategory {
@@ -98,8 +133,8 @@ function getQuestionCategory(question: SpotQuiz): QuizCategory {
   return "地域史・史跡";
 }
 
-function findRelatedSpot(question: SpotQuiz, spots: SpotInfo[]) {
-  return spots.find((spot) => spot.id === question.spotId);
+function findRelatedSpot(question: SpotQuiz, spotsById: Map<string, SpotInfo>) {
+  return spotsById.get(question.spotId);
 }
 
 function shuffle<T>(items: T[]) {
@@ -118,17 +153,40 @@ function buildChoices(question: SpotQuiz) {
   return shuffle([question.correctAnswer, ...shuffle(Array.from(new Set(wrongAnswers))).slice(0, 3)]);
 }
 
+function calculateDistanceKm(a: Point, b: Point) {
+  const radius = 6371;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.lat * Math.PI) / 180;
+  const deltaLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const deltaLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const h = Math.sin(deltaLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
+  return radius * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+function getUniqueSorted(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b, "ja"));
+}
+
 export default function KenteiQuiz() {
   const [allQuestions, setAllQuestions] = useState<SpotQuiz[]>([]);
   const [sessionQuestions, setSessionQuestions] = useState<SpotQuiz[]>([]);
   const [spots, setSpots] = useState<SpotInfo[]>([]);
   const [mode, setMode] = useState<QuizMode>("idle");
+  const [filterMode, setFilterMode] = useState<QuizFilterMode>("all");
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState("");
   const [checked, setChecked] = useState(false);
   const [answerRecords, setAnswerRecords] = useState<AnswerRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [currentLocation, setCurrentLocation] = useState<Point | null>(null);
+  const [mapPoint, setMapPoint] = useState<Point | null>(null);
+  const [selectedPrefecture, setSelectedPrefecture] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const leafletMapRef = useRef<Leaflet.Map | null>(null);
+  const leafletMarkerRef = useRef<Leaflet.Marker | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -158,21 +216,158 @@ export default function KenteiQuiz() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (filterMode !== "map" || !mapRef.current || leafletMapRef.current) return;
+    let disposed = false;
+
+    async function setupMap() {
+      const L = await import("leaflet");
+      if (disposed || !mapRef.current) return;
+
+      if (!document.getElementById("leaflet-css")) {
+        const link = document.createElement("link");
+        link.id = "leaflet-css";
+        link.rel = "stylesheet";
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        document.head.appendChild(link);
+      }
+
+      const map = L.map(mapRef.current).setView([MAP_DEFAULT_CENTER.lat, MAP_DEFAULT_CENTER.lng], 12);
+      leafletMapRef.current = map;
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(map);
+      map.on("click", (event: Leaflet.LeafletMouseEvent) => {
+        const point = { lat: event.latlng.lat, lng: event.latlng.lng };
+        setMapPoint(point);
+        if (leafletMarkerRef.current) {
+          leafletMarkerRef.current.setLatLng(event.latlng);
+        } else {
+          leafletMarkerRef.current = L.marker(event.latlng).addTo(map);
+        }
+      });
+    }
+
+    setupMap();
+    return () => {
+      disposed = true;
+      leafletMapRef.current?.remove();
+      leafletMapRef.current = null;
+      leafletMarkerRef.current = null;
+    };
+  }, [filterMode]);
+
+  const spotsById = useMemo(() => new Map(spots.map((spot) => [spot.id, spot])), [spots]);
+  const questionSpotIds = useMemo(() => new Set(allQuestions.map((questionItem) => questionItem.spotId).filter(Boolean)), [allQuestions]);
+  const quizSpots = useMemo(() => spots.filter((spot) => questionSpotIds.has(spot.id)), [questionSpotIds, spots]);
+  const prefectures = useMemo(() => getUniqueSorted(quizSpots.map((spot) => spot.prefecture)), [quizSpots]);
+  const cities = useMemo(
+    () => getUniqueSorted(quizSpots.filter((spot) => spot.prefecture === selectedPrefecture).map((spot) => spot.city)),
+    [quizSpots, selectedPrefecture]
+  );
+
   const question = sessionQuestions[questionIndex];
   const choices = useMemo(() => (question ? buildChoices(question) : []), [question]);
   const currentCorrect = question ? isCorrect(question, answer) : false;
   const correctCount = answerRecords.filter((record) => record.correct).length;
   const scoreRate = sessionQuestions.length > 0 ? Math.round((correctCount / sessionQuestions.length) * 100) : 0;
-  const relatedSpot = question ? findRelatedSpot(question, spots) : undefined;
+  const relatedSpot = question ? findRelatedSpot(question, spotsById) : undefined;
   const category = question ? getQuestionCategory(question) : "地域史・史跡";
 
+  function getQuestionsBySpotIds(spotIds: Set<string>) {
+    return allQuestions.filter((questionItem) => spotIds.has(questionItem.spotId));
+  }
+
+  function getPointFilteredQuestions(center: Point) {
+    let lastQuestions: SpotQuiz[] = [];
+    let lastRadius = POINT_RADII_KM[POINT_RADII_KM.length - 1];
+
+    for (const radius of POINT_RADII_KM) {
+      const targetSpotIds = new Set(
+        quizSpots
+          .filter((spot) => spot.lat !== null && spot.lng !== null)
+          .filter((spot) => calculateDistanceKm(center, { lat: spot.lat as number, lng: spot.lng as number }) <= radius)
+          .map((spot) => spot.id)
+      );
+      const questions = getQuestionsBySpotIds(targetSpotIds);
+      lastQuestions = questions;
+      lastRadius = radius;
+      if (questions.length >= 10) return { questions, radius };
+    }
+    return { questions: lastQuestions, radius: lastRadius };
+  }
+
   function startQuiz() {
-    setSessionQuestions(shuffle(allQuestions).slice(0, 10));
+    setFilterStatus("");
+    let candidates: SpotQuiz[] = [];
+    let statusMessage = "";
+
+    if (filterMode === "all") {
+      candidates = allQuestions;
+      statusMessage = `全問題から出題します。対象：${candidates.length}問`;
+    }
+
+    if (filterMode === "current") {
+      if (!currentLocation) {
+        setFilterStatus("現在地を取得してください。");
+        return;
+      }
+      const result = getPointFilteredQuestions(currentLocation);
+      candidates = result.questions;
+      statusMessage = `現在地から半径${result.radius}kmの問題から出題します。対象：${candidates.length}問`;
+    }
+
+    if (filterMode === "map") {
+      if (!mapPoint) {
+        setFilterStatus("マップ上で基準点を選択してください。");
+        return;
+      }
+      const result = getPointFilteredQuestions(mapPoint);
+      candidates = result.questions;
+      statusMessage = `選択地点から半径${result.radius}kmの問題から出題します。対象：${candidates.length}問`;
+    }
+
+    if (filterMode === "address") {
+      if (!selectedPrefecture || !selectedCity) {
+        setFilterStatus("都道府県と市区町村を選択してください。");
+        return;
+      }
+      const targetSpotIds = new Set(
+        quizSpots.filter((spot) => spot.prefecture === selectedPrefecture && spot.city === selectedCity).map((spot) => spot.id)
+      );
+      candidates = getQuestionsBySpotIds(targetSpotIds);
+      statusMessage = `${selectedPrefecture}${selectedCity}の問題から出題します。対象：${candidates.length}問`;
+    }
+
+    if (candidates.length < 10) {
+      setFilterStatus(`${statusMessage}。10問未満のため開始できません。`);
+      return;
+    }
+
+    setFilterStatus(statusMessage);
+    setSessionQuestions(shuffle(candidates).slice(0, 10));
     setMode("playing");
     setQuestionIndex(0);
     setAnswer("");
     setChecked(false);
     setAnswerRecords([]);
+  }
+
+  function getCurrentLocation() {
+    setFilterStatus("現在地を取得しています。");
+    if (!navigator.geolocation) {
+      setFilterStatus("このブラウザでは現在地取得を利用できません。");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCurrentLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setFilterStatus("現在地を取得しました。開始できます。");
+      },
+      () => setFilterStatus("現在地を取得できませんでした。ブラウザの位置情報許可を確認してください。"),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   }
 
   function endQuiz() {
@@ -284,8 +479,76 @@ export default function KenteiQuiz() {
 
         {!loading && !error && mode === "idle" && (
           <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-            <h2 className="text-xl font-bold mb-2">検定を開始</h2>
-            <p className="text-sm text-slate-300 leading-relaxed mb-4">登録済みの問題からランダムに10問を選んで出題します。開始するたびに問題と順番が変わります。</p>
+            <h2 className="text-xl font-bold mb-2">ゲームのモードを選択してください</h2>
+            <div className="grid grid-cols-1 gap-2 mb-4">
+              {[
+                ["current", "① 現在地から選択"],
+                ["map", "② マップの任意の地点から選択"],
+                ["address", "③ 住所から選択"],
+                ["all", "④ 全問題"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    setFilterMode(value as QuizFilterMode);
+                    setFilterStatus("");
+                  }}
+                  className={`w-full rounded-xl px-4 py-3 text-left text-sm font-bold border ${
+                    filterMode === value ? "bg-yellow-300 text-black border-yellow-200" : "bg-slate-950 text-white border-slate-600"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {filterMode === "current" && (
+              <div className="mb-4 rounded-xl bg-slate-900 p-3">
+                <button type="button" onClick={getCurrentLocation} className="w-full bg-blue-500 text-white py-3 rounded-xl font-bold">現在地を取得</button>
+                {currentLocation && <p className="text-xs text-slate-300 mt-2">取得済み：{currentLocation.lat.toFixed(5)}, {currentLocation.lng.toFixed(5)}</p>}
+              </div>
+            )}
+
+            {filterMode === "map" && (
+              <div className="mb-4 rounded-xl bg-slate-900 p-3">
+                <p className="text-xs text-slate-300 mb-2">マップをクリックして基準点を選択してください。</p>
+                <div ref={mapRef} className="h-64 w-full rounded-xl overflow-hidden bg-slate-700" />
+                {mapPoint && <p className="text-xs text-slate-300 mt-2">選択地点：{mapPoint.lat.toFixed(5)}, {mapPoint.lng.toFixed(5)}</p>}
+              </div>
+            )}
+
+            {filterMode === "address" && (
+              <div className="mb-4 rounded-xl bg-slate-900 p-3 space-y-3">
+                <select
+                  value={selectedPrefecture}
+                  onChange={(event) => {
+                    setSelectedPrefecture(event.target.value);
+                    setSelectedCity("");
+                    setFilterStatus("");
+                  }}
+                  className="w-full rounded-xl bg-slate-950 border border-slate-600 px-3 py-3 text-white"
+                >
+                  <option value="">都道府県を選択</option>
+                  {prefectures.map((prefecture) => <option key={prefecture} value={prefecture}>{prefecture}</option>)}
+                </select>
+                <select
+                  value={selectedCity}
+                  onChange={(event) => {
+                    setSelectedCity(event.target.value);
+                    setFilterStatus("");
+                  }}
+                  disabled={!selectedPrefecture}
+                  className="w-full rounded-xl bg-slate-950 border border-slate-600 px-3 py-3 text-white disabled:opacity-40"
+                >
+                  <option value="">市区町村を選択</option>
+                  {cities.map((city) => <option key={city} value={city}>{city}</option>)}
+                </select>
+              </div>
+            )}
+
+            <p className="text-sm text-slate-300 leading-relaxed mb-4">選択した条件に該当するスポットの問題からランダムに10問を出題します。</p>
+            {filterStatus && <p className="text-sm text-yellow-200 leading-relaxed mb-4">{filterStatus}</p>}
             <button type="button" onClick={startQuiz} disabled={allQuestions.length === 0} className="w-full bg-yellow-300 text-black py-3 rounded-xl font-bold disabled:opacity-40">開始</button>
           </section>
         )}
