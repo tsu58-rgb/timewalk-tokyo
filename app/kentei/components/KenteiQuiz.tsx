@@ -173,6 +173,7 @@ export default function KenteiQuiz() {
   const [spots, setSpots] = useState<SpotInfo[]>([]);
   const [mode, setMode] = useState<QuizMode>("idle");
   const [filterMode, setFilterMode] = useState<QuizFilterMode>("all");
+  const [sessionSourceLabel, setSessionSourceLabel] = useState("全問題から出題");
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState("");
   const [checked, setChecked] = useState(false);
@@ -278,6 +279,21 @@ export default function KenteiQuiz() {
     return allQuestions.filter((questionItem) => spotIds.has(questionItem.spotId));
   }
 
+  function getPointSourceLabel(center: Point) {
+    const nearestSpot = quizSpots
+      .filter((spot) => spot.lat !== null && spot.lng !== null)
+      .map((spot) => ({
+        spot,
+        distance: calculateDistanceKm(center, { lat: spot.lat as number, lng: spot.lng as number }),
+      }))
+      .sort((a, b) => a.distance - b.distance)[0]?.spot;
+
+    if (nearestSpot?.prefecture || nearestSpot?.city) {
+      return `${nearestSpot.prefecture}${nearestSpot.city}付近から出題`;
+    }
+    return "選択地点付近から出題";
+  }
+
   function getPointFilteredQuestions(center: Point) {
     let lastQuestions: SpotQuiz[] = [];
     let lastRadius = POINT_RADII_KM[POINT_RADII_KM.length - 1];
@@ -301,10 +317,12 @@ export default function KenteiQuiz() {
     setFilterStatus("");
     let candidates: SpotQuiz[] = [];
     let statusMessage = "";
+    let sourceLabel = "全問題から出題";
 
     if (filterMode === "all") {
       candidates = allQuestions;
-      statusMessage = `全問題から出題します。対象：${candidates.length}問`;
+      sourceLabel = "全問題から出題";
+      statusMessage = `${sourceLabel}。対象：${candidates.length}問`;
     }
 
     if (filterMode === "current") {
@@ -314,7 +332,8 @@ export default function KenteiQuiz() {
       }
       const result = getPointFilteredQuestions(currentLocation);
       candidates = result.questions;
-      statusMessage = `現在地から半径${result.radius}kmの問題から出題します。対象：${candidates.length}問`;
+      sourceLabel = getPointSourceLabel(currentLocation);
+      statusMessage = `${sourceLabel}。半径${result.radius}km、対象：${candidates.length}問`;
     }
 
     if (filterMode === "map") {
@@ -324,7 +343,8 @@ export default function KenteiQuiz() {
       }
       const result = getPointFilteredQuestions(mapPoint);
       candidates = result.questions;
-      statusMessage = `選択地点から半径${result.radius}kmの問題から出題します。対象：${candidates.length}問`;
+      sourceLabel = getPointSourceLabel(mapPoint);
+      statusMessage = `${sourceLabel}。半径${result.radius}km、対象：${candidates.length}問`;
     }
 
     if (filterMode === "address") {
@@ -336,7 +356,8 @@ export default function KenteiQuiz() {
         quizSpots.filter((spot) => spot.prefecture === selectedPrefecture && spot.city === selectedCity).map((spot) => spot.id)
       );
       candidates = getQuestionsBySpotIds(targetSpotIds);
-      statusMessage = `${selectedPrefecture}${selectedCity}の問題から出題します。対象：${candidates.length}問`;
+      sourceLabel = `${selectedPrefecture}${selectedCity}から出題`;
+      statusMessage = `${sourceLabel}。対象：${candidates.length}問`;
     }
 
     if (candidates.length < 10) {
@@ -344,6 +365,7 @@ export default function KenteiQuiz() {
       return;
     }
 
+    setSessionSourceLabel(sourceLabel);
     setFilterStatus(statusMessage);
     setSessionQuestions(shuffle(candidates).slice(0, 10));
     setMode("playing");
@@ -456,11 +478,12 @@ export default function KenteiQuiz() {
 
   const navigationArea = (
     <div className="mb-4">
+      <p className="mb-2 text-center text-sm font-bold text-slate-300">({questionIndex + 1}/{sessionQuestions.length || 10})</p>
       <div className="grid grid-cols-2 gap-2">
         <button type="button" onClick={() => { setQuestionIndex((current) => Math.max(current - 1, 0)); setAnswer(""); setChecked(false); }} disabled={questionIndex === 0} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">前へ</button>
         <button type="button" onClick={goToNextQuestion} disabled={!checked} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">次へ</button>
       </div>
-      <button type="button" onClick={endQuiz} className="mt-2 w-full rounded-xl bg-slate-600 px-3 py-3 text-sm font-bold text-white">終了</button>
+      <button type="button" onClick={endQuiz} className="mt-2 w-full rounded-xl bg-slate-600 px-3 py-3 text-sm font-bold text-white">検定トップに戻る</button>
     </div>
   );
 
@@ -479,13 +502,13 @@ export default function KenteiQuiz() {
 
         {!loading && !error && mode === "idle" && (
           <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-            <h2 className="text-xl font-bold mb-2">ゲームのモードを選択してください</h2>
+            <h2 className="text-xl font-bold mb-2">モードを選択してください</h2>
             <div className="grid grid-cols-1 gap-2 mb-4">
               {[
-                ["current", "① 現在地から選択"],
-                ["map", "② マップの任意の地点から選択"],
-                ["address", "③ 住所から選択"],
-                ["all", "④ 全問題"],
+                ["current", "1. 現在地から出題"],
+                ["map", "2. 任意の地点から出題"],
+                ["address", "3. 市区町村別に出題"],
+                ["all", "4. 全問題から出題"],
               ].map(([value, label]) => (
                 <button
                   key={value}
@@ -557,11 +580,10 @@ export default function KenteiQuiz() {
           <>
             <section className="bg-slate-800 rounded-2xl p-4 mb-4">
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className="text-xs bg-yellow-300 text-black px-2 py-1 rounded-full font-bold">レベル{question.level}</span>
-                <span className="text-xs bg-slate-700 text-slate-200 px-2 py-1 rounded-full font-bold">10問中{questionIndex + 1}問目</span>
+                <span className="text-xs bg-yellow-300 text-black px-2 py-1 rounded-full font-bold">{sessionSourceLabel}</span>
               </div>
               <p className="text-xs text-slate-400 mb-2">カテゴリ：{category}</p>
-              <h2 className="text-lg font-bold leading-relaxed">{question.question}</h2>
+              <h2 className="text-lg font-bold leading-relaxed">Q. {question.question}</h2>
               {answerArea}
             </section>
 
@@ -587,7 +609,7 @@ export default function KenteiQuiz() {
             <h2 className="text-xl font-bold mb-2">結果発表</h2>
             <p className="text-3xl font-bold text-yellow-300 mb-2">{correctCount}/{sessionQuestions.length}問 正解</p>
             <p className="text-sm text-slate-300 mb-4">正答率 {scoreRate}%</p>
-            <button type="button" onClick={endQuiz} className="w-full bg-yellow-300 text-black py-3 rounded-xl font-bold">初期画面に戻る</button>
+            <button type="button" onClick={endQuiz} className="w-full bg-yellow-300 text-black py-3 rounded-xl font-bold">検定トップに戻る</button>
           </section>
         )}
       </div>
