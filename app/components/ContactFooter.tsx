@@ -47,6 +47,12 @@ export default function ContactFooter() {
       </div>
 
       <div>
+        <a href="/ukiyoe" className="underline text-blue-400">
+          TimeWalk浮世絵
+        </a>
+      </div>
+
+      <div>
         <a href="/games" className="underline text-blue-400">
           ゲーム
         </a>
