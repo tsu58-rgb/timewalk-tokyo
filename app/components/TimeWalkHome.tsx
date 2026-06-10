@@ -53,6 +53,9 @@ export default function TimeWalkHome() {
   const [locationLoading, setLocationLoading] = useState(false);
 
   const readyCourses = getReadyCourses();
+  const mapCurrentPosition: [number, number] | null = position
+    ? [position.latitude, position.longitude]
+    : null;
 
   useEffect(() => {
     fetchSpots()
@@ -85,6 +88,16 @@ export default function TimeWalkHome() {
     }
   }
 
+  function updatePosition(pos: GeolocationPosition, shouldUpdateAddress = false) {
+    setPosition(pos.coords);
+    setError("");
+    setLocationLoading(false);
+
+    if (shouldUpdateAddress) {
+      fetchAddress(pos.coords.latitude, pos.coords.longitude);
+    }
+  }
+
   function getCurrentLocation() {
     if (!navigator.geolocation) {
       setError("このブラウザは位置情報に対応していません");
@@ -95,12 +108,7 @@ export default function TimeWalkHome() {
     setError("現在地を取得中...");
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setPosition(pos.coords);
-        fetchAddress(pos.coords.latitude, pos.coords.longitude);
-        setError("");
-        setLocationLoading(false);
-      },
+      (pos) => updatePosition(pos, true),
       (err) => {
         setError("位置情報が取得できません: " + err.message);
         setLocationLoading(false);
@@ -111,6 +119,18 @@ export default function TimeWalkHome() {
 
   useEffect(() => {
     getCurrentLocation();
+  }, []);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => updatePosition(pos, false),
+      (err) => console.warn(err),
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
   const allTags = useMemo(() => {
@@ -214,7 +234,7 @@ export default function TimeWalkHome() {
         </div>
 
         <div className="mb-4">
-          <SpotMap spots={spots} initialZoom={15} height="360px" />
+          <SpotMap spots={spots} initialZoom={15} height="360px" currentPosition={mapCurrentPosition} followCurrentLocation />
         </div>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
