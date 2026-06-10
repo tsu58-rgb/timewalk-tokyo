@@ -3,6 +3,14 @@
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef, useState } from "react";
 
+import { clusterSpots } from "../../components/map/clusterSpots";
+import {
+  getClusterMarkerIcon,
+  getCurrentLocationMarkerIcon,
+  getNewSpotMarkerIcon,
+  getSpotMarkerIcon,
+} from "../../components/map/mapIcons";
+
 type Spot = {
   id?: string;
   name: string;
@@ -55,23 +63,15 @@ export default function AdminSpotsMapPage() {
   const [imageBase64, setImageBase64] = useState("");
   const [message, setMessage] = useState("");
   const [pendingMove, setPendingMove] = useState<{ lat: number; lng: number } | null>(null);
-  const [allSpots, setAllSpots] = useState<any[]>([]);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   function login() {
-    if (!passwordInput) {
-      return;
-    }
+    if (!passwordInput) return;
 
     localStorage.setItem("timewalkAdminPassword", passwordInput);
     setPagePassword(passwordInput);
   }
-
-  useEffect(() => {
-    if (!pagePassword) return;
-    initMap();
-  }, [pagePassword]);
 
   useEffect(() => {
     const savedPassword = localStorage.getItem("timewalkAdminPassword");
@@ -80,7 +80,12 @@ export default function AdminSpotsMapPage() {
       setPagePassword(savedPassword);
     }
   }, []);
-    
+
+  useEffect(() => {
+    if (!pagePassword) return;
+    initMap();
+  }, [pagePassword]);
+
   async function initMap() {
     const L = await import("leaflet");
 
@@ -100,9 +105,7 @@ export default function AdminSpotsMapPage() {
     await flyToCurrentLocation(false);
 
     map.on("click", async (e: any) => {
-      if (isSavingRef.current) {
-        return;
-      }
+      if (isSavingRef.current) return;
 
       const lat = e.latlng.lat;
       const lng = e.latlng.lng;
@@ -166,7 +169,6 @@ export default function AdminSpotsMapPage() {
     }
 
     const spots = json.spots || [];
-    setAllSpots(spots);
     allSpotsRef.current = spots;
 
     await renderSpots(spots);
@@ -188,51 +190,27 @@ export default function AdminSpotsMapPage() {
     const visibleSpots = spots.filter((s: any) => {
       const lat = Number(s.lat);
       const lng = Number(s.lng);
-      if (!lat || !lng) return false;
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
       return bounds.contains([lat, lng]);
     });
 
-    const shouldCluster = zoom < 17;
-    const cellSize = zoom <= 12 ? 90 : zoom <= 14 ? 75 : zoom <= 16 ? 60 : 45;
+    const items = clusterSpots(visibleSpots, map, zoom);
 
-    if (!shouldCluster) {
-      visibleSpots.forEach((s: any) => addSpotMarker(L, s));
-      setMessage(`表示中：${visibleSpots.length}件 / 取得${spots.length}件`);
-      return;
-    }
-
-    const clusters: Record<string, any[]> = {};
-
-    visibleSpots.forEach((s: any) => {
-      const lat = Number(s.lat);
-      const lng = Number(s.lng);
-      if (!lat || !lng) return;
-
-      const point = map.project([lat, lng], zoom);
-      const key = `${Math.floor(point.x / cellSize)}_${Math.floor(point.y / cellSize)}`;
-
-      if (!clusters[key]) clusters[key] = [];
-      clusters[key].push(s);
-    });
-
-    Object.values(clusters).forEach((group: any[]) => {
-      if (group.length === 1) {
-        addSpotMarker(L, group[0]);
+    items.forEach((item) => {
+      if (item.type === "spot") {
+        addSpotMarker(L, item.spot);
         return;
       }
 
-      const avgLat = group.reduce((sum, s) => sum + Number(s.lat), 0) / group.length;
-      const avgLng = group.reduce((sum, s) => sum + Number(s.lng), 0) / group.length;
-
-      const marker = L.marker([avgLat, avgLng], {
-        icon: getClusterIcon(L, group.length),
+      const marker = L.marker([item.lat, item.lng], {
+        icon: getClusterMarkerIcon(L, item.count) as any,
       })
         .addTo(markerLayerRef.current)
-        .bindPopup(`${group.length}件`);
+        .bindPopup(`${item.count}件`);
 
       marker.on("click", () => {
         if (isSavingRef.current) return;
-        map.setView([avgLat, avgLng], Math.min(map.getZoom() + 2, 20));
+        map.setView([item.lat, item.lng], Math.min(map.getZoom() + 1, map.getMaxZoom()));
       });
     });
 
@@ -242,19 +220,17 @@ export default function AdminSpotsMapPage() {
   function addSpotMarker(L: any, s: any) {
     const lat = Number(s.lat);
     const lng = Number(s.lng);
-    if (!lat || !lng) return;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
     const marker = L.marker([lat, lng], {
       draggable: true,
-      icon: getSpotIcon(L, s),
+      icon: getSpotMarkerIcon(L, s) as any,
     })
       .addTo(markerLayerRef.current)
       .bindPopup(`${s.name || ""}<br>${s.id || ""}`);
 
     marker.on("click", () => {
-      if (isSavingRef.current) {
-        return;
-      }
+      if (isSavingRef.current) return;
 
       setSpot({
         id: String(s.id || ""),
@@ -298,84 +274,6 @@ export default function AdminSpotsMapPage() {
     });
   }
 
-  function getSpotIcon(L: any, s: any) {
-    let pinColor = "#9f2f25";
-    let centerColor = "#ffffff";
-
-    if (String(s.spotsImage || "").trim()) {
-      centerColor = "#ffe96a";
-    }
-
-    const desc = String(s.description || "").trim();
-
-    if (
-      desc.includes("自動入力") ||
-      desc === "" ||
-      desc.length <= 50
-    ) {
-      pinColor = "#e36f6f";
-    }
-
-    return L.divIcon({
-      html: `
-        <svg width="26" height="40" viewBox="0 0 26 40">
-          <path
-            d="M13 0 C6 0 0 6 0 13 C0 24 13 40 13 40 C13 40 26 24 26 13 C26 6 20 0 13 0Z"
-            fill="${pinColor}"
-          />
-          <circle cx="13" cy="13" r="5" fill="${centerColor}" />
-        </svg>
-      `,
-      className: "",
-      iconSize: [26, 40],
-      iconAnchor: [13, 40],
-    });
-  }
-
-  function getClusterIcon(L: any, count: number) {
-    return L.divIcon({
-      html: `
-        <svg width="42" height="56" viewBox="0 0 42 56">
-          <path
-            d="M21 0 C10 0 1 9 1 20 C1 36 21 56 21 56 C21 56 41 36 41 20 C41 9 32 0 21 0Z"
-            fill="#9f2f25"
-          />
-          <circle cx="21" cy="20" r="10" fill="#ffffff" />
-          <text
-            x="21"
-            y="24"
-            text-anchor="middle"
-            font-size="11"
-            font-weight="bold"
-            fill="#9f2f25"
-          >${count}</text>
-        </svg>
-      `,
-      className: "",
-      iconSize: [42, 56],
-      iconAnchor: [21, 56],
-    });
-  }
-
-  function getCurrentLocationIcon(L: any) {
-    return L.divIcon({
-      html: `
-        <div style="
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: #1a73e8;
-          border: 3px solid #ffffff;
-          box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.25), 0 2px 6px rgba(0,0,0,0.35);
-          box-sizing: border-box;
-        "></div>
-      `,
-      className: "",
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
-    });
-  }
-
   async function renderCurrentLocation(lat: number, lng: number, accuracy?: number) {
     const L = await import("leaflet");
     const map = mapRef.current;
@@ -390,7 +288,7 @@ export default function AdminSpotsMapPage() {
     }
 
     currentLocationMarkerRef.current = L.marker([lat, lng], {
-      icon: getCurrentLocationIcon(L),
+      icon: getCurrentLocationMarkerIcon(L) as any,
       interactive: false,
       zIndexOffset: 1000,
     }).addTo(map);
@@ -415,9 +313,9 @@ export default function AdminSpotsMapPage() {
 
     if (showMessage) setMessage("現在地を取得中...");
 
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
-        async position => {
+        async (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
           const accuracy = position.coords.accuracy;
@@ -438,7 +336,7 @@ export default function AdminSpotsMapPage() {
 
           resolve(true);
         },
-        error => {
+        (error) => {
           console.warn(error);
 
           if (showMessage) {
@@ -482,7 +380,7 @@ export default function AdminSpotsMapPage() {
       const lat = Number(json[0].lat);
       const lng = Number(json[0].lon);
 
-      if (!lat || !lng) {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         setMessage("地点の緯度経度を取得できませんでした。");
         return;
       }
@@ -506,31 +404,16 @@ export default function AdminSpotsMapPage() {
 
     newMarkerRef.current = L.marker([lat, lng], {
       draggable: true,
-      icon: L.divIcon({
-        html: `
-          <svg width="26" height="40" viewBox="0 0 26 40">
-            <path
-              d="M13 0 C6 0 0 6 0 13 C0 24 13 40 13 40 C13 40 26 24 26 13 C26 6 20 0 13 0Z"
-              fill="#20c7b5"
-            />
-            <circle cx="13" cy="13" r="5" fill="#ffffff" />
-          </svg>
-        `,
-        className: "",
-        iconSize: [26, 40],
-        iconAnchor: [13, 40],
-      }),
+      icon: getNewSpotMarkerIcon(L) as any,
     }).addTo(mapRef.current);
 
     newMarkerRef.current.on("dragend", async (e: any) => {
-      if (isSavingRef.current) {
-        return;
-      }
+      if (isSavingRef.current) return;
 
       const p = e.target.getLatLng();
       const geo = await reverseGeocode(p.lat, p.lng);
 
-      setSpot(prev => ({
+      setSpot((prev) => ({
         ...prev,
         lat: p.lat,
         lng: p.lng,
@@ -563,14 +446,12 @@ export default function AdminSpotsMapPage() {
 
       return {
         country: (a.country_code || "jp").toUpperCase(),
-
         prefecture:
           a.state ||
           a.province ||
           a.region ||
           prefectureFromDisplay ||
           "",
-
         city:
           a.city ||
           a.town ||
@@ -580,7 +461,6 @@ export default function AdminSpotsMapPage() {
           a.county ||
           cityFromDisplay ||
           "",
-
         area:
           a.suburb ||
           a.neighbourhood ||
@@ -608,7 +488,7 @@ export default function AdminSpotsMapPage() {
   }
 
   function fileToBase64(file: File): Promise<string> {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result));
       reader.readAsDataURL(file);
@@ -627,11 +507,6 @@ export default function AdminSpotsMapPage() {
       id: spot.id === "新規" ? "" : spot.id,
       imageBase64,
     };
-
-    console.log("保存データ", {
-      ...savingSpot,
-      imageBase64: imageBase64 ? "画像あり" : "",
-    });
 
     if (!savingSpot.name && !savingSpot.description && !savingSpot.lat && !savingSpot.lng) {
       setMessage("保存する内容が空です");
@@ -690,8 +565,8 @@ export default function AdminSpotsMapPage() {
           type="password"
           placeholder="管理パスワード"
           value={passwordInput}
-          onChange={e => setPasswordInput(e.target.value)}
-          onKeyDown={e => {
+          onChange={(e) => setPasswordInput(e.target.value)}
+          onKeyDown={(e) => {
             if (e.key === "Enter") login();
           }}
           style={inputStyle}
@@ -716,12 +591,14 @@ export default function AdminSpotsMapPage() {
   }
 
   return (
-    <main style={{
-      display: "grid",
-      gridTemplateColumns: "minmax(0, 1fr) 420px",
-      height: "100vh",
-      width: "100vw",
-    }}>
+    <main
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr) 420px",
+        height: "100vh",
+        width: "100vw",
+      }}
+    >
       <style>{`
         @media (max-width: 800px) {
           main {
@@ -763,8 +640,8 @@ export default function AdminSpotsMapPage() {
         >
           <input
             value={searchKeyword}
-            onChange={e => setSearchKeyword(e.target.value)}
-            onKeyDown={e => {
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            onKeyDown={(e) => {
               if (e.key === "Enter") searchPlace();
             }}
             placeholder="地点を検索"
@@ -847,18 +724,20 @@ export default function AdminSpotsMapPage() {
         <input value={spot.id || "新規"} readOnly style={inputStyle} />
 
         <label>name</label>
-        <input value={spot.name} onChange={e => setSpot({ ...spot, name: e.target.value })} style={editableInputStyle} />
+        <input value={spot.name} onChange={(e) => setSpot({ ...spot, name: e.target.value })} style={editableInputStyle} />
 
         <label>kana</label>
-        <input value={spot.kana || ""} onChange={e => setSpot({ ...spot, kana: e.target.value })} style={editableInputStyle} />
+        <input value={spot.kana || ""} onChange={(e) => setSpot({ ...spot, kana: e.target.value })} style={editableInputStyle} />
 
         {pendingMove && (
-          <div style={{
-            border: "2px solid #b33a2f",
-            padding: 12,
-            margin: "12px 0",
-            background: "#fff7f5",
-          }}>
+          <div
+            style={{
+              border: "2px solid #b33a2f",
+              padding: 12,
+              margin: "12px 0",
+              background: "#fff7f5",
+            }}
+          >
             <p style={{ margin: "0 0 8px", fontWeight: "bold" }}>移動候補</p>
             <p style={{ margin: "0 0 4px" }}>lat: {pendingMove.lat}</p>
             <p style={{ margin: "0 0 8px" }}>lng: {pendingMove.lng}</p>
@@ -870,7 +749,7 @@ export default function AdminSpotsMapPage() {
 
                 const geo = await reverseGeocode(pendingMove.lat, pendingMove.lng);
 
-                setSpot(prev => ({
+                setSpot((prev) => ({
                   ...prev,
                   lat: pendingMove.lat,
                   lng: pendingMove.lng,
@@ -922,22 +801,22 @@ export default function AdminSpotsMapPage() {
         <input value={spot.lng} readOnly style={inputStyle} />
 
         <label>country</label>
-        <input value={spot.country || ""} onChange={e => setSpot({ ...spot, country: e.target.value })} style={editableInputStyle} />
+        <input value={spot.country || ""} onChange={(e) => setSpot({ ...spot, country: e.target.value })} style={editableInputStyle} />
 
         <label>prefecture</label>
-        <input value={spot.prefecture || ""} onChange={e => setSpot({ ...spot, prefecture: e.target.value })} style={editableInputStyle} />
+        <input value={spot.prefecture || ""} onChange={(e) => setSpot({ ...spot, prefecture: e.target.value })} style={editableInputStyle} />
 
         <label>city</label>
-        <input value={spot.city || ""} onChange={e => setSpot({ ...spot, city: e.target.value })} style={editableInputStyle} />
+        <input value={spot.city || ""} onChange={(e) => setSpot({ ...spot, city: e.target.value })} style={editableInputStyle} />
 
         <label>area</label>
-        <input value={spot.area || ""} onChange={e => setSpot({ ...spot, area: e.target.value })} style={editableInputStyle} />
+        <input value={spot.area || ""} onChange={(e) => setSpot({ ...spot, area: e.target.value })} style={editableInputStyle} />
 
         <label>category</label>
-        <input value={spot.category || ""} onChange={e => setSpot({ ...spot, category: e.target.value })} style={editableInputStyle} />
+        <input value={spot.category || ""} onChange={(e) => setSpot({ ...spot, category: e.target.value })} style={editableInputStyle} />
 
         <label>mode</label>
-        <input value={spot.mode || ""} onChange={e => setSpot({ ...spot, mode: e.target.value })} style={editableInputStyle} />
+        <input value={spot.mode || ""} onChange={(e) => setSpot({ ...spot, mode: e.target.value })} style={editableInputStyle} />
 
         <label>spotsImage</label>
         <input ref={fileInputRef} type="file" accept="image/*" onChange={onImageChange} style={editableInputStyle} />
@@ -947,13 +826,13 @@ export default function AdminSpotsMapPage() {
         )}
 
         <label>description</label>
-        <textarea value={spot.description || ""} onChange={e => setSpot({ ...spot, description: e.target.value })} style={editableTextareaStyle} />
+        <textarea value={spot.description || ""} onChange={(e) => setSpot({ ...spot, description: e.target.value })} style={editableTextareaStyle} />
 
         <label>trivia</label>
-        <textarea value={spot.trivia || ""} onChange={e => setSpot({ ...spot, trivia: e.target.value })} style={editableTextareaStyle} />
+        <textarea value={spot.trivia || ""} onChange={(e) => setSpot({ ...spot, trivia: e.target.value })} style={editableTextareaStyle} />
 
         <label>characterIds</label>
-        <input value={spot.characterIds || ""} onChange={e => setSpot({ ...spot, characterIds: e.target.value })} style={editableInputStyle} />
+        <input value={spot.characterIds || ""} onChange={(e) => setSpot({ ...spot, characterIds: e.target.value })} style={editableInputStyle} />
 
         <button
           onClick={saveSpot}
