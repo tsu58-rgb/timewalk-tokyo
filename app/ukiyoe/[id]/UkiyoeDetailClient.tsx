@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { UKIYOE_SPOTS_URL, accuracyLabel, parseUkiyoeCsv, splitTags, type UkiyoeSpot } from "../data";
+import { UKIYOE_SPOTS_URL, accuracyLabel, fallbackDescription, parseUkiyoeCsv, splitTags, type UkiyoeSpot } from "../data";
 
 function orderNumber(spot: UkiyoeSpot) {
   const value = Number(spot.seriesOrder);
@@ -39,6 +39,8 @@ function RelatedSpotCard({ spot }: { spot: UkiyoeSpot }) {
         <img
           src={thumbnail}
           alt={spot.title}
+          loading="lazy"
+          decoding="async"
           className="h-20 w-20 shrink-0 rounded-xl bg-black object-contain"
         />
       )}
@@ -134,12 +136,10 @@ export default function UkiyoeDetailClient({ id }: { id: string }) {
           {spot.modernAddress && <p className="mt-1 text-sm text-slate-700">現在の目安：{spot.modernAddress}</p>}
         </section>
 
-        {spot.description && (
-          <section className="mb-4 rounded-2xl bg-white p-4 text-black">
-            <h2 className="mb-2 font-bold">作品・場所の説明</h2>
-            <p className="leading-7">{spot.description}</p>
-          </section>
-        )}
+        <section className="mb-4 rounded-2xl bg-white p-4 text-black">
+          <h2 className="mb-2 font-bold">作品・場所の説明</h2>
+          <p className="leading-7">{fallbackDescription(spot)}</p>
+        </section>
 
         {spot.highlight && (
           <section className="mb-4 rounded-2xl bg-amber-100 p-4 text-black">
