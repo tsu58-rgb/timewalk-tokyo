@@ -4,9 +4,7 @@ import Papa from "papaparse";
 const CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?output=csv";
 
-export async function POST(req: Request) {
-  const body = await req.json();
-
+export async function POST() {
   const csv = await fetch(CSV_URL, { cache: "no-store" }).then((r) => r.text());
 
   const parsed = Papa.parse(csv, {
@@ -39,9 +37,5 @@ export async function POST(req: Request) {
     ok: true,
     spots,
     total: spots.length,
-    debug: {
-      receivedPassword: body.pagePassword ? "あり" : "なし",
-      envPassword: process.env.ADMIN_PAGE_PASSWORD ? "あり" : "なし",
-    },
   });
 }
