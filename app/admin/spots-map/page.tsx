@@ -2,6 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Papa from "papaparse";
 
 import { clusterSpots } from "../../components/map/clusterSpots";
 import {
@@ -35,6 +36,9 @@ type ReviewItem = {
   reasons: string[];
 };
 
+const CHARACTERS_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=1745190060&single=true&output=csv";
+
 const emptySpot: Spot = {
   name: "",
   kana: "",
@@ -53,13 +57,20 @@ const emptySpot: Spot = {
   status: "",
 };
 
-function getReviewReasons(s: Spot) {
+function splitCharacterIds(value: string) {
+  return String(value || "")
+    .split("・")
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
+function getReviewReasons(s: Spot, characterIdSet: Set<string>) {
   const reasons: string[] = [];
   const name = String(s.name || "").trim();
   const description = String(s.description || "").trim();
   const image = String(s.spotsImage || "").trim();
   const category = String(s.category || "").trim();
-  const characterIds = String(s.characterIds || "").trim();
+  const characterIds = splitCharacterIds(String(s.characterIds || ""));
   const status = String(s.status || "").trim();
   const lat = Number(s.lat);
   const lng = Number(s.lng);
@@ -71,7 +82,12 @@ function getReviewReasons(s: Spot) {
   if (description.includes("自動入力")) reasons.push("自動入力あり");
   if (!image) reasons.push("画像なし");
   if (!category) reasons.push("カテゴリなし");
-  if (!characterIds) reasons.push("人物IDなし");
+
+  const missingCharacterIds = characterIds.filter((characterId) => !characterIdSet.has(characterId));
+  if (missingCharacterIds.length > 0) {
+    reasons.push(`人物ID不一致: ${missingCharacterIds.join("・")}`);
+  }
+
   if (status && status.toLowerCase() !== "ready") reasons.push(`status=${status}`);
 
   return reasons;
@@ -113,6 +129,7 @@ export default function AdminSpotsMapPage() {
   const [pagePassword, setPagePassword] = useState("");
   const [spot, setSpot] = useState<Spot>(emptySpot);
   const [spots, setSpots] = useState<Spot[]>([]);
+  const [characterIds, setCharacterIds] = useState<Set<string>>(new Set());
   const [imageBase64, setImageBase64] = useState("");
   const [message, setMessage] = useState("");
   const [pendingMove, setPendingMove] = useState<{ lat: number; lng: number } | null>(null);
@@ -123,9 +140,9 @@ export default function AdminSpotsMapPage() {
   const reviewItems: ReviewItem[] = useMemo(
     () =>
       spots
-        .map((s) => ({ spot: s, reasons: getReviewReasons(s) }))
+        .map((s) => ({ spot: s, reasons: getReviewReasons(s, characterIds) }))
         .filter((item) => item.reasons.length > 0),
-    [spots]
+    [spots, characterIds]
   );
 
   function login() {
@@ -146,7 +163,29 @@ export default function AdminSpotsMapPage() {
   useEffect(() => {
     if (!pagePassword) return;
     initMap();
+    loadCharacterIds();
   }, [pagePassword]);
+
+  async function loadCharacterIds() {
+    try {
+      const text = await fetch(CHARACTERS_URL).then((res) => res.text());
+      const parsed = Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+      });
+
+      const ids = new Set(
+        (parsed.data as any[])
+          .map((row) => String(row.characterId || "").trim())
+          .filter(Boolean)
+      );
+
+      setCharacterIds(ids);
+    } catch (e) {
+      console.error(e);
+      setCharacterIds(new Set());
+    }
+  }
 
   async function initMap() {
     const L = await import("leaflet");
@@ -779,13 +818,13 @@ export default function AdminSpotsMapPage() {
               background: "#f5f5f5",
             }}
           >
-            <h2 style={{ margin: "0 0 8px" }}>要修正一覧</h2>
-            <p style={{ margin: "0 0 16px", color: "#555" }}>
+            <h2 style={{ margin: "0 0 8px", color: "#111" }}>要修正一覧</h2>
+            <p style={{ margin: "0 0 16px", color: "#333" }}>
               未完成・確認が必要なスポットだけを表示します。
             </p>
 
             {reviewItems.length === 0 ? (
-              <p>要修正スポットはありません。</p>
+              <p style={{ color: "#111" }}>要修正スポットはありません。</p>
             ) : (
               <div style={{ display: "grid", gap: 12 }}>
                 {reviewItems.map((item) => (
@@ -804,7 +843,7 @@ export default function AdminSpotsMapPage() {
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                      <strong>{item.spot.name || "名称未入力"}</strong>
+                      <strong style={{ color: "#111" }}>{item.spot.name || "名称未入力"}</strong>
                       <span style={{ color: "#666", fontSize: 12 }}>{item.spot.id || "新規"}</span>
                     </div>
                     <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -824,7 +863,7 @@ export default function AdminSpotsMapPage() {
                       ))}
                     </div>
                     {item.spot.description && (
-                      <p style={{ margin: "10px 0 0", fontSize: 13, color: "#555", lineHeight: 1.5 }}>
+                      <p style={{ margin: "10px 0 0", fontSize: 13, color: "#333", lineHeight: 1.5 }}>
                         {String(item.spot.description).replace(/<[^>]*>/g, "").slice(0, 90)}
                         {String(item.spot.description).replace(/<[^>]*>/g, "").length > 90 ? "..." : ""}
                       </p>
