@@ -7,6 +7,8 @@ export type Spot = {
   characterIds: string;
   spotsImage: string;
   status: string;
+  mode: string;
+  description: string;
 };
 
 export type Character = {
