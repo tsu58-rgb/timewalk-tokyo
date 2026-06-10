@@ -175,6 +175,26 @@ function RecenterMap({ position, zoom }: { position: [number, number]; zoom: num
   return null;
 }
 
+function ZoomableClusterMarker({ item }: { item: Extract<MapItem, { type: "cluster" }> }) {
+  const map = useMap();
+
+  return (
+    <Marker
+      key={`cluster-${item.key}`}
+      position={[item.lat, item.lng]}
+      icon={getClusterIcon(item.count)}
+      eventHandlers={{
+        click: () => {
+          const nextZoom = Math.min(map.getZoom() + 1, map.getMaxZoom());
+          map.setView([item.lat, item.lng], nextZoom);
+        },
+      }}
+    >
+      <Popup>{item.count}件</Popup>
+    </Marker>
+  );
+}
+
 function deferMarkerUpdate(callback: () => void) {
   const timeoutId = window.setTimeout(callback, 0);
   return () => window.clearTimeout(timeoutId);
@@ -361,15 +381,7 @@ export default function SpotMap({ spots, initialZoom = 16, height = "360px" }: P
 
         {mapItems.map((item) => {
           if (item.type === "cluster") {
-            return (
-              <Marker
-                key={`cluster-${item.key}`}
-                position={[item.lat, item.lng]}
-                icon={getClusterIcon(item.count)}
-              >
-                <Popup>{item.count}件</Popup>
-              </Marker>
-            );
+            return <ZoomableClusterMarker key={`cluster-${item.key}`} item={item} />;
           }
 
           const spot = item.spot;
