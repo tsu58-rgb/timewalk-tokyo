@@ -4,39 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
 
 import { CHARACTERS_URL, EVENTS_URL, SPOTS_URL } from "../lib/sheetUrls";
+import type { Character, EventItem, Spot, SpotWithDistance } from "@/types/timewalk";
 
 const DISTANCE_OPTIONS = [200, 500, 1000, 2000, 10000];
 const DISPLAY_LIMIT = 30;
-
-type Spot = {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  category: string;
-  characterIds: string;
-  spotsImage: string;
-  status: string;
-};
-
-type Character = {
-  characterId: string;
-  characterName: string;
-};
-
-type EventItem = {
-  id: string;
-  date: string;
-  description: string;
-  memorial: string;
-  source_url: string;
-  quiz: string;
-  quizAnswer: string;
-};
-
-type SpotWithDistance = Spot & {
-  distance: number | null;
-};
 
 function calcDistanceMeters(lat1: number, lng1: number, lat2: number, lng2: number) {
   return Math.sqrt(Math.pow(lat1 - lat2, 2) + Math.pow(lng1 - lng2, 2)) * 111000;
