@@ -3,15 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
 
+import { calcDistanceMeters } from "../lib/distance";
 import { CHARACTERS_URL, EVENTS_URL, SPOTS_URL } from "../lib/sheetUrls";
 import type { Character, EventItem, Spot, SpotWithDistance } from "@/types/timewalk";
 
 const DISTANCE_OPTIONS = [200, 500, 1000, 2000, 10000];
 const DISPLAY_LIMIT = 30;
-
-function calcDistanceMeters(lat1: number, lng1: number, lat2: number, lng2: number) {
-  return Math.sqrt(Math.pow(lat1 - lat2, 2) + Math.pow(lng1 - lng2, 2)) * 111000;
-}
 
 function splitJapaneseList(value: string) {
   return String(value || "")
