@@ -2,10 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import Papa from "papaparse";
 
 import { calcDistanceMeters } from "../lib/distance";
-import { CHARACTERS_URL, EVENTS_URL, SPOTS_URL } from "../lib/sheetUrls";
+import { fetchCharacters, fetchEvents, fetchSpots } from "../lib/timewalkData";
 import type { Character, EventItem, Spot, SpotWithDistance } from "@/types/timewalk";
 
 const SpotMap = dynamic(() => import("./SpotMap"), {
@@ -52,33 +51,8 @@ export default function TimeWalkHome() {
   const [locationLoading, setLocationLoading] = useState(false);
 
   useEffect(() => {
-    fetch(SPOTS_URL)
-      .then((res) => res.text())
-      .then((text) => {
-        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-        const data = (parsed.data as any[])
-          .map((row) => ({
-            id: row.id || "",
-            name: row.name || "",
-            spotsImage: row.spotsImage || "",
-            lat: Number(row.lat),
-            lng: Number(row.lng),
-            category: row.category || "",
-            characterIds: row.characterIds || "",
-            status: String(row.status || "").trim(),
-            mode: row.mode || "",
-            description: row.description || "",
-          }))
-          .filter(
-            (spot) =>
-              spot.status.toLowerCase() === "ready" &&
-              Number.isFinite(spot.lat) &&
-              Number.isFinite(spot.lng) &&
-              !String(spot.mode || "").includes("除外")
-          );
-
-        setSpots(data);
-      })
+    fetchSpots()
+      .then(setSpots)
       .catch((err) => {
         console.error(err);
         setError("スポットデータの取得に失敗しました。");
@@ -86,36 +60,11 @@ export default function TimeWalkHome() {
   }, []);
 
   useEffect(() => {
-    fetch(CHARACTERS_URL)
-      .then((res) => res.text())
-      .then((text) => {
-        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-        setCharacters(
-          (parsed.data as any[]).map((row) => ({
-            characterId: row.characterId || "",
-            characterName: row.characterName || "",
-          }))
-        );
-      });
+    fetchCharacters().then(setCharacters).catch(console.error);
   }, []);
 
   useEffect(() => {
-    fetch(EVENTS_URL)
-      .then((res) => res.text())
-      .then((text) => {
-        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-        setEvents(
-          (parsed.data as any[]).map((row) => ({
-            id: row.id || "",
-            date: row.date || "",
-            description: row.description || "",
-            memorial: row.memorial || "",
-            source_url: row.source_url || "",
-            quiz: row.quiz || "",
-            quizAnswer: row.quizAnswer || "",
-          }))
-        );
-      });
+    fetchEvents().then(setEvents).catch(console.error);
   }, []);
 
   async function fetchAddress(lat: number, lon: number) {
