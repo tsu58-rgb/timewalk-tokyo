@@ -12,7 +12,7 @@ function parseCsvObjects(text: string) {
   return parsed.data;
 }
 
-async function fetchCsvObjects(url: string, noStore = false) {
+export async function fetchCsvObjects(url: string, noStore = false) {
   const targetUrl = noStore ? `${url}&cacheBust=${Date.now()}` : url;
   const response = await fetch(targetUrl, noStore ? { cache: "no-store" } : undefined);
 
