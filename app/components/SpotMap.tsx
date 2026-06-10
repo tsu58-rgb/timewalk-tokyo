@@ -280,10 +280,10 @@ export default function SpotMap({ spots }: Props) {
         style={{
           position: "absolute",
           top: 12,
-          right: 12,
+          left: 56,
           zIndex: 1000,
-          background: "rgba(15, 23, 42, 0.92)",
-          color: "#fff",
+          background: "rgba(255, 255, 255, 0.95)",
+          color: "#111",
           padding: "8px 10px",
           borderRadius: 10,
           boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
