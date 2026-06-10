@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 
 import { calcDistanceMeters } from "../lib/distance";
+import { getReadyCourses } from "../lib/courses";
 import { fetchCharacters, fetchEvents, fetchSpots } from "../lib/timewalkData";
 import type { Character, EventItem, Spot, SpotWithDistance } from "@/types/timewalk";
 
@@ -49,6 +50,8 @@ export default function TimeWalkHome() {
   const [tagsInitialized, setTagsInitialized] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
+
+  const readyCourses = getReadyCourses();
 
   useEffect(() => {
     fetchSpots()
@@ -237,6 +240,25 @@ export default function TimeWalkHome() {
               </div>
             </div>
           )}
+        </section>
+
+        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+          <div className="mb-3">
+            <p className="font-bold">おすすめ歴史さんぽコース</p>
+            <p className="text-xs text-slate-400 mt-1">迷ったら、この順番で歩いてみよう</p>
+          </div>
+          <div className="space-y-3">
+            {readyCourses.map((course) => (
+              <a key={course.id} href={`/courses/${course.id}`} className="block bg-slate-900 border border-slate-600 rounded-2xl p-4">
+                <div className="flex justify-between gap-3 mb-2">
+                  <h2 className="font-bold text-yellow-300">{course.title}</h2>
+                  <span className="text-xs text-blue-300 whitespace-nowrap">{course.duration}</span>
+                </div>
+                <p className="text-sm text-slate-300 leading-relaxed">{course.description}</p>
+                <p className="text-xs text-slate-400 mt-2">{course.area} / {course.distance}</p>
+              </a>
+            ))}
+          </div>
         </section>
 
         {error && !position && <p className="bg-red-900 rounded-xl p-3 mb-4 text-sm">{error}</p>}
