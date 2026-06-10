@@ -275,26 +275,43 @@ export default function SpotMap({ spots }: Props) {
   }, []);
 
   return (
-    <div>
-      <div className="mb-3 rounded-xl bg-slate-800 p-3 text-white">
-        <p className="mb-2 text-sm font-bold">地図の種類を変更できます</p>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+    <div style={{ position: "relative" }}>
+      <div
+        style={{
+          position: "absolute",
+          top: 12,
+          right: 12,
+          zIndex: 1000,
+          background: "rgba(15, 23, 42, 0.92)",
+          color: "#fff",
+          padding: "8px 10px",
+          borderRadius: 10,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+        }}
+      >
+        <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
+          地図の種類を変更できます
+        </label>
+        <select
+          value={selectedLayerId}
+          onChange={(e) => setSelectedLayerId(e.target.value as MapLayerId)}
+          style={{
+            width: 220,
+            maxWidth: "60vw",
+            padding: "6px 8px",
+            borderRadius: 6,
+            border: "1px solid #cbd5e1",
+            background: "#fff",
+            color: "#111",
+            fontWeight: 700,
+          }}
+        >
           {mapLayers.map((layer) => (
-            <button
-              key={layer.id}
-              type="button"
-              onClick={() => setSelectedLayerId(layer.id)}
-              className={`rounded-lg border px-3 py-2 text-left text-xs ${
-                selectedLayerId === layer.id
-                  ? "border-yellow-300 bg-yellow-300 text-black"
-                  : "border-slate-600 bg-slate-700 text-slate-200"
-              }`}
-            >
-              <span className="block font-bold">{layer.label}</span>
-              <span className="block text-[11px] opacity-80">{layer.description}</span>
-            </button>
+            <option key={layer.id} value={layer.id}>
+              {layer.label}
+            </option>
           ))}
-        </div>
+        </select>
       </div>
 
       <MapContainer
