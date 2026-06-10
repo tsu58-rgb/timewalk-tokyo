@@ -122,11 +122,7 @@ function getSpotIcon(spot: Spot) {
 
   const desc = String(spot.description || "").trim();
 
-  if (
-    desc.includes("自動入力") ||
-    desc === "" ||
-    desc.length <= 50
-  ) {
+  if (desc.includes("自動入力") || desc === "" || desc.length <= 50) {
     pinColor = "#e36f6f";
   }
 
@@ -179,14 +175,7 @@ function RecenterMap({ position, zoom }: { position: [number, number]; zoom: num
   return null;
 }
 
-function runWhenIdle(callback: () => void) {
-  if (typeof window === "undefined") return;
-
-  if ("requestIdleCallback" in window) {
-    const idleId = window.requestIdleCallback(callback, { timeout: 1000 });
-    return () => window.cancelIdleCallback(idleId);
-  }
-
+function deferMarkerUpdate(callback: () => void) {
   const timeoutId = window.setTimeout(callback, 0);
   return () => window.clearTimeout(timeoutId);
 }
@@ -203,7 +192,7 @@ function SpotLayerController({
   const updateItems = (map: L.Map) => {
     cleanupRef.current?.();
 
-    cleanupRef.current = runWhenIdle(() => {
+    cleanupRef.current = deferMarkerUpdate(() => {
       const zoom = map.getZoom();
       const bounds = map.getBounds().pad(0.2);
 
@@ -270,12 +259,9 @@ function SpotLayerController({
 }
 
 export default function SpotMap({ spots, initialZoom = 16, height = "360px" }: Props) {
-  const [currentPosition, setCurrentPosition] = useState<[number, number] | null>(
-    null
-  );
+  const [currentPosition, setCurrentPosition] = useState<[number, number] | null>(null);
   const [mapItems, setMapItems] = useState<MapItem[]>([]);
-  const [selectedLayerId, setSelectedLayerId] =
-    useState<MapLayerId>("gsi-pale");
+  const [selectedLayerId, setSelectedLayerId] = useState<MapLayerId>("gsi-pale");
 
   const selectedLayer =
     mapLayers.find((layer) => layer.id === selectedLayerId) || mapLayers[0];
