@@ -1,11 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Papa from "papaparse";
 
 import { calcDistanceMeters } from "../lib/distance";
 import { CHARACTERS_URL, EVENTS_URL, SPOTS_URL } from "../lib/sheetUrls";
 import type { Character, EventItem, Spot, SpotWithDistance } from "@/types/timewalk";
+
+const SpotMap = dynamic(() => import("./SpotMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-slate-800 rounded-2xl p-4 mb-4 text-sm text-slate-300">
+      地図を読み込み中です。
+    </div>
+  ),
+});
 
 const DISTANCE_OPTIONS = [200, 500, 1000, 2000, 10000];
 const DISPLAY_LIMIT = 30;
@@ -56,12 +66,15 @@ export default function TimeWalkHome() {
             category: row.category || "",
             characterIds: row.characterIds || "",
             status: String(row.status || "").trim(),
+            mode: row.mode || "",
+            description: row.description || "",
           }))
           .filter(
             (spot) =>
               spot.status.toLowerCase() === "ready" &&
               Number.isFinite(spot.lat) &&
-              Number.isFinite(spot.lng)
+              Number.isFinite(spot.lng) &&
+              !String(spot.mode || "").includes("除外")
           );
 
         setSpots(data);
@@ -247,8 +260,8 @@ export default function TimeWalkHome() {
           )}
         </div>
 
-        <div className="text-center mb-4">
-          <a href="/map" className="text-sm text-blue-400 underline font-bold">全スポットマップを表示</a>
+        <div className="mb-4">
+          <SpotMap spots={spots} initialZoom={16} height="360px" />
         </div>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
