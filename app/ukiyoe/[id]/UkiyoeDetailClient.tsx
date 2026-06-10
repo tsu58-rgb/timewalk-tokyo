@@ -106,7 +106,7 @@ export default function UkiyoeDetailClient({ id }: { id: string }) {
 
   return (
     <main className="min-h-screen bg-slate-950 p-4 text-white">
-      <div className="mx-auto max-w-3xl rounded-3xl border border-amber-300/30 bg-slate-900 p-5">
+      <div className="mx-auto max-w-5xl rounded-3xl border border-amber-300/30 bg-slate-900 p-5">
         <div className="mb-4 flex flex-wrap gap-3">
           <Link className="rounded-xl border border-amber-300 px-4 py-2 text-sm font-bold text-amber-100" href="/ukiyoe">
             一覧へ
@@ -164,7 +164,7 @@ export default function UkiyoeDetailClient({ id }: { id: string }) {
         {nearbySpots.length > 0 && (
           <section className="mb-4 rounded-2xl bg-slate-800 p-4">
             <h2 className="mb-3 font-bold text-white">この近くの浮世絵</h2>
-            <div className="grid gap-3">
+            <div className="grid gap-3 md:grid-cols-2">
               {nearbySpots.map((item) => (
                 <RelatedSpotCard key={item.id} spot={item} />
               ))}
@@ -175,7 +175,7 @@ export default function UkiyoeDetailClient({ id }: { id: string }) {
         {seriesNeighbors.length > 0 && (
           <section className="mb-4 rounded-2xl bg-slate-800 p-4">
             <h2 className="mb-3 font-bold text-white">同じシリーズの前後</h2>
-            <div className="grid gap-3">
+            <div className="grid gap-3 md:grid-cols-2">
               {seriesNeighbors.map((item) => (
                 <RelatedSpotCard key={item.id} spot={item} />
               ))}
