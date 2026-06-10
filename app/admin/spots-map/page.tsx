@@ -1,7 +1,7 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { clusterSpots } from "../../components/map/clusterSpots";
 import {
@@ -27,6 +27,12 @@ type Spot = {
   description?: string;
   trivia?: string;
   characterIds?: string;
+  status?: string;
+};
+
+type ReviewItem = {
+  spot: Spot;
+  reasons: string[];
 };
 
 const emptySpot: Spot = {
@@ -44,12 +50,58 @@ const emptySpot: Spot = {
   description: "",
   trivia: "",
   characterIds: "",
+  status: "",
 };
+
+function getReviewReasons(s: Spot) {
+  const reasons: string[] = [];
+  const name = String(s.name || "").trim();
+  const description = String(s.description || "").trim();
+  const image = String(s.spotsImage || "").trim();
+  const category = String(s.category || "").trim();
+  const characterIds = String(s.characterIds || "").trim();
+  const status = String(s.status || "").trim();
+  const lat = Number(s.lat);
+  const lng = Number(s.lng);
+
+  if (!name) reasons.push("名前なし");
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) reasons.push("座標不正");
+  if (!description) reasons.push("説明なし");
+  if (description && description.length <= 50) reasons.push("説明50文字以下");
+  if (description.includes("自動入力")) reasons.push("自動入力あり");
+  if (!image) reasons.push("画像なし");
+  if (!category) reasons.push("カテゴリなし");
+  if (!characterIds) reasons.push("人物IDなし");
+  if (status && status.toLowerCase() !== "ready") reasons.push(`status=${status}`);
+
+  return reasons;
+}
+
+function normalizeSpot(s: any): Spot {
+  return {
+    id: String(s.id || ""),
+    name: String(s.name || ""),
+    kana: String(s.kana || ""),
+    lat: Number(s.lat),
+    lng: Number(s.lng),
+    country: String(s.country || ""),
+    prefecture: String(s.prefecture || ""),
+    city: String(s.city || ""),
+    area: String(s.area || ""),
+    category: String(s.category || ""),
+    mode: String(s.mode || ""),
+    spotsImage: String(s.spotsImage || ""),
+    description: String(s.description || ""),
+    trivia: String(s.trivia || ""),
+    characterIds: String(s.characterIds || ""),
+    status: String(s.status || ""),
+  };
+}
 
 export default function AdminSpotsMapPage() {
   const mapRef = useRef<any>(null);
   const markerLayerRef = useRef<any>(null);
-  const allSpotsRef = useRef<any[]>([]);
+  const allSpotsRef = useRef<Spot[]>([]);
   const selectedMarkerRef = useRef<any>(null);
   const newMarkerRef = useRef<any>(null);
   const currentLocationMarkerRef = useRef<any>(null);
@@ -60,11 +112,21 @@ export default function AdminSpotsMapPage() {
   const [passwordInput, setPasswordInput] = useState("");
   const [pagePassword, setPagePassword] = useState("");
   const [spot, setSpot] = useState<Spot>(emptySpot);
+  const [spots, setSpots] = useState<Spot[]>([]);
   const [imageBase64, setImageBase64] = useState("");
   const [message, setMessage] = useState("");
   const [pendingMove, setPendingMove] = useState<{ lat: number; lng: number } | null>(null);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [viewMode, setViewMode] = useState<"map" | "review">("map");
+
+  const reviewItems: ReviewItem[] = useMemo(
+    () =>
+      spots
+        .map((s) => ({ spot: s, reasons: getReviewReasons(s) }))
+        .filter((item) => item.reasons.length > 0),
+    [spots]
+  );
 
   function login() {
     if (!passwordInput) return;
@@ -168,15 +230,16 @@ export default function AdminSpotsMapPage() {
       return;
     }
 
-    const spots = json.spots || [];
-    allSpotsRef.current = spots;
+    const loadedSpots = (json.spots || []).map(normalizeSpot);
+    allSpotsRef.current = loadedSpots;
+    setSpots(loadedSpots);
 
-    await renderSpots(spots);
+    await renderSpots(loadedSpots);
 
-    setMessage(`表示中：${spots.length}件 / 全${json.total || spots.length}件`);
+    setMessage(`表示中：${loadedSpots.length}件 / 全${json.total || loadedSpots.length}件`);
   }
 
-  async function renderSpots(spots: any[]) {
+  async function renderSpots(targetSpots: Spot[]) {
     const L = await import("leaflet");
 
     if (!mapRef.current || !markerLayerRef.current) return;
@@ -187,7 +250,7 @@ export default function AdminSpotsMapPage() {
     const zoom = map.getZoom();
     const bounds = map.getBounds().pad(0.2);
 
-    const visibleSpots = spots.filter((s: any) => {
+    const visibleSpots = targetSpots.filter((s: Spot) => {
       const lat = Number(s.lat);
       const lng = Number(s.lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
@@ -214,10 +277,24 @@ export default function AdminSpotsMapPage() {
       });
     });
 
-    setMessage(`表示中：${visibleSpots.length}件 / 取得${spots.length}件`);
+    setMessage(`表示中：${visibleSpots.length}件 / 取得${targetSpots.length}件`);
   }
 
-  function addSpotMarker(L: any, s: any) {
+  function selectSpot(s: Spot, centerMap = false) {
+    const selected = normalizeSpot(s);
+
+    setSpot(selected);
+    setPendingMove(null);
+    setImageBase64("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    if (centerMap && mapRef.current && Number.isFinite(selected.lat) && Number.isFinite(selected.lng)) {
+      mapRef.current.setView([selected.lat, selected.lng], Math.max(mapRef.current.getZoom(), 16));
+      setViewMode("map");
+    }
+  }
+
+  function addSpotMarker(L: any, s: Spot) {
     const lat = Number(s.lat);
     const lng = Number(s.lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
@@ -232,28 +309,8 @@ export default function AdminSpotsMapPage() {
     marker.on("click", () => {
       if (isSavingRef.current) return;
 
-      setSpot({
-        id: String(s.id || ""),
-        name: String(s.name || ""),
-        kana: String(s.kana || ""),
-        lat,
-        lng,
-        country: String(s.country || ""),
-        prefecture: String(s.prefecture || ""),
-        city: String(s.city || ""),
-        area: String(s.area || ""),
-        category: String(s.category || ""),
-        mode: String(s.mode || ""),
-        spotsImage: String(s.spotsImage || ""),
-        description: String(s.description || ""),
-        trivia: String(s.trivia || ""),
-        characterIds: String(s.characterIds || ""),
-      });
-
+      selectSpot(s);
       selectedMarkerRef.current = marker;
-      setPendingMove(null);
-      setImageBase64("");
-      if (fileInputRef.current) fileInputRef.current.value = "";
     });
 
     marker.on("dragend", (e: any) => {
@@ -385,6 +442,7 @@ export default function AdminSpotsMapPage() {
         return;
       }
 
+      setViewMode("map");
       mapRef.current.setView([lat, lng], 16);
       await loadExistingSpots();
 
@@ -604,12 +662,12 @@ export default function AdminSpotsMapPage() {
             display: block !important;
             height: auto !important;
           }
-          #map {
+          #map,
+          #review-list {
             width: 100vw !important;
             height: 60vh !important;
             min-height: 360px !important;
           }
-
           main > div {
             width: 100vw !important;
             height: 60vh !important;
@@ -637,71 +695,146 @@ export default function AdminSpotsMapPage() {
             pointerEvents: "none",
           }}
         >
-          <input
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") searchPlace();
-            }}
-            placeholder="地点を検索"
-            disabled={isSaving}
-            style={{
-              flex: 1,
-              minWidth: 0,
-              padding: "10px 12px",
-              borderRadius: 6,
-              border: "1px solid #ccc",
-              background: "#fff",
-              color: "#111",
-              fontSize: 16,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-              pointerEvents: "auto",
-            }}
-          />
-
           <button
             type="button"
-            onClick={searchPlace}
-            disabled={isSaving}
+            onClick={() => setViewMode("map")}
             style={{
-              padding: "10px 12px",
-              borderRadius: 6,
-              border: "1px solid #111",
-              background: "#111",
-              color: "#fff",
-              fontWeight: "bold",
-              whiteSpace: "nowrap",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-              pointerEvents: "auto",
+              ...topButtonStyle,
+              background: viewMode === "map" ? "#111" : "#fff",
+              color: viewMode === "map" ? "#fff" : "#111",
             }}
           >
-            検索
+            地図で探す
           </button>
 
           <button
             type="button"
-            onClick={() => {
-              if (isSavingRef.current) return;
-              flyToCurrentLocation(true);
-            }}
-            disabled={isSaving}
+            onClick={() => setViewMode("review")}
             style={{
-              padding: "10px 12px",
-              borderRadius: 6,
-              border: "1px solid #ccc",
-              background: "#fff",
-              color: "#111",
-              fontWeight: "bold",
-              whiteSpace: "nowrap",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-              pointerEvents: "auto",
+              ...topButtonStyle,
+              background: viewMode === "review" ? "#b33a2f" : "#fff",
+              color: viewMode === "review" ? "#fff" : "#111",
             }}
           >
-            現在地
+            要修正一覧 {reviewItems.length}件
           </button>
+
+          {viewMode === "map" && (
+            <>
+              <input
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") searchPlace();
+                }}
+                placeholder="地点を検索"
+                disabled={isSaving}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  padding: "10px 12px",
+                  borderRadius: 6,
+                  border: "1px solid #ccc",
+                  background: "#fff",
+                  color: "#111",
+                  fontSize: 16,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                  pointerEvents: "auto",
+                }}
+              />
+
+              <button type="button" onClick={searchPlace} disabled={isSaving} style={topButtonStyle}>
+                検索
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (isSavingRef.current) return;
+                  flyToCurrentLocation(true);
+                }}
+                disabled={isSaving}
+                style={topButtonStyle}
+              >
+                現在地
+              </button>
+            </>
+          )}
         </div>
 
-        <div id="map" style={{ width: "100%", height: "100%", minHeight: 420 }} />
+        <div style={{ display: viewMode === "map" ? "block" : "none", width: "100%", height: "100%" }}>
+          <div id="map" style={{ width: "100%", height: "100%", minHeight: 420 }} />
+        </div>
+
+        {viewMode === "review" && (
+          <div
+            id="review-list"
+            style={{
+              width: "100%",
+              height: "100%",
+              minHeight: 420,
+              overflowY: "auto",
+              padding: "76px 16px 16px",
+              boxSizing: "border-box",
+              background: "#f5f5f5",
+            }}
+          >
+            <h2 style={{ margin: "0 0 8px" }}>要修正一覧</h2>
+            <p style={{ margin: "0 0 16px", color: "#555" }}>
+              未完成・確認が必要なスポットだけを表示します。
+            </p>
+
+            {reviewItems.length === 0 ? (
+              <p>要修正スポットはありません。</p>
+            ) : (
+              <div style={{ display: "grid", gap: 12 }}>
+                {reviewItems.map((item) => (
+                  <button
+                    key={item.spot.id || item.spot.name}
+                    type="button"
+                    onClick={() => selectSpot(item.spot, false)}
+                    style={{
+                      textAlign: "left",
+                      background: "#fff",
+                      border: "1px solid #ddd",
+                      borderRadius: 12,
+                      padding: 14,
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                      <strong>{item.spot.name || "名称未入力"}</strong>
+                      <span style={{ color: "#666", fontSize: 12 }}>{item.spot.id || "新規"}</span>
+                    </div>
+                    <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {item.reasons.map((reason) => (
+                        <span
+                          key={reason}
+                          style={{
+                            fontSize: 12,
+                            padding: "4px 8px",
+                            borderRadius: 999,
+                            background: reason.includes("画像") ? "#fff3cd" : reason.includes("説明") ? "#f8d7da" : "#e2e3e5",
+                            color: "#111",
+                          }}
+                        >
+                          {reason}
+                        </span>
+                      ))}
+                    </div>
+                    {item.spot.description && (
+                      <p style={{ margin: "10px 0 0", fontSize: 13, color: "#555", lineHeight: 1.5 }}>
+                        {String(item.spot.description).replace(/<[^>]*>/g, "").slice(0, 90)}
+                        {String(item.spot.description).replace(/<[^>]*>/g, "").length > 90 ? "..." : ""}
+                      </p>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {isSaving && (
           <div
@@ -878,4 +1011,17 @@ const buttonStyle: React.CSSProperties = {
   padding: 12,
   marginTop: 12,
   fontWeight: "bold",
+};
+
+const topButtonStyle: React.CSSProperties = {
+  padding: "10px 12px",
+  borderRadius: 6,
+  border: "1px solid #111",
+  background: "#111",
+  color: "#fff",
+  fontWeight: "bold",
+  whiteSpace: "nowrap",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+  pointerEvents: "auto",
+  cursor: "pointer",
 };
