@@ -15,6 +15,10 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
+import { clusterSpots, type ClusterItem } from "./map/clusterSpots";
+import { defaultMapLayerId, mapLayers, type MapLayerId } from "./map/mapLayers";
+import { getClusterMarkerIcon, getSpotMarkerIcon } from "./map/mapIcons";
+
 type Spot = {
   id: string;
   name: string;
@@ -31,139 +35,9 @@ type Props = {
   height?: string;
 };
 
-type MapLayerId =
-  | "osm"
-  | "gsi-pale"
-  | "gsi-photo"
-  | "gsi-photo-1945"
-  | "gsi-photo-1936";
-
-type MapLayer = {
-  id: MapLayerId;
-  label: string;
-  description: string;
-  url: string;
-  attribution: string;
-  minNativeZoom?: number;
-  maxNativeZoom?: number;
-};
-
-type MapItem =
-  | {
-      type: "spot";
-      spot: Spot;
-    }
-  | {
-      type: "cluster";
-      key: string;
-      count: number;
-      lat: number;
-      lng: number;
-    };
-
-const GSI_ATTRIBUTION =
-  '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener noreferrer">地理院タイル</a>';
-
-const mapLayers: MapLayer[] = [
-  {
-    id: "osm",
-    label: "OpenStreetMap",
-    description: "通常の地図",
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
-    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  },
-  {
-    id: "gsi-pale",
-    label: "地理院 淡色地図",
-    description: "ピンが見やすい淡色地図",
-    attribution: GSI_ATTRIBUTION,
-    url: "https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png",
-    maxNativeZoom: 18,
-  },
-  {
-    id: "gsi-photo",
-    label: "地理院 最新写真",
-    description: "全国最新写真・空中写真",
-    attribution: GSI_ATTRIBUTION,
-    url: "https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg",
-    minNativeZoom: 9,
-    maxNativeZoom: 18,
-  },
-  {
-    id: "gsi-photo-1945",
-    label: "地理院 空中写真 1945-1950",
-    description: "終戦直後ごろの空中写真",
-    attribution: GSI_ATTRIBUTION,
-    url: "https://cyberjapandata.gsi.go.jp/xyz/ort_USA10/{z}/{x}/{y}.png",
-    minNativeZoom: 10,
-    maxNativeZoom: 17,
-  },
-  {
-    id: "gsi-photo-1936",
-    label: "地理院 空中写真 1936-1942",
-    description: "東京23区内などの戦前空中写真",
-    attribution: GSI_ATTRIBUTION,
-    url: "https://cyberjapandata.gsi.go.jp/xyz/ort_riku10/{z}/{x}/{y}.png",
-    minNativeZoom: 13,
-    maxNativeZoom: 18,
-  },
-];
+type MapItem = ClusterItem<Spot>;
 
 const defaultCenter: [number, number] = [35.681236, 139.767125];
-
-function getSpotIcon(spot: Spot) {
-  let pinColor = "#9f2f25";
-  let centerColor = "#ffffff";
-
-  if (String(spot.spotsImage || "").trim()) {
-    centerColor = "#ffe96a";
-  }
-
-  const desc = String(spot.description || "").trim();
-
-  if (desc.includes("自動入力") || desc === "" || desc.length <= 50) {
-    pinColor = "#e36f6f";
-  }
-
-  return L.divIcon({
-    html: `
-      <svg width="26" height="40" viewBox="0 0 26 40">
-        <path
-          d="M13 0 C6 0 0 6 0 13 C0 24 13 40 13 40 C13 40 26 24 26 13 C26 6 20 0 13 0Z"
-          fill="${pinColor}"
-        />
-        <circle cx="13" cy="13" r="5" fill="${centerColor}" />
-      </svg>
-    `,
-    className: "",
-    iconSize: [26, 40],
-    iconAnchor: [13, 40],
-    popupAnchor: [0, -40],
-  });
-}
-
-function getClusterIcon(count: number) {
-  return L.divIcon({
-    html: `
-      <svg width="44" height="44" viewBox="0 0 44 44">
-        <circle cx="22" cy="22" r="20" fill="#9f2f25" />
-        <circle cx="22" cy="22" r="12" fill="#ffffff" />
-        <text
-          x="22"
-          y="26"
-          text-anchor="middle"
-          font-size="12"
-          font-weight="bold"
-          fill="#9f2f25"
-        >${count}</text>
-      </svg>
-    `,
-    className: "",
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
-  });
-}
 
 function RecenterMap({ position, zoom }: { position: [number, number]; zoom: number }) {
   const map = useMap();
@@ -182,7 +56,7 @@ function ZoomableClusterMarker({ item }: { item: Extract<MapItem, { type: "clust
     <Marker
       key={`cluster-${item.key}`}
       position={[item.lat, item.lng]}
-      icon={getClusterIcon(item.count)}
+      icon={getClusterMarkerIcon(L, item.count) as L.Icon}
       eventHandlers={{
         click: () => {
           const nextZoom = Math.min(map.getZoom() + 1, map.getMaxZoom());
@@ -221,45 +95,7 @@ function SpotLayerController({
         return bounds.contains([spot.lat, spot.lng]);
       });
 
-      const shouldCluster = zoom < 17;
-      const cellSize = zoom <= 12 ? 90 : zoom <= 14 ? 75 : zoom <= 16 ? 60 : 45;
-
-      if (!shouldCluster) {
-        onItemsChange(visibleSpots.map((spot) => ({ type: "spot", spot })));
-        return;
-      }
-
-      const clusters: Record<string, Spot[]> = {};
-
-      visibleSpots.forEach((spot) => {
-        const point = map.project([spot.lat, spot.lng], zoom);
-        const key = `${Math.floor(point.x / cellSize)}_${Math.floor(point.y / cellSize)}`;
-
-        if (!clusters[key]) clusters[key] = [];
-        clusters[key].push(spot);
-      });
-
-      const items: MapItem[] = [];
-
-      Object.entries(clusters).forEach(([key, group]) => {
-        if (group.length === 1) {
-          items.push({ type: "spot", spot: group[0] });
-          return;
-        }
-
-        const lat = group.reduce((sum, spot) => sum + spot.lat, 0) / group.length;
-        const lng = group.reduce((sum, spot) => sum + spot.lng, 0) / group.length;
-
-        items.push({
-          type: "cluster",
-          key,
-          count: group.length,
-          lat,
-          lng,
-        });
-      });
-
-      onItemsChange(items);
+      onItemsChange(clusterSpots(visibleSpots, map, zoom));
     });
   };
 
@@ -281,7 +117,7 @@ function SpotLayerController({
 export default function SpotMap({ spots, initialZoom = 16, height = "360px" }: Props) {
   const [currentPosition, setCurrentPosition] = useState<[number, number] | null>(null);
   const [mapItems, setMapItems] = useState<MapItem[]>([]);
-  const [selectedLayerId, setSelectedLayerId] = useState<MapLayerId>("gsi-pale");
+  const [selectedLayerId, setSelectedLayerId] = useState<MapLayerId>(defaultMapLayerId);
 
   const selectedLayer =
     mapLayers.find((layer) => layer.id === selectedLayerId) || mapLayers[0];
@@ -390,7 +226,7 @@ export default function SpotMap({ spots, initialZoom = 16, height = "360px" }: P
             <Marker
               key={spot.id}
               position={[spot.lat, spot.lng]}
-              icon={getSpotIcon(spot)}
+              icon={getSpotMarkerIcon(L, spot) as L.Icon}
             >
               <Popup>
                 <div>
