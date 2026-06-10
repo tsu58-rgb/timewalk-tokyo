@@ -19,6 +19,8 @@ type Props = {
   spots: Spot[];
   initialZoom?: number;
   height?: string;
+  currentPosition?: [number, number] | null;
+  followCurrentLocation?: boolean;
 };
 
 type MapItem = ClusterItem<Spot>;
@@ -80,8 +82,14 @@ function SpotLayerController({
   return null;
 }
 
-export default function SpotMap({ spots, initialZoom = 16, height = "360px" }: Props) {
-  const [currentPosition, setCurrentPosition] = useState<[number, number] | null>(null);
+export default function SpotMap({
+  spots,
+  initialZoom = 16,
+  height = "360px",
+  currentPosition,
+  followCurrentLocation = true,
+}: Props) {
+  const [detectedCurrentPosition, setDetectedCurrentPosition] = useState<[number, number] | null>(null);
   const [mapItems, setMapItems] = useState<MapItem[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<MapLayerId>(defaultMapLayerId);
 
@@ -89,11 +97,12 @@ export default function SpotMap({ spots, initialZoom = 16, height = "360px" }: P
     mapLayers.find((layer) => layer.id === selectedLayerId) || mapLayers[0];
 
   useEffect(() => {
+    if (currentPosition !== undefined) return;
     if (!navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCurrentPosition([pos.coords.latitude, pos.coords.longitude]);
+        setDetectedCurrentPosition([pos.coords.latitude, pos.coords.longitude]);
       },
       (err) => {
         console.error(err);
@@ -102,14 +111,17 @@ export default function SpotMap({ spots, initialZoom = 16, height = "360px" }: P
         enableHighAccuracy: true,
       }
     );
-  }, []);
+  }, [currentPosition]);
+
+  const displayedCurrentPosition =
+    currentPosition !== undefined ? currentPosition : detectedCurrentPosition;
 
   return (
     <div style={{ position: "relative" }}>
       <MapLayerSelector selectedLayerId={selectedLayerId} onChange={setSelectedLayerId} />
 
       <MapContainer
-        center={currentPosition || defaultCenter}
+        center={displayedCurrentPosition || defaultCenter}
         zoom={initialZoom}
         style={{
           width: "100%",
@@ -128,12 +140,14 @@ export default function SpotMap({ spots, initialZoom = 16, height = "360px" }: P
 
         <SpotLayerController spots={spots} onItemsChange={setMapItems} />
 
-        {currentPosition && <RecenterMap position={currentPosition} zoom={initialZoom} />}
+        {displayedCurrentPosition && followCurrentLocation && (
+          <RecenterMap position={displayedCurrentPosition} zoom={initialZoom} />
+        )}
 
-        {currentPosition !== null && (
+        {displayedCurrentPosition !== null && displayedCurrentPosition !== undefined && (
           <Pane name="current-location-pane" style={{ zIndex: 1000 }}>
             <CircleMarker
-              center={[currentPosition[0], currentPosition[1]]}
+              center={[displayedCurrentPosition[0], displayedCurrentPosition[1]]}
               radius={10}
               pathOptions={{
                 color: "#ffffff",
