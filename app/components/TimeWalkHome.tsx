@@ -48,6 +48,7 @@ export default function TimeWalkHome() {
   const [selectedDistance, setSelectedDistance] = useState(2000);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagsInitialized, setTagsInitialized] = useState(false);
+  const [showCourses, setShowCourses] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
 
@@ -217,7 +218,26 @@ export default function TimeWalkHome() {
         </div>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <button onClick={() => setShowDetails(!showDetails)} className={`w-full text-center text-base font-bold ${showDetails ? "border border-white py-2" : ""}`}>{showDetails ? "詳細非表示" : "詳細表示"}</button>
+          <button onClick={() => setShowCourses(!showCourses)} className={`w-full text-center text-base font-bold ${showCourses ? "border border-white py-2" : ""}`}>おすすめ歴史さんぽコース [{showCourses ? "閉じる" : "開く"}]</button>
+          {showCourses && (
+            <div className="mt-4 space-y-3">
+              <p className="text-xs text-slate-400">迷ったら、この順番で歩いてみよう</p>
+              {readyCourses.map((course) => (
+                <a key={course.id} href={`/courses/${course.id}`} className="block bg-slate-900 border border-slate-600 rounded-2xl p-4">
+                  <div className="flex justify-between gap-3 mb-2">
+                    <h2 className="font-bold text-yellow-300">{course.title}</h2>
+                    <span className="text-xs text-blue-300 whitespace-nowrap">{course.duration}</span>
+                  </div>
+                  <p className="text-sm text-slate-300 leading-relaxed">{course.description}</p>
+                  <p className="text-xs text-slate-400 mt-2">{course.area} / {course.distance}</p>
+                </a>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
+          <button onClick={() => setShowDetails(!showDetails)} className={`w-full text-center text-base font-bold ${showDetails ? "border border-white py-2" : ""}`}>詳細設定[{showDetails ? "閉じる" : "開く"}]</button>
           {showDetails && (
             <div className="mt-4 space-y-4">
               <div>
@@ -240,25 +260,6 @@ export default function TimeWalkHome() {
               </div>
             </div>
           )}
-        </section>
-
-        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <div className="mb-3">
-            <p className="font-bold">おすすめ歴史さんぽコース</p>
-            <p className="text-xs text-slate-400 mt-1">迷ったら、この順番で歩いてみよう</p>
-          </div>
-          <div className="space-y-3">
-            {readyCourses.map((course) => (
-              <a key={course.id} href={`/courses/${course.id}`} className="block bg-slate-900 border border-slate-600 rounded-2xl p-4">
-                <div className="flex justify-between gap-3 mb-2">
-                  <h2 className="font-bold text-yellow-300">{course.title}</h2>
-                  <span className="text-xs text-blue-300 whitespace-nowrap">{course.duration}</span>
-                </div>
-                <p className="text-sm text-slate-300 leading-relaxed">{course.description}</p>
-                <p className="text-xs text-slate-400 mt-2">{course.area} / {course.distance}</p>
-              </a>
-            ))}
-          </div>
         </section>
 
         {error && !position && <p className="bg-red-900 rounded-xl p-3 mb-4 text-sm">{error}</p>}
