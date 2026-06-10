@@ -261,7 +261,7 @@ export default function TimeWalkHome() {
         </div>
 
         <div className="mb-4">
-          <SpotMap spots={spots} initialZoom={16} height="360px" />
+          <SpotMap spots={spots} initialZoom={15} height="360px" />
         </div>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
