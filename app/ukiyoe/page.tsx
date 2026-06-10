@@ -29,6 +29,7 @@ export default function UkiyoePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [selectedSeriesId, setSelectedSeriesId] = useState("");
 
   useEffect(() => {
     fetch(UKIYOE_SPOTS_URL)
@@ -41,9 +42,24 @@ export default function UkiyoePage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const seriesOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    spots.forEach((spot) => {
+      if (spot.seriesId && spot.series && !map.has(spot.seriesId)) {
+        map.set(spot.seriesId, spot.series);
+      }
+    });
+    return Array.from(map.entries()).map(([seriesId, series]) => ({ seriesId, series }));
+  }, [spots]);
+
   const filteredSpots = useMemo(
-    () => spots.filter((spot) => matchesSearch(spot, query)),
-    [spots, query]
+    () =>
+      spots.filter(
+        (spot) =>
+          (!selectedSeriesId || spot.seriesId === selectedSeriesId) &&
+          matchesSearch(spot, query)
+      ),
+    [spots, selectedSeriesId, query]
   );
 
   return (
@@ -66,16 +82,39 @@ export default function UkiyoePage() {
         </section>
 
         <section className="mb-5 rounded-2xl border border-slate-700 bg-slate-900 p-4">
-          <label className="mb-2 block text-sm font-bold text-amber-100" htmlFor="ukiyoe-search">
-            浮世絵を検索
-          </label>
-          <input
-            id="ukiyoe-search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="作品名・作者・場所・タグで検索"
-            className="w-full rounded-xl border border-slate-600 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500"
-          />
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-bold text-amber-100" htmlFor="ukiyoe-series">
+                シリーズを選択
+              </label>
+              <select
+                id="ukiyoe-series"
+                value={selectedSeriesId}
+                onChange={(event) => setSelectedSeriesId(event.target.value)}
+                className="w-full rounded-xl border border-slate-600 bg-slate-950 px-4 py-3 text-white"
+              >
+                <option value="">すべてのシリーズ</option>
+                {seriesOptions.map((option) => (
+                  <option key={option.seriesId} value={option.seriesId}>
+                    {option.series}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-amber-100" htmlFor="ukiyoe-search">
+                浮世絵を検索
+              </label>
+              <input
+                id="ukiyoe-search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="作品名・作者・場所・タグで検索"
+                className="w-full rounded-xl border border-slate-600 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500"
+              />
+            </div>
+          </div>
           <p className="mt-2 text-xs text-slate-400">
             表示中：{filteredSpots.length}件 / 全{spots.length}件
           </p>
