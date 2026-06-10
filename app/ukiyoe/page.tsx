@@ -1,13 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { UKIYOE_SPOTS_URL, parseUkiyoeCsv, type UkiyoeSpot } from "./data";
+
+function matchesSearch(spot: UkiyoeSpot, query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return true;
+
+  const target = [
+    spot.series,
+    spot.seriesOrder,
+    spot.title,
+    spot.titleKana,
+    spot.artist,
+    spot.placeName,
+    spot.modernAddress,
+    spot.tags,
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return target.includes(normalizedQuery);
+}
 
 export default function UkiyoePage() {
   const [spots, setSpots] = useState<UkiyoeSpot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     fetch(UKIYOE_SPOTS_URL)
@@ -20,9 +41,14 @@ export default function UkiyoePage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const filteredSpots = useMemo(
+    () => spots.filter((spot) => matchesSearch(spot, query)),
+    [spots, query]
+  );
+
   return (
-    <main className="min-h-screen bg-slate-950 text-white p-4">
-      <div className="mx-auto max-w-5xl">
+    <main className="min-h-screen bg-slate-950 p-4 text-white">
+      <div className="mx-auto max-w-7xl">
         <section className="mb-6 rounded-3xl border border-amber-300/40 bg-slate-900 p-6">
           <p className="mb-2 text-sm text-amber-300">TimeWalk 浮世絵</p>
           <h1 className="mb-3 text-3xl font-bold">浮世絵で歩く江戸・東京</h1>
@@ -39,17 +65,42 @@ export default function UkiyoePage() {
           </div>
         </section>
 
+        <section className="mb-5 rounded-2xl border border-slate-700 bg-slate-900 p-4">
+          <label className="mb-2 block text-sm font-bold text-amber-100" htmlFor="ukiyoe-search">
+            浮世絵を検索
+          </label>
+          <input
+            id="ukiyoe-search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="作品名・作者・場所・タグで検索"
+            className="w-full rounded-xl border border-slate-600 bg-slate-950 px-4 py-3 text-white placeholder:text-slate-500"
+          />
+          <p className="mt-2 text-xs text-slate-400">
+            表示中：{filteredSpots.length}件 / 全{spots.length}件
+          </p>
+        </section>
+
         {loading && <p>読み込み中...</p>}
         {error && <p className="rounded-xl bg-red-900 p-4">{error}</p>}
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {spots.map((spot) => (
-            <Link key={spot.id} href={`/ukiyoe/${spot.id}`} target="_blank" className="rounded-2xl border border-slate-700 bg-slate-900 p-4 hover:border-amber-300">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {filteredSpots.map((spot) => (
+            <Link
+              key={spot.id}
+              href={`/ukiyoe/${spot.id}`}
+              target="_blank"
+              className="rounded-2xl border border-slate-700 bg-slate-900 p-4 hover:border-amber-300"
+            >
               {spot.thumbnailUrl && (
-                <img src={spot.thumbnailUrl} alt={spot.title} className="mb-3 max-h-56 w-full object-contain rounded-xl bg-black" />
+                <img
+                  src={spot.thumbnailUrl}
+                  alt={spot.title}
+                  className="mb-3 h-48 w-full rounded-xl bg-black object-contain"
+                />
               )}
               <p className="text-xs text-amber-300">{spot.series} #{spot.seriesOrder}</p>
-              <h2 className="text-xl font-bold">{spot.title}</h2>
+              <h2 className="text-lg font-bold leading-snug">{spot.title}</h2>
               <p className="text-sm text-slate-300">{spot.artist} / {spot.placeName}</p>
             </Link>
           ))}
