@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMap } from "react-leaflet";
 import {
   MapContainer,
@@ -27,6 +27,8 @@ type Spot = {
 
 type Props = {
   spots: Spot[];
+  initialZoom?: number;
+  height?: string;
 };
 
 type MapLayerId =
@@ -167,14 +169,26 @@ function getClusterIcon(count: number) {
   });
 }
 
-function RecenterMap({ position }: { position: [number, number] }) {
+function RecenterMap({ position, zoom }: { position: [number, number]; zoom: number }) {
   const map = useMap();
 
   useEffect(() => {
-    map.setView(position, 14);
-  }, [position, map]);
+    map.setView(position, zoom);
+  }, [position, zoom, map]);
 
   return null;
+}
+
+function runWhenIdle(callback: () => void) {
+  if (typeof window === "undefined") return;
+
+  if ("requestIdleCallback" in window) {
+    const idleId = window.requestIdleCallback(callback, { timeout: 1000 });
+    return () => window.cancelIdleCallback(idleId);
+  }
+
+  const timeoutId = window.setTimeout(callback, 0);
+  return () => window.clearTimeout(timeoutId);
 }
 
 function SpotLayerController({
@@ -184,54 +198,60 @@ function SpotLayerController({
   spots: Spot[];
   onItemsChange: (items: MapItem[]) => void;
 }) {
+  const cleanupRef = useRef<(() => void) | undefined>(undefined);
+
   const updateItems = (map: L.Map) => {
-    const zoom = map.getZoom();
-    const bounds = map.getBounds().pad(0.2);
+    cleanupRef.current?.();
 
-    const visibleSpots = spots.filter((spot) => {
-      if (!Number.isFinite(spot.lat) || !Number.isFinite(spot.lng)) return false;
-      return bounds.contains([spot.lat, spot.lng]);
-    });
+    cleanupRef.current = runWhenIdle(() => {
+      const zoom = map.getZoom();
+      const bounds = map.getBounds().pad(0.2);
 
-    const shouldCluster = zoom < 17;
-    const cellSize = zoom <= 12 ? 90 : zoom <= 14 ? 75 : zoom <= 16 ? 60 : 45;
+      const visibleSpots = spots.filter((spot) => {
+        if (!Number.isFinite(spot.lat) || !Number.isFinite(spot.lng)) return false;
+        return bounds.contains([spot.lat, spot.lng]);
+      });
 
-    if (!shouldCluster) {
-      onItemsChange(visibleSpots.map((spot) => ({ type: "spot", spot })));
-      return;
-    }
+      const shouldCluster = zoom < 17;
+      const cellSize = zoom <= 12 ? 90 : zoom <= 14 ? 75 : zoom <= 16 ? 60 : 45;
 
-    const clusters: Record<string, Spot[]> = {};
-
-    visibleSpots.forEach((spot) => {
-      const point = map.project([spot.lat, spot.lng], zoom);
-      const key = `${Math.floor(point.x / cellSize)}_${Math.floor(point.y / cellSize)}`;
-
-      if (!clusters[key]) clusters[key] = [];
-      clusters[key].push(spot);
-    });
-
-    const items: MapItem[] = [];
-
-    Object.entries(clusters).forEach(([key, group]) => {
-      if (group.length === 1) {
-        items.push({ type: "spot", spot: group[0] });
+      if (!shouldCluster) {
+        onItemsChange(visibleSpots.map((spot) => ({ type: "spot", spot })));
         return;
       }
 
-      const lat = group.reduce((sum, spot) => sum + spot.lat, 0) / group.length;
-      const lng = group.reduce((sum, spot) => sum + spot.lng, 0) / group.length;
+      const clusters: Record<string, Spot[]> = {};
 
-      items.push({
-        type: "cluster",
-        key,
-        count: group.length,
-        lat,
-        lng,
+      visibleSpots.forEach((spot) => {
+        const point = map.project([spot.lat, spot.lng], zoom);
+        const key = `${Math.floor(point.x / cellSize)}_${Math.floor(point.y / cellSize)}`;
+
+        if (!clusters[key]) clusters[key] = [];
+        clusters[key].push(spot);
       });
-    });
 
-    onItemsChange(items);
+      const items: MapItem[] = [];
+
+      Object.entries(clusters).forEach(([key, group]) => {
+        if (group.length === 1) {
+          items.push({ type: "spot", spot: group[0] });
+          return;
+        }
+
+        const lat = group.reduce((sum, spot) => sum + spot.lat, 0) / group.length;
+        const lng = group.reduce((sum, spot) => sum + spot.lng, 0) / group.length;
+
+        items.push({
+          type: "cluster",
+          key,
+          count: group.length,
+          lat,
+          lng,
+        });
+      });
+
+      onItemsChange(items);
+    });
   };
 
   const map = useMapEvents({
@@ -242,12 +262,14 @@ function SpotLayerController({
 
   useEffect(() => {
     updateItems(map);
+
+    return () => cleanupRef.current?.();
   }, [spots, map]);
 
   return null;
 }
 
-export default function SpotMap({ spots }: Props) {
+export default function SpotMap({ spots, initialZoom = 16, height = "360px" }: Props) {
   const [currentPosition, setCurrentPosition] = useState<[number, number] | null>(
     null
   );
@@ -289,15 +311,13 @@ export default function SpotMap({ spots }: Props) {
           boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
         }}
       >
-        <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 4 }}>
-          地図の種類を変更できます
-        </label>
         <select
+          aria-label="地図の種類"
           value={selectedLayerId}
           onChange={(e) => setSelectedLayerId(e.target.value as MapLayerId)}
           style={{
-            width: 220,
-            maxWidth: "60vw",
+            width: 180,
+            maxWidth: "52vw",
             padding: "6px 8px",
             borderRadius: 6,
             border: "1px solid #cbd5e1",
@@ -316,10 +336,10 @@ export default function SpotMap({ spots }: Props) {
 
       <MapContainer
         center={currentPosition || defaultCenter}
-        zoom={12}
+        zoom={initialZoom}
         style={{
           width: "100%",
-          height: "80vh",
+          height,
           borderRadius: "16px",
           overflow: "hidden",
         }}
@@ -334,7 +354,7 @@ export default function SpotMap({ spots }: Props) {
 
         <SpotLayerController spots={spots} onItemsChange={setMapItems} />
 
-        {currentPosition && <RecenterMap position={currentPosition} />}
+        {currentPosition && <RecenterMap position={currentPosition} zoom={initialZoom} />}
 
         {currentPosition !== null && (
           <Pane name="current-location-pane" style={{ zIndex: 1000 }}>
