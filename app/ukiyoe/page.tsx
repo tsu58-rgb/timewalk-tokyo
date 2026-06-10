@@ -44,7 +44,7 @@ export default function UkiyoePage() {
 
         <div className="grid gap-4 md:grid-cols-2">
           {spots.map((spot) => (
-            <Link key={spot.id} href={`/ukiyoe/${spot.id}`} className="rounded-2xl border border-slate-700 bg-slate-900 p-4 hover:border-amber-300">
+            <Link key={spot.id} href={`/ukiyoe/${spot.id}`} target="_blank" className="rounded-2xl border border-slate-700 bg-slate-900 p-4 hover:border-amber-300">
               {spot.thumbnailUrl && (
                 <img src={spot.thumbnailUrl} alt={spot.title} className="mb-3 max-h-56 w-full object-contain rounded-xl bg-black" />
               )}
