@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
 import Link from "next/link";
-import Papa from "papaparse";
+
+import { fetchCsvObjects } from "../../lib/timewalkData";
+import { SPOT_QUIZZES_URL, SPOTS_URL } from "../../lib/sheetUrls";
 
 type SpotQuiz = {
   quizId: string;
@@ -46,17 +48,8 @@ type QuizCategory =
   | "年中行事・祭礼"
   | "地域史・史跡";
 
-const BASE_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub";
-const SPOT_QUIZZES_URL = `${BASE_URL}?gid=987654321&single=true&output=csv`;
-const SPOTS_URL = `${BASE_URL}?gid=1242477641&single=true&output=csv`;
-const POINT_RADII_KM = [2, 5, 10];
+const QUIZ_COUNT = 10;
 const MAP_DEFAULT_CENTER: Point = { lat: 35.681236, lng: 139.767125 };
-
-function parseCsvObjects(text: string) {
-  const parsed = Papa.parse<Record<string, string>>(text, { header: true, skipEmptyLines: true });
-  return parsed.data;
-}
 
 function normalizeAnswer(value: string) {
   return value.trim().toLowerCase().replace(/[\s　]/g, "");
@@ -174,8 +167,8 @@ export default function KenteiQuiz() {
   const [sessionQuestions, setSessionQuestions] = useState<SpotQuiz[]>([]);
   const [spots, setSpots] = useState<SpotInfo[]>([]);
   const [mode, setMode] = useState<QuizMode>("idle");
-  const [filterMode, setFilterMode] = useState<QuizFilterMode>("all");
-  const [sessionSourceLabel, setSessionSourceLabel] = useState("全問題から出題");
+  const [filterMode, setFilterMode] = useState<QuizFilterMode>("current");
+  const [sessionSourceLabel, setSessionSourceLabel] = useState("現在地付近から出題");
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState("");
   const [checked, setChecked] = useState(false);
@@ -196,20 +189,18 @@ export default function KenteiQuiz() {
       try {
         setLoading(true);
         setError("");
-        const [quizResponse, spotsResponse] = await Promise.all([
-          fetch(`${SPOT_QUIZZES_URL}&cacheBust=${Date.now()}`, { cache: "no-store" }),
-          fetch(`${SPOTS_URL}&cacheBust=${Date.now()}`, { cache: "no-store" }),
-        ]);
-        if (!quizResponse.ok) throw new Error(`spot_quizzesを取得できませんでした: ${quizResponse.status}`);
 
-        const questions = parseCsvObjects(await quizResponse.text()).map(convertRow).filter((item): item is SpotQuiz => Boolean(item));
+        const [quizRows, spotRows] = await Promise.all([
+          fetchCsvObjects(SPOT_QUIZZES_URL, true),
+          fetchCsvObjects(SPOTS_URL, true),
+        ]);
+
+        const questions = quizRows.map(convertRow).filter((item): item is SpotQuiz => Boolean(item));
         if (questions.length === 0) throw new Error("spot_quizzesに有効な問題がありません。");
         setAllQuestions(questions);
 
-        if (spotsResponse.ok) {
-          const loadedSpots = parseCsvObjects(await spotsResponse.text()).map(convertSpotRow).filter((item): item is SpotInfo => Boolean(item));
-          setSpots(loadedSpots);
-        }
+        const loadedSpots = spotRows.map(convertSpotRow).filter((item): item is SpotInfo => Boolean(item));
+        setSpots(loadedSpots);
       } catch (err) {
         setError(err instanceof Error ? err.message : "問題の読み込みに失敗しました。");
       } finally {
@@ -300,21 +291,28 @@ export default function KenteiQuiz() {
   }
 
   function getPointFilteredQuestions(center: Point) {
-    let lastQuestions: SpotQuiz[] = [];
-    let lastRadius = POINT_RADII_KM[POINT_RADII_KM.length - 1];
+    const spotDistances = quizSpots
+      .filter((spot) => spot.lat !== null && spot.lng !== null)
+      .map((spot) => ({
+        spot,
+        distance: calculateDistanceKm(center, { lat: spot.lat as number, lng: spot.lng as number }),
+      }))
+      .sort((a, b) => a.distance - b.distance);
 
-    for (const radius of POINT_RADII_KM) {
+    const maxRadius = Math.max(1, Math.ceil(spotDistances[spotDistances.length - 1]?.distance ?? 1));
+    let lastQuestions: SpotQuiz[] = [];
+    let lastRadius = 1;
+
+    for (let radius = 1; radius <= maxRadius; radius += 1) {
       const targetSpotIds = new Set(
-        quizSpots
-          .filter((spot) => spot.lat !== null && spot.lng !== null)
-          .filter((spot) => calculateDistanceKm(center, { lat: spot.lat as number, lng: spot.lng as number }) <= radius)
-          .map((spot) => spot.id)
+        spotDistances.filter((item) => item.distance <= radius).map((item) => item.spot.id)
       );
       const questions = getQuestionsBySpotIds(targetSpotIds);
       lastQuestions = questions;
       lastRadius = radius;
-      if (questions.length >= 10) return { questions, radius };
+      if (questions.length >= QUIZ_COUNT) return { questions, radius };
     }
+
     return { questions: lastQuestions, radius: lastRadius };
   }
 
@@ -365,14 +363,21 @@ export default function KenteiQuiz() {
       statusMessage = `${sourceLabel}。対象：${candidates.length}問`;
     }
 
-    if (candidates.length < 10) {
-      setFilterStatus(`${statusMessage}。10問未満のため開始できません。`);
+    if (candidates.length === 0) {
+      setFilterStatus(`${statusMessage}。出題できる問題がありません。`);
       return;
     }
 
+    if (filterMode !== "address" && candidates.length < QUIZ_COUNT) {
+      setFilterStatus(`${statusMessage}。${QUIZ_COUNT}問未満のため開始できません。`);
+      return;
+    }
+
+    const nextQuestions = shuffle(candidates).slice(0, Math.min(QUIZ_COUNT, candidates.length));
+
     setSessionSourceLabel(sourceLabel);
     setFilterStatus(statusMessage);
-    setSessionQuestions(shuffle(candidates).slice(0, 10));
+    setSessionQuestions(nextQuestions);
     setMode("playing");
     setQuestionIndex(0);
     setAnswer("");
@@ -483,7 +488,7 @@ export default function KenteiQuiz() {
 
   const navigationArea = (
     <div className="mb-4">
-      <p className="mb-2 text-center text-sm font-bold text-slate-300">({questionIndex + 1}/{sessionQuestions.length || 10})</p>
+      <p className="mb-2 text-center text-sm font-bold text-slate-300">({questionIndex + 1}/{sessionQuestions.length || QUIZ_COUNT})</p>
       <div className="grid grid-cols-2 gap-2">
         <button type="button" onClick={() => { setQuestionIndex((current) => Math.max(current - 1, 0)); setAnswer(""); setChecked(false); }} disabled={questionIndex === 0} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">前へ</button>
         <button type="button" onClick={goToNextQuestion} disabled={!checked} className="rounded-xl bg-slate-700 px-3 py-3 text-sm font-bold text-white disabled:opacity-30">次へ</button>
@@ -499,7 +504,7 @@ export default function KenteiQuiz() {
         <header className="text-center my-5">
           <p className="text-xs text-slate-300 mb-1">TimeWalk</p>
           <h1 className="text-2xl font-bold">TimeWalk検定</h1>
-          <p className="text-sm text-slate-300 leading-relaxed mt-3">TimeWalkに登録されたスポットから出題します。ランダムに選ばれた10問に挑戦できます。</p>
+          <p className="text-sm text-slate-300 leading-relaxed mt-3">TimeWalkに登録されたスポットから出題します。条件に応じて最大10問に挑戦できます。</p>
         </header>
 
         {loading && <section className="bg-slate-800 rounded-2xl p-4 mb-4 text-sm text-slate-200">問題を読み込んでいます。</section>}
@@ -575,7 +580,7 @@ export default function KenteiQuiz() {
               </div>
             )}
 
-            <p className="text-sm text-slate-300 leading-relaxed mb-4">選択した条件に該当する日本国内スポットの問題からランダムに10問を出題します。</p>
+            <p className="text-sm text-slate-300 leading-relaxed mb-4">1と2は10問に達するまで半径を1kmずつ広げます。3は10問未満でも開始できます。</p>
             {filterStatus && <p className="text-sm text-yellow-200 leading-relaxed mb-4">{filterStatus}</p>}
             <button type="button" onClick={startQuiz} disabled={jpQuestions.length === 0} className="w-full bg-yellow-300 text-black py-3 rounded-xl font-bold disabled:opacity-40">開始</button>
           </section>
