@@ -3,10 +3,6 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   const body = await req.json();
 
-  if (body.pagePassword !== process.env.ADMIN_PAGE_PASSWORD) {
-    return NextResponse.json({ ok: false, error: "password error" }, { status: 401 });
-  }
-
   const res = await fetch(process.env.GAS_WEB_APP_URL!, {
     method: "POST",
     headers: { "Content-Type": "text/plain" },

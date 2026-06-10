@@ -624,7 +624,7 @@ export default function AdminSpotsMapPage() {
 
     const savingSpot = {
       ...spot,
-      id: spot.id === "新規" ? "" : spot.id,
+      id: spot.id && spot.id !== "新規" ? spot.id : "",
       imageBase64,
     };
 
@@ -647,7 +647,6 @@ export default function AdminSpotsMapPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          pagePassword,
           spot: savingSpot,
         }),
       });
