@@ -135,6 +135,8 @@ export default function UkiyoePage() {
                 <img
                   src={spot.thumbnailUrl}
                   alt={spot.title}
+                  loading="lazy"
+                  decoding="async"
                   className="mb-3 h-48 w-full rounded-xl bg-black object-contain"
                 />
               )}
