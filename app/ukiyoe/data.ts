@@ -42,6 +42,8 @@ export function parseUkiyoeCsv(text: string): UkiyoeSpot[] {
     skipEmptyLines: true,
   });
 
+  const seenIds = new Set<string>();
+
   return (parsed.data as Record<string, string>[])
     .map((row) => ({
       id: row.id || "",
@@ -81,7 +83,12 @@ export function parseUkiyoeCsv(text: string): UkiyoeSpot[] {
         spot.id.trim() !== "" &&
         Number.isFinite(spot.lat) &&
         Number.isFinite(spot.lng)
-    );
+    )
+    .filter((spot) => {
+      if (seenIds.has(spot.id)) return false;
+      seenIds.add(spot.id);
+      return true;
+    });
 }
 
 export function splitTags(value: string) {
@@ -102,4 +109,12 @@ export function accuracyLabel(value: string) {
     default:
       return "推定";
   }
+}
+
+export function fallbackDescription(spot: UkiyoeSpot) {
+  if (spot.description.trim()) return spot.description;
+
+  const placeText = spot.placeName ? `${spot.placeName}周辺` : "描かれた場所";
+  const yearText = spot.year || spot.period || "制作年不詳";
+  return `${spot.artist}『${spot.series}』の一図「${spot.title}」です。${yearText}の作品として登録されています。${placeText}を主題に、当時の名所や風景を現在の地図と重ねて楽しめるようにしています。`;
 }
