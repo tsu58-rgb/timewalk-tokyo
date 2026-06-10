@@ -1,16 +1,63 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { UKIYOE_SPOTS_URL, accuracyLabel, parseUkiyoeCsv, splitTags, type UkiyoeSpot } from "../data";
 
+function orderNumber(spot: UkiyoeSpot) {
+  const value = Number(spot.seriesOrder);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function distanceKm(a: UkiyoeSpot, b: UkiyoeSpot) {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const earthRadiusKm = 6371;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * earthRadiusKm * Math.asin(Math.sqrt(h));
+}
+
+function RelatedSpotCard({ spot }: { spot: UkiyoeSpot }) {
+  const thumbnail = spot.thumbnailUrl || spot.imageUrl;
+
+  return (
+    <Link
+      href={`/ukiyoe/${spot.id}`}
+      className="flex items-center justify-between gap-4 rounded-2xl border border-slate-700 bg-slate-900 p-4 hover:border-amber-300"
+    >
+      <div className="min-w-0">
+        <p className="text-xs text-amber-300">{spot.series} #{spot.seriesOrder}</p>
+        <h3 className="font-bold text-white">{spot.title}</h3>
+        <p className="text-sm text-slate-300">{spot.artist} / {spot.placeName}</p>
+      </div>
+      {thumbnail && (
+        <img
+          src={thumbnail}
+          alt={spot.title}
+          className="h-20 w-20 shrink-0 rounded-xl bg-black object-contain"
+        />
+      )}
+    </Link>
+  );
+}
+
 export default function UkiyoeDetailClient({ id }: { id: string }) {
+  const [spots, setSpots] = useState<UkiyoeSpot[]>([]);
   const [spot, setSpot] = useState<UkiyoeSpot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
+    setError("");
+    setImageError(false);
+
     fetch(UKIYOE_SPOTS_URL)
       .then((res) => {
         if (!res.ok) throw new Error("fetch failed");
@@ -18,11 +65,32 @@ export default function UkiyoeDetailClient({ id }: { id: string }) {
       })
       .then((text) => {
         const data = parseUkiyoeCsv(text);
+        setSpots(data);
         setSpot(data.find((item) => item.id === id) || null);
       })
       .catch(() => setError("浮世絵データを取得できませんでした。"))
       .finally(() => setLoading(false));
   }, [id]);
+
+  const nearbySpots = useMemo(() => {
+    if (!spot) return [];
+    return spots
+      .filter((item) => item.id !== spot.id)
+      .sort((a, b) => distanceKm(spot, a) - distanceKm(spot, b))
+      .slice(0, 4);
+  }, [spot, spots]);
+
+  const seriesNeighbors = useMemo(() => {
+    if (!spot) return [];
+    const sameSeries = spots
+      .filter((item) => item.seriesId === spot.seriesId)
+      .sort((a, b) => orderNumber(a) - orderNumber(b));
+    const currentIndex = sameSeries.findIndex((item) => item.id === spot.id);
+
+    return [sameSeries[currentIndex - 1], sameSeries[currentIndex + 1]].filter(
+      (item): item is UkiyoeSpot => Boolean(item)
+    );
+  }, [spot, spots]);
 
   if (loading) {
     return <main className="min-h-screen bg-slate-950 p-4 text-white">読み込み中...</main>;
@@ -46,7 +114,7 @@ export default function UkiyoeDetailClient({ id }: { id: string }) {
           <Link className="rounded-xl border border-amber-300 px-4 py-2 text-sm font-bold text-amber-100" href="/ukiyoe/map">
             マップへ
           </Link>
-          <a className="rounded-xl bg-green-500 px-4 py-2 text-sm font-bold text-white" href={`https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`} target="_blank" rel="noreferrer">
+          <a className="rounded-xl bg-green-500 px-4 py-2 text-sm font-bold text-white" href={`https://www.google.com/maps/search/?api=1&query=${spot.lat},${spot.lng}`}>
             Googleマップで開く
           </a>
         </div>
@@ -93,11 +161,33 @@ export default function UkiyoeDetailClient({ id }: { id: string }) {
           ))}
         </div>
 
+        {nearbySpots.length > 0 && (
+          <section className="mb-4 rounded-2xl bg-slate-800 p-4">
+            <h2 className="mb-3 font-bold text-white">この近くの浮世絵</h2>
+            <div className="grid gap-3">
+              {nearbySpots.map((item) => (
+                <RelatedSpotCard key={item.id} spot={item} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {seriesNeighbors.length > 0 && (
+          <section className="mb-4 rounded-2xl bg-slate-800 p-4">
+            <h2 className="mb-3 font-bold text-white">同じシリーズの前後</h2>
+            <div className="grid gap-3">
+              {seriesNeighbors.map((item) => (
+                <RelatedSpotCard key={item.id} spot={item} />
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="rounded-2xl bg-slate-800 p-4 text-xs text-slate-300">
           <h2 className="mb-2 font-bold text-white">出典・利用条件</h2>
           <p>{spot.credit}</p>
           <p>{spot.license}</p>
-          {spot.sourceUrl && <a className="mt-2 inline-block text-amber-300 underline" href={spot.sourceUrl} target="_blank" rel="noreferrer">出典ページを開く</a>}
+          {spot.sourceUrl && <a className="mt-2 inline-block text-amber-300 underline" href={spot.sourceUrl}>出典ページを開く</a>}
         </section>
       </div>
     </main>
