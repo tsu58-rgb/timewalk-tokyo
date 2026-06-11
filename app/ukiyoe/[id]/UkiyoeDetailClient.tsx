@@ -28,6 +28,7 @@ function RelatedSpotCard({ spot }: { spot: UkiyoeSpot }) {
   return (
     <Link
       href={`/ukiyoe/${spot.id}`}
+      prefetch={false}
       className="flex items-center justify-between gap-4 rounded-2xl border border-slate-700 bg-slate-900 p-4 hover:border-amber-300"
     >
       <div className="min-w-0">
