@@ -30,11 +30,6 @@ function isUkiyoeSpot(value: UkiyoeSpot | undefined): value is UkiyoeSpot {
   return Boolean(value);
 }
 
-export async function generateStaticParams() {
-  const spots = await getUkiyoeSpots();
-  return spots.map((spot) => ({ id: spot.id }));
-}
-
 export default async function UkiyoeDetailPage({ params }: PageParams) {
   const { id } = await params;
   const spots = await getUkiyoeSpots();
