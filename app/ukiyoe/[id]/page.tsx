@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import UkiyoeDetailClient from "./UkiyoeDetailClient";
-import { getUkiyoeSpots, UKIYOE_REVALIDATE_SECONDS } from "../data";
+import { getUkiyoeSpots, UKIYOE_REVALIDATE_SECONDS, type UkiyoeSpot } from "../data";
 
 export const revalidate = UKIYOE_REVALIDATE_SECONDS;
 
@@ -26,6 +26,10 @@ function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: numb
   return 2 * earthRadiusKm * Math.asin(Math.sqrt(h));
 }
 
+function isUkiyoeSpot(value: UkiyoeSpot | undefined): value is UkiyoeSpot {
+  return Boolean(value);
+}
+
 export async function generateStaticParams() {
   const spots = await getUkiyoeSpots();
   return spots.map((spot) => ({ id: spot.id }));
@@ -49,7 +53,7 @@ export default async function UkiyoeDetailPage({ params }: PageParams) {
     .filter((item) => item.seriesId === spot.seriesId)
     .sort((a, b) => orderNumber(a.seriesOrder) - orderNumber(b.seriesOrder));
   const currentIndex = sameSeries.findIndex((item) => item.id === spot.id);
-  const seriesNeighbors = [sameSeries[currentIndex - 1], sameSeries[currentIndex + 1]].filter(Boolean);
+  const seriesNeighbors = [sameSeries[currentIndex - 1], sameSeries[currentIndex + 1]].filter(isUkiyoeSpot);
 
   return (
     <UkiyoeDetailClient
