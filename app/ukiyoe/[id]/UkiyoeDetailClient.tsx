@@ -1,26 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { UKIYOE_SPOTS_URL, accuracyLabel, fallbackDescription, parseUkiyoeCsv, splitTags, type UkiyoeSpot } from "../data";
-
-function orderNumber(spot: UkiyoeSpot) {
-  const value = Number(spot.seriesOrder);
-  return Number.isFinite(value) ? value : 0;
-}
-
-function distanceKm(a: UkiyoeSpot, b: UkiyoeSpot) {
-  const toRad = (value: number) => (value * Math.PI) / 180;
-  const earthRadiusKm = 6371;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.lat);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return 2 * earthRadiusKm * Math.asin(Math.sqrt(h));
-}
+import { accuracyLabel, fallbackDescription, splitTags, type UkiyoeSpot } from "../data";
 
 function RelatedSpotCard({ spot }: { spot: UkiyoeSpot }) {
   const thumbnail = spot.thumbnailUrl || spot.imageUrl;
@@ -48,63 +30,16 @@ function RelatedSpotCard({ spot }: { spot: UkiyoeSpot }) {
   );
 }
 
-export default function UkiyoeDetailClient({ id }: { id: string }) {
-  const [spots, setSpots] = useState<UkiyoeSpot[]>([]);
-  const [spot, setSpot] = useState<UkiyoeSpot | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export default function UkiyoeDetailClient({
+  spot,
+  nearbySpots,
+  seriesNeighbors,
+}: {
+  spot: UkiyoeSpot;
+  nearbySpots: UkiyoeSpot[];
+  seriesNeighbors: UkiyoeSpot[];
+}) {
   const [imageError, setImageError] = useState(false);
-
-  useEffect(() => {
-    setLoading(true);
-    setError("");
-    setImageError(false);
-
-    fetch(UKIYOE_SPOTS_URL)
-      .then((res) => {
-        if (!res.ok) throw new Error("fetch failed");
-        return res.text();
-      })
-      .then((text) => {
-        const data = parseUkiyoeCsv(text);
-        setSpots(data);
-        setSpot(data.find((item) => item.id === id) || null);
-      })
-      .catch(() => setError("浮世絵データを取得できませんでした。"))
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  const nearbySpots = useMemo(() => {
-    if (!spot) return [];
-    return spots
-      .filter((item) => item.id !== spot.id)
-      .sort((a, b) => distanceKm(spot, a) - distanceKm(spot, b))
-      .slice(0, 4);
-  }, [spot, spots]);
-
-  const seriesNeighbors = useMemo(() => {
-    if (!spot) return [];
-    const sameSeries = spots
-      .filter((item) => item.seriesId === spot.seriesId)
-      .sort((a, b) => orderNumber(a) - orderNumber(b));
-    const currentIndex = sameSeries.findIndex((item) => item.id === spot.id);
-
-    return [sameSeries[currentIndex - 1], sameSeries[currentIndex + 1]].filter(
-      (item): item is UkiyoeSpot => Boolean(item)
-    );
-  }, [spot, spots]);
-
-  if (loading) {
-    return <main className="min-h-screen bg-slate-950 p-4 text-white">読み込み中...</main>;
-  }
-
-  if (error) {
-    return <main className="min-h-screen bg-slate-950 p-4 text-white">{error}</main>;
-  }
-
-  if (!spot) {
-    return <main className="min-h-screen bg-slate-950 p-4 text-white">作品が見つかりません。</main>;
-  }
 
   return (
     <main className="min-h-screen bg-slate-950 p-4 text-white">
