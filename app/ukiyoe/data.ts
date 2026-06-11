@@ -3,8 +3,6 @@ import Papa from "papaparse";
 export const UKIYOE_SPOTS_URL =
   "https://docs.google.com/spreadsheets/d/1fbdYLOTvelQkL8wBNhza00Xbh6Kculj5V_dht1beCII/gviz/tq?tqx=out:csv&sheet=ukiyoe_spots";
 
-export const UKIYOE_REVALIDATE_SECONDS = 60 * 60 * 24;
-
 export type UkiyoeSpot = {
   id: string;
   status: string;
@@ -91,18 +89,6 @@ export function parseUkiyoeCsv(text: string): UkiyoeSpot[] {
       seenIds.add(spot.id);
       return true;
     });
-}
-
-export async function getUkiyoeSpots() {
-  const response = await fetch(UKIYOE_SPOTS_URL, {
-    next: { revalidate: UKIYOE_REVALIDATE_SECONDS },
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch ukiyoe spots");
-  }
-
-  return parseUkiyoeCsv(await response.text());
 }
 
 export function splitTags(value: string) {
