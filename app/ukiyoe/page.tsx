@@ -129,6 +129,7 @@ export default function UkiyoePage() {
               key={spot.id}
               href={`/ukiyoe/${spot.id}`}
               target="_blank"
+              prefetch={false}
               className="rounded-2xl border border-slate-700 bg-slate-900 p-3 hover:border-amber-300 sm:p-4"
             >
               {spot.thumbnailUrl && (
