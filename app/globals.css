@@ -22,10 +22,81 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;  
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .leaflet-container {
   height: 300px;
   width: 100%;
+}
+
+@media (max-width: 800px) {
+  body:has(#map) main > div:first-of-type {
+    width: 100vw !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  body:has(#map) main > div:first-of-type > div:first-child {
+    position: relative !important;
+    inset: auto !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    gap: 6px !important;
+    width: 100% !important;
+    padding: 8px !important;
+    box-sizing: border-box !important;
+    align-items: center !important;
+    background: #fff !important;
+    pointer-events: auto !important;
+  }
+
+  body:has(#map) main > div:first-of-type > div:first-child > button:nth-child(1) {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    justify-self: start !important;
+  }
+
+  body:has(#map) main > div:first-of-type > div:first-child > button:nth-child(2) {
+    grid-column: 2 / 4 !important;
+    grid-row: 1 !important;
+    justify-self: end !important;
+  }
+
+  body:has(#map) main > div:first-of-type > div:first-child > input {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 7px 8px !important;
+    font-size: 14px !important;
+  }
+
+  body:has(#map) main > div:first-of-type > div:first-child > input + button {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+  }
+
+  body:has(#map) main > div:first-of-type > div:first-child > input + button + button {
+    grid-column: 3 !important;
+    grid-row: 2 !important;
+  }
+
+  body:has(#map) main > div:first-of-type > div:first-child > button {
+    padding: 7px 9px !important;
+    font-size: 13px !important;
+  }
+
+  body:has(#map) #map {
+    width: 100vw !important;
+    height: 60vh !important;
+    min-height: 360px !important;
+  }
+
+  body:has(#map) #review-list {
+    width: 100vw !important;
+    height: 60vh !important;
+    min-height: 360px !important;
+    padding: 16px !important;
+  }
 }
