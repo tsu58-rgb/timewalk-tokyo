@@ -3,6 +3,11 @@ import Papa from "papaparse";
 import { CHARACTERS_URL, EVENTS_URL, SPOTS_URL } from "./sheetUrls";
 import type { Character, EventItem, Spot } from "@/types/timewalk";
 
+type FetchOptions = {
+  noStore?: boolean;
+  revalidateSeconds?: number;
+};
+
 function parseCsvObjects(text: string) {
   const parsed = Papa.parse<Record<string, string>>(text, {
     header: true,
@@ -12,9 +17,19 @@ function parseCsvObjects(text: string) {
   return parsed.data;
 }
 
-export async function fetchCsvObjects(url: string, noStore = false) {
+export async function fetchCsvObjects(
+  url: string,
+  noStore = false,
+  revalidateSeconds?: number
+) {
   const targetUrl = noStore ? `${url}&cacheBust=${Date.now()}` : url;
-  const response = await fetch(targetUrl, noStore ? { cache: "no-store" } : undefined);
+  const fetchOptions = noStore
+    ? { cache: "no-store" as const }
+    : revalidateSeconds
+      ? { next: { revalidate: revalidateSeconds } }
+      : undefined;
+
+  const response = await fetch(targetUrl, fetchOptions);
 
   if (!response.ok) {
     throw new Error(`CSVを取得できませんでした: ${response.status}`);
@@ -23,8 +38,12 @@ export async function fetchCsvObjects(url: string, noStore = false) {
   return parseCsvObjects(await response.text());
 }
 
-export async function fetchSpots(options: { noStore?: boolean } = {}) {
-  const rows = await fetchCsvObjects(SPOTS_URL, options.noStore);
+export async function fetchSpots(options: FetchOptions = {}) {
+  const rows = await fetchCsvObjects(
+    SPOTS_URL,
+    options.noStore,
+    options.revalidateSeconds
+  );
 
   return rows
     .map((row): Spot => ({
@@ -49,8 +68,12 @@ export async function fetchSpots(options: { noStore?: boolean } = {}) {
     );
 }
 
-export async function fetchCharacters(options: { noStore?: boolean } = {}) {
-  const rows = await fetchCsvObjects(CHARACTERS_URL, options.noStore);
+export async function fetchCharacters(options: FetchOptions = {}) {
+  const rows = await fetchCsvObjects(
+    CHARACTERS_URL,
+    options.noStore,
+    options.revalidateSeconds
+  );
 
   return rows.map((row): Character => ({
     characterId: row.characterId || "",
@@ -58,8 +81,12 @@ export async function fetchCharacters(options: { noStore?: boolean } = {}) {
   }));
 }
 
-export async function fetchEvents(options: { noStore?: boolean } = {}) {
-  const rows = await fetchCsvObjects(EVENTS_URL, options.noStore);
+export async function fetchEvents(options: FetchOptions = {}) {
+  const rows = await fetchCsvObjects(
+    EVENTS_URL,
+    options.noStore,
+    options.revalidateSeconds
+  );
 
   return rows.map((row): EventItem => ({
     id: row.id || "",
