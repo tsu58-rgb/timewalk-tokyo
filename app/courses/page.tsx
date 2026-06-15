@@ -3,10 +3,10 @@ import Link from "next/link";
 import CoursesSearchList from "./CoursesSearchList";
 import { getReadyCourses } from "../lib/courses";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function CoursesPage() {
-  const courses = await getReadyCourses({ noStore: true });
+  const courses = await getReadyCourses({ revalidateSeconds: 300 });
 
   return (
     <main className="min-h-screen bg-slate-900 p-4 text-white flex justify-center">
