@@ -95,7 +95,7 @@ export default async function CoursePage({
           </p>
         )}
 
-        <section className="mb-4 rounded-2xl bg-slate-800 p-4">
+        <section className="mb-4">
           <h2 className="mb-3 font-bold">歩く順番</h2>
           {points.length === 0 ? (
             <p className="text-sm text-slate-400">地点登録後に表示されます。</p>
