@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 
 import { calcDistanceMeters } from "../lib/distance";
-import { getReadyCourses } from "../lib/courses";
 import { fetchCharacters, fetchEvents, fetchSpots } from "../lib/timewalkData";
 import type { Character, EventItem, Spot, SpotWithDistance } from "@/types/timewalk";
 
@@ -48,11 +47,9 @@ export default function TimeWalkHome() {
   const [selectedDistance, setSelectedDistance] = useState(2000);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagsInitialized, setTagsInitialized] = useState(false);
-  const [showCourses, setShowCourses] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
 
-  const readyCourses = getReadyCourses();
   const mapCurrentPosition: [number, number] | null = position
     ? [position.latitude, position.longitude]
     : null;
@@ -237,24 +234,9 @@ export default function TimeWalkHome() {
           <SpotMap spots={spots} initialZoom={15} height="360px" currentPosition={mapCurrentPosition} followCurrentLocation />
         </div>
 
-        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <button onClick={() => setShowCourses(!showCourses)} className={`w-full text-center text-base font-bold ${showCourses ? "border border-white py-2" : ""}`}>おすすめ歴史さんぽコース [{showCourses ? "閉じる" : "開く"}]</button>
-          {showCourses && (
-            <div className="mt-4 space-y-3">
-              <p className="text-xs text-slate-400">迷ったら、この順番で歩いてみよう</p>
-              {readyCourses.map((course) => (
-                <a key={course.id} href={`/courses/${course.id}`} className="block bg-slate-900 border border-slate-600 rounded-2xl p-4">
-                  <div className="flex justify-between gap-3 mb-2">
-                    <h2 className="font-bold text-yellow-300">{course.title}</h2>
-                    <span className="text-xs text-blue-300 whitespace-nowrap">{course.duration}</span>
-                  </div>
-                  <p className="text-sm text-slate-300 leading-relaxed">{course.description}</p>
-                  <p className="text-xs text-slate-400 mt-2">{course.area} / {course.distance}</p>
-                </a>
-              ))}
-            </div>
-          )}
-        </section>
+        <a href="/courses" className="mb-4 block w-full rounded-2xl bg-yellow-300 px-4 py-3 text-center font-bold text-black">
+          散歩コース一覧
+        </a>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
           <button onClick={() => setShowDetails(!showDetails)} className={`w-full text-center text-base font-bold ${showDetails ? "border border-white py-2" : ""}`}>詳細設定[{showDetails ? "閉じる" : "開く"}]</button>
