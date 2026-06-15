@@ -8,6 +8,7 @@ import {
   calculateCourseDurationMin,
   formatCourseDistance,
   formatCourseDuration,
+  type Course,
   type CoursePoint,
 } from "../../lib/courses";
 
@@ -38,6 +39,9 @@ export default function AdminCoursesPage() {
   const [pagePassword, setPagePassword] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [spots, setSpots] = useState<SelectableSpot[]>([]);
+  const [existingCourses, setExistingCourses] = useState<Course[]>([]);
+  const [storedCoursePoints, setStoredCoursePoints] = useState<CoursePoint[]>([]);
+  const [selectedExistingId, setSelectedExistingId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [area, setArea] = useState("");
@@ -53,18 +57,34 @@ export default function AdminCoursesPage() {
     if (saved) setPagePassword(saved);
   }, []);
 
-  useEffect(() => {
-    if (!pagePassword) return;
-    fetch("/api/admin/spots", {
+  async function loadCourseData() {
+    const response = await fetch("/api/admin/courses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pagePassword }),
-    })
-      .then((response) => response.json())
-      .then((json) => {
-        if (!json.ok) throw new Error(json.error || "取得失敗");
+    });
+    const json = await response.json();
+    if (!json.ok) throw new Error(json.error || "コース取得失敗");
+    setExistingCourses(json.courses || []);
+    setStoredCoursePoints(json.points || []);
+    return json;
+  }
+
+  useEffect(() => {
+    if (!pagePassword) return;
+
+    Promise.all([
+      fetch("/api/admin/spots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pagePassword }),
+      }).then((response) => response.json()),
+      loadCourseData(),
+    ])
+      .then(([spotsJson]) => {
+        if (!spotsJson.ok) throw new Error(spotsJson.error || "地点取得失敗");
         setSpots(
-          (json.spots || []).map((spot: any) => ({
+          (spotsJson.spots || []).map((spot: any) => ({
             id: String(spot.id || ""),
             name: String(spot.name || ""),
             lat: Number(spot.lat),
@@ -84,6 +104,40 @@ export default function AdminCoursesPage() {
     if (!passwordInput) return;
     localStorage.setItem("timewalkAdminPassword", passwordInput);
     setPagePassword(passwordInput);
+  }
+
+  function startNewCourse() {
+    setSelectedExistingId("");
+    setCourseId("");
+    setTitle("");
+    setDescription("");
+    setArea("");
+    setStatus("draft");
+    setPoints([]);
+    setMessage("新規コースを作成します。");
+  }
+
+  function loadExistingCourse(id: string) {
+    setSelectedExistingId(id);
+    if (!id) {
+      startNewCourse();
+      return;
+    }
+
+    const course = existingCourses.find((item) => item.id === id);
+    if (!course) return;
+
+    setCourseId(course.id);
+    setTitle(course.title);
+    setDescription(course.description);
+    setArea(course.area);
+    setStatus(course.status || "draft");
+    setPoints(
+      storedCoursePoints
+        .filter((point) => point.courseId === id)
+        .sort((a, b) => a.pointOrder - b.pointOrder)
+    );
+    setMessage(`既存コースを読み込みました：${course.title}`);
   }
 
   function addSpot(spot: SelectableSpot) {
@@ -155,7 +209,7 @@ export default function AdminCoursesPage() {
     const finalId = courseId.trim() || makeCourseId(title);
     setCourseId(finalId);
     setSaving(true);
-    setMessage("保存中...");
+    setMessage(selectedExistingId ? "既存コースを更新中..." : "新規コースを保存中...");
 
     try {
       const response = await fetch("/api/admin/save-course", {
@@ -178,7 +232,18 @@ export default function AdminCoursesPage() {
       });
       const json = await response.json();
       if (!json.ok) throw new Error(json.error || "保存に失敗しました。");
-      setMessage(`保存しました：${finalId}`);
+
+      const refreshed = await loadCourseData();
+      const refreshedCourses: Course[] = refreshed.courses || [];
+      const refreshedPoints: CoursePoint[] = refreshed.points || [];
+      const savedCourse = refreshedCourses.find((item) => item.id === finalId);
+      setExistingCourses(refreshedCourses);
+      setStoredCoursePoints(refreshedPoints);
+      setSelectedExistingId(finalId);
+      if (savedCourse) {
+        setStatus(savedCourse.status || status);
+      }
+      setMessage(`${selectedExistingId ? "更新" : "保存"}しました：${finalId}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
     } finally {
@@ -209,6 +274,27 @@ export default function AdminCoursesPage() {
         <h1>散歩コース管理</h1>
         <p>赤いピンを選ぶと歴史スポットを追加します。経由地追加モードでは地図上の任意の場所を押してください。</p>
 
+        <div style={{ display: "flex", gap: 8, alignItems: "end", flexWrap: "wrap", margin: "12px 0 16px" }}>
+          <div style={{ flex: "1 1 320px" }}>
+            <label>既存コースを編集</label>
+            <select
+              value={selectedExistingId}
+              onChange={(event) => loadExistingCourse(event.target.value)}
+              style={{ ...inputStyle, marginBottom: 0 }}
+            >
+              <option value="">新規コース</option>
+              {existingCourses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.title}（{course.status}）
+                </option>
+              ))}
+            </select>
+          </div>
+          <button onClick={startNewCourse} style={{ padding: "10px 16px", fontWeight: "bold" }}>
+            新規作成に戻す
+          </button>
+        </div>
+
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(320px, 1fr)", gap: 16 }}>
           <div>
             <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
@@ -219,8 +305,8 @@ export default function AdminCoursesPage() {
           </div>
 
           <div style={{ background: "#fff", padding: 16, borderRadius: 12 }}>
-            <label>courseId（空欄なら自動作成）</label>
-            <input value={courseId} onChange={(event) => setCourseId(event.target.value)} style={inputStyle} />
+            <label>courseId（新規は空欄で自動作成）</label>
+            <input value={courseId} onChange={(event) => setCourseId(event.target.value)} readOnly={Boolean(selectedExistingId)} style={{ ...inputStyle, background: selectedExistingId ? "#eee" : "#fff" }} />
             <label>タイトル</label>
             <input value={title} onChange={(event) => setTitle(event.target.value)} style={inputStyle} />
             <label>説明</label>
@@ -261,7 +347,7 @@ export default function AdminCoursesPage() {
             </div>
 
             <button onClick={saveCourse} disabled={saving} style={{ width: "100%", padding: 14, marginTop: 16, fontWeight: "bold", background: "#111", color: "#fff" }}>
-              {saving ? "保存中..." : "コースを保存"}
+              {saving ? "保存中..." : selectedExistingId ? "コースを更新" : "コースを保存"}
             </button>
             <p>{message}</p>
           </div>
