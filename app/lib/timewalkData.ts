@@ -30,6 +30,7 @@ export async function fetchSpots(options: { noStore?: boolean } = {}) {
     .map((row): Spot => ({
       id: row.id || "",
       name: row.name || "",
+      kana: row.kana || "",
       spotsImage: row.spotsImage || "",
       lat: Number(row.lat),
       lng: Number(row.lng),
