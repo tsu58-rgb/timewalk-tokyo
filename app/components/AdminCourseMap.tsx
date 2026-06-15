@@ -16,6 +16,24 @@ type SelectableSpot = {
   description?: string;
 };
 
+function redPinIcon(L: any) {
+  return L.divIcon({
+    className: "course-admin-pin",
+    html: '<div style="width:26px;height:26px;border-radius:50% 50% 50% 0;background:#dc2626;border:3px solid #fff;transform:rotate(-45deg);box-shadow:0 2px 7px rgba(0,0,0,.45)"><div style="width:8px;height:8px;border-radius:50%;background:#fff;position:absolute;left:6px;top:6px"></div></div>',
+    iconSize: [26, 36],
+    iconAnchor: [13, 32],
+  });
+}
+
+function clusterIcon(L: any, count: number) {
+  return L.divIcon({
+    className: "course-admin-cluster",
+    html: `<div style="width:38px;height:38px;border-radius:50%;background:#b91c1c;color:#fff;border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.4)">${count}</div>`,
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
+  });
+}
+
 export default function AdminCourseMap({
   spots,
   points,
@@ -54,7 +72,11 @@ export default function AdminCourseMap({
         maxZoom: 18,
       }).addTo(map);
 
-      clusterLayerRef.current = (L as any).markerClusterGroup({ disableClusteringAtZoom: 17 });
+      clusterLayerRef.current = (L as any).markerClusterGroup({
+        disableClusteringAtZoom: 14,
+        showCoverageOnHover: false,
+        iconCreateFunction: (cluster: any) => clusterIcon(L, cluster.getChildCount()),
+      });
       selectedLayerRef.current = L.layerGroup().addTo(map);
       map.addLayer(clusterLayerRef.current);
 
@@ -78,16 +100,11 @@ export default function AdminCourseMap({
       const layer = clusterLayerRef.current;
       if (!layer) return;
       layer.clearLayers();
+      const icon = redPinIcon(L);
 
       spots.forEach((spot) => {
         if (!Number.isFinite(spot.lat) || !Number.isFinite(spot.lng)) return;
-        const marker = L.circleMarker([spot.lat, spot.lng], {
-          radius: 7,
-          color: "#fff",
-          weight: 2,
-          fillColor: "#b91c1c",
-          fillOpacity: 1,
-        }).bindTooltip(spot.name || spot.id);
+        const marker = L.marker([spot.lat, spot.lng], { icon }).bindTooltip(spot.name || spot.id);
         marker.on("click", (event: any) => {
           L.DomEvent.stopPropagation(event);
           if (callbacksRef.current.mode === "spot") callbacksRef.current.onSpotSelect(spot);
