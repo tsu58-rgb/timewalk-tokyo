@@ -2,8 +2,10 @@ import Link from "next/link";
 
 import { formatCourseDistance, getReadyCourses } from "../lib/courses";
 
+export const dynamic = "force-dynamic";
+
 export default async function CoursesPage() {
-  const courses = await getReadyCourses();
+  const courses = await getReadyCourses({ noStore: true });
 
   return (
     <main className="min-h-screen bg-slate-900 p-4 text-white flex justify-center">
