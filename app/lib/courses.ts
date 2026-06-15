@@ -22,8 +22,8 @@ export type CoursePoint = {
   name: string;
   lat: number;
   lng: number;
-  imageUrl: string;
-  description: string;
+  imageUrl?: string;
+  description?: string;
 };
 
 export async function fetchCourses(options: { noStore?: boolean } = {}) {
@@ -58,8 +58,6 @@ export async function fetchCoursePoints(options: { noStore?: boolean } = {}) {
       name: String(row.name || "").trim(),
       lat: Number(row.lat),
       lng: Number(row.lng),
-      imageUrl: String(row.imageUrl || "").trim(),
-      description: String(row.description || "").trim(),
     }))
     .filter(
       (point) =>
