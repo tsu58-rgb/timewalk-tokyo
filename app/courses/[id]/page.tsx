@@ -115,28 +115,28 @@ export default async function CoursePage({
                           <p className="mb-1 text-xs text-slate-400">{point.kana}</p>
                         )}
                         <h3 className="font-bold">{point.name || `経由地 ${index + 1}`}</h3>
-                      </div>
 
-                      <div className="flex shrink-0 flex-col items-end gap-2">
-                        {isSpot && (
+                        <div className="mt-2 flex flex-wrap justify-end gap-2">
+                          {isSpot && (
+                            <a
+                              href={`/spot/${point.spotId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="whitespace-nowrap rounded-lg bg-white px-3 py-2 text-xs font-bold text-black"
+                            >
+                              別タブで詳細
+                            </a>
+                          )}
+
                           <a
-                            href={`/spot/${point.spotId}`}
+                            href={getGoogleMapsUrl(point.lat, point.lng)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="whitespace-nowrap rounded-lg bg-white px-3 py-2 text-xs font-bold text-black"
+                            className="whitespace-nowrap rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white"
                           >
-                            別タブで詳細
+                            Googleマップ
                           </a>
-                        )}
-
-                        <a
-                          href={getGoogleMapsUrl(point.lat, point.lng)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="whitespace-nowrap rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white"
-                        >
-                          Googleマップ
-                        </a>
+                        </div>
                       </div>
                     </div>
 
