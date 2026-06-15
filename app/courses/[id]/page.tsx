@@ -1,6 +1,17 @@
-import { getCourseById, resolveCourseSpots } from "../../lib/courses";
+import Link from "next/link";
+
+import CourseRouteMapLoader from "../../components/CourseRouteMapLoader";
+import {
+  formatCourseDistance,
+  getCourseById,
+  getCoursePointsById,
+  type CoursePoint,
+} from "../../lib/courses";
 import { fetchSpots } from "../../lib/timewalkData";
-import SpotMap from "../../components/SpotMap";
+
+function cleanDescription(value: string) {
+  return String(value || "").replace(/<[^>]*>/g, "");
+}
 
 export default async function CoursePage({
   params,
@@ -8,91 +19,124 @@ export default async function CoursePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const course = getCourseById(id);
+  const [course, storedPoints, spots] = await Promise.all([
+    getCourseById(id),
+    getCoursePointsById(id),
+    fetchSpots(),
+  ]);
 
   if (!course) {
     return (
-      <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
-        <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
-          <a href="/" className="inline-block mb-4 bg-white text-black px-4 py-2 rounded-xl font-bold">
-            ← Topに戻る
-          </a>
+      <main className="min-h-screen bg-slate-900 p-4 text-white flex justify-center">
+        <div className="w-full max-w-md rounded-3xl border-4 border-white bg-slate-950 p-5">
+          <Link href="/courses" className="mb-4 inline-block rounded-xl bg-white px-4 py-2 font-bold text-black">
+            ← 散歩コース一覧へ
+          </Link>
           <p>コースが見つかりません。</p>
         </div>
       </main>
     );
   }
 
-  const spots = await fetchSpots();
-  const courseSpots = resolveCourseSpots(course, spots);
+  const spotMap = new Map(spots.map((spot) => [spot.id, spot]));
+  const points: CoursePoint[] = storedPoints.map((point) => {
+    if (point.pointType !== "spot") return point;
+    const spot = spotMap.get(point.spotId);
+    if (!spot) return point;
+
+    return {
+      ...point,
+      name: spot.name || point.name,
+      lat: spot.lat,
+      lng: spot.lng,
+      imageUrl: spot.spotsImage || point.imageUrl,
+      description: spot.description || point.description,
+    };
+  });
 
   return (
-    <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
-      <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
-        <a href="/" className="inline-block mb-4 bg-white text-black px-4 py-2 rounded-xl font-bold">
-          ← Topに戻る
-        </a>
+    <main className="min-h-screen bg-slate-900 p-4 text-white flex justify-center">
+      <div className="w-full max-w-md rounded-3xl border-4 border-white bg-slate-950 p-5">
+        <Link href="/courses" className="mb-4 inline-block rounded-xl bg-white px-4 py-2 font-bold text-black">
+          ← 散歩コース一覧へ
+        </Link>
 
-        <p className="text-xs text-yellow-300 font-bold mb-2">歴史さんぽコース</p>
-        <h1 className="text-2xl font-bold mb-3">{course.title}</h1>
-        <p className="text-sm text-slate-300 leading-relaxed mb-4">{course.description}</p>
+        <p className="mb-2 text-xs font-bold text-yellow-300">歴史さんぽコース</p>
+        <h1 className="mb-3 text-2xl font-bold">{course.title}</h1>
+        <p className="mb-4 text-sm leading-relaxed text-slate-300">{course.description}</p>
+        <p className="mb-4 rounded-xl bg-slate-800 p-3 text-center text-sm font-bold">
+          {course.area} / {formatCourseDistance(course.distanceKm)} / {course.durationLabel || `約${course.durationMin}分`}
+        </p>
 
-        <div className="grid grid-cols-3 gap-2 mb-4 text-center text-xs">
-          <div className="bg-slate-800 rounded-xl p-3">
-            <p className="text-slate-400 mb-1">エリア</p>
-            <p className="font-bold">{course.area}</p>
-          </div>
-          <div className="bg-slate-800 rounded-xl p-3">
-            <p className="text-slate-400 mb-1">時間</p>
-            <p className="font-bold">{course.duration}</p>
-          </div>
-          <div className="bg-slate-800 rounded-xl p-3">
-            <p className="text-slate-400 mb-1">距離</p>
-            <p className="font-bold">{course.distance}</p>
-          </div>
-        </div>
-
-        {courseSpots.length > 0 ? (
+        {points.length > 0 ? (
           <div className="mb-4">
-            <SpotMap spots={courseSpots} initialZoom={15} height="320px" />
+            <CourseRouteMapLoader points={points} />
           </div>
         ) : (
-          <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">
-            このコースに対応するスポットはまだ登録されていません。
+          <p className="mb-4 rounded-xl bg-slate-800 p-3 text-sm">
+            このコースの地点はまだ登録されていません。
           </p>
         )}
 
-        <section className="bg-slate-800 rounded-2xl p-4 mb-4">
-          <h2 className="font-bold mb-3">歩く順番</h2>
-          {courseSpots.length === 0 ? (
-            <p className="text-sm text-slate-400">スポット登録後に表示されます。</p>
+        <section className="mb-4 rounded-2xl bg-slate-800 p-4">
+          <h2 className="mb-3 font-bold">歩く順番</h2>
+          {points.length === 0 ? (
+            <p className="text-sm text-slate-400">地点登録後に表示されます。</p>
           ) : (
             <div className="space-y-3">
-              {courseSpots.map((spot, index) => (
-                <a key={spot.id} href={`/spot/${spot.id}`} className="block bg-slate-900 border border-slate-600 rounded-2xl p-4">
+              {points.map((point, index) => {
+                const content = (
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-yellow-300 text-black flex items-center justify-center font-bold shrink-0">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-300 font-bold text-black">
                       {index + 1}
                     </div>
-                    <div>
-                      <h3 className="font-bold">{spot.name}{spot.spotsImage ? " 🖼️" : ""}</h3>
-                      {spot.category && <p className="text-xs text-slate-400 mt-1">{spot.category}</p>}
-                      {spot.description && (
-                        <p className="text-sm text-slate-300 mt-2 leading-relaxed">
-                          {spot.description.replace(/<[^>]*>/g, "").slice(0, 80)}{spot.description.replace(/<[^>]*>/g, "").length > 80 ? "..." : ""}
+                    {point.imageUrl && (
+                      <img
+                        src={point.imageUrl}
+                        alt={point.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-20 w-24 shrink-0 rounded-xl bg-black object-cover"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <h3 className="font-bold">{point.name || `経由地 ${index + 1}`}</h3>
+                      {point.pointType === "waypoint" && (
+                        <p className="mt-1 text-xs text-blue-300">歩行経由地</p>
+                      )}
+                      {point.description && point.pointType === "spot" && (
+                        <p className="mt-2 text-sm leading-relaxed text-slate-300">
+                          {cleanDescription(point.description).slice(0, 90)}
+                          {cleanDescription(point.description).length > 90 ? "..." : ""}
                         </p>
                       )}
                     </div>
                   </div>
-                </a>
-              ))}
+                );
+
+                if (point.pointType === "spot" && point.spotId) {
+                  return (
+                    <a
+                      key={point.pointId}
+                      href={`/spot/${point.spotId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block rounded-2xl border border-slate-600 bg-slate-900 p-4"
+                    >
+                      {content}
+                    </a>
+                  );
+                }
+
+                return (
+                  <div key={point.pointId} className="rounded-2xl border border-slate-600 bg-slate-900 p-4">
+                    {content}
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
-
-        <p className="text-xs text-slate-400 leading-relaxed">
-          このコースは最小版です。今後、コース専用のシート管理・並び順指定・イベント連携を追加できます。
-        </p>
       </div>
     </main>
   );
