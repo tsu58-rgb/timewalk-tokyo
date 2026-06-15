@@ -8,3 +8,7 @@ export const SPOTS_URL = `${SHEETS_BASE_URL}?gid=1242477641&single=true&output=c
 export const CHARACTERS_URL = `${SHEETS_BASE_URL}?gid=1745190060&single=true&output=csv`;
 
 export const SPOT_QUIZZES_URL = `${SHEETS_BASE_URL}?gid=987654321&single=true&output=csv`;
+
+export const COURSES_URL = `${SHEETS_BASE_URL}?gid=21001&single=true&output=csv`;
+
+export const COURSE_POINTS_URL = `${SHEETS_BASE_URL}?gid=21002&single=true&output=csv`;
