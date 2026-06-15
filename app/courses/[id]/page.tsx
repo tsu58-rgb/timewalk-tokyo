@@ -9,7 +9,7 @@ import {
 } from "../../lib/courses";
 import { fetchSpots } from "../../lib/timewalkData";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 function getGoogleMapsUrl(lat: number, lng: number) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
@@ -34,10 +34,11 @@ export default async function CoursePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const cacheOptions = { revalidateSeconds: 300 };
   const [course, storedPoints, spots] = await Promise.all([
-    getCourseById(id, { noStore: true }),
-    getCoursePointsById(id, { noStore: true }),
-    fetchSpots({ noStore: true }),
+    getCourseById(id, cacheOptions),
+    getCoursePointsById(id, cacheOptions),
+    fetchSpots(cacheOptions),
   ]);
 
   if (!course) {
