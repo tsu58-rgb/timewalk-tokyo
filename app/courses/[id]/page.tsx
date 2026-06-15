@@ -85,36 +85,35 @@ export default async function CoursePage({
           ) : (
             <div className="space-y-3">
               {points.map((point, index) => {
-                const content = (
-                  <div className="flex gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-300 font-bold text-black">
-                      {index + 1}
+                const isSpot = point.pointType === "spot" && Boolean(point.spotId);
+                const cardContent = (
+                  <div>
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-300 font-bold text-black">
+                        {index + 1}
+                      </div>
+                      <h3 className="font-bold">{point.name || `経由地 ${index + 1}`}</h3>
                     </div>
-                    {point.imageUrl && (
+
+                    {isSpot && point.imageUrl && (
                       <img
                         src={point.imageUrl}
                         alt={point.name}
                         loading="lazy"
                         decoding="async"
-                        className="h-20 w-24 shrink-0 rounded-xl bg-black object-cover"
+                        className="mb-3 w-full rounded-xl bg-black object-cover"
                       />
                     )}
-                    <div className="min-w-0">
-                      <h3 className="font-bold">{point.name || `経由地 ${index + 1}`}</h3>
-                      {point.pointType === "waypoint" && (
-                        <p className="mt-1 text-xs text-blue-300">歩行経由地</p>
-                      )}
-                      {point.description && point.pointType === "spot" && (
-                        <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                          {cleanDescription(point.description).slice(0, 90)}
-                          {cleanDescription(point.description).length > 90 ? "..." : ""}
-                        </p>
-                      )}
-                    </div>
+
+                    {isSpot && point.description && (
+                      <p className="text-sm leading-relaxed text-slate-300">
+                        {cleanDescription(point.description)}
+                      </p>
+                    )}
                   </div>
                 );
 
-                if (point.pointType === "spot" && point.spotId) {
+                if (isSpot) {
                   return (
                     <a
                       key={point.pointId}
@@ -123,14 +122,14 @@ export default async function CoursePage({
                       rel="noopener noreferrer"
                       className="block rounded-2xl border border-slate-600 bg-slate-900 p-4"
                     >
-                      {content}
+                      {cardContent}
                     </a>
                   );
                 }
 
                 return (
                   <div key={point.pointId} className="rounded-2xl border border-slate-600 bg-slate-900 p-4">
-                    {content}
+                    {cardContent}
                   </div>
                 );
               })}
