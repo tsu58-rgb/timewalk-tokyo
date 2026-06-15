@@ -1,6 +1,7 @@
 export type Spot = {
   id: string;
   name: string;
+  kana: string;
   lat: number;
   lng: number;
   category: string;
