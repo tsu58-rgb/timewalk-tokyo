@@ -1,6 +1,8 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { useEffect, useRef, useState } from "react";
 
 import type { CoursePoint } from "../lib/courses";
@@ -38,16 +40,10 @@ export default function AdminCourseMap({
 }) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
-  const spotLayerRef = useRef<any>(null);
+  const clusterLayerRef = useRef<any>(null);
   const selectedLayerRef = useRef<any>(null);
-  const spotsRef = useRef<SelectableSpot[]>(spots);
   const callbacksRef = useRef({ onSpotSelect, onWaypointAdd, mode });
   const [mapReady, setMapReady] = useState(false);
-  const [spotRenderTick, setSpotRenderTick] = useState(0);
-
-  useEffect(() => {
-    spotsRef.current = spots;
-  }, [spots]);
 
   useEffect(() => {
     callbacksRef.current = { onSpotSelect, onWaypointAdd, mode };
@@ -58,6 +54,7 @@ export default function AdminCourseMap({
 
     async function initialize() {
       const L = await import("leaflet");
+      await import("leaflet.markercluster");
       if (cancelled || !mapContainerRef.current || mapRef.current) return;
 
       const map = L.map(mapContainerRef.current, { maxZoom: 18 }).setView([35.681236, 139.767125], 14);
@@ -67,17 +64,19 @@ export default function AdminCourseMap({
         maxZoom: 18,
       }).addTo(map);
 
-      spotLayerRef.current = L.layerGroup().addTo(map);
+      clusterLayerRef.current = (L as any).markerClusterGroup({
+        maxClusterRadius: 55,
+        disableClusteringAtZoom: 17,
+        showCoverageOnHover: false,
+        spiderfyOnMaxZoom: true,
+      });
       selectedLayerRef.current = L.layerGroup().addTo(map);
+      map.addLayer(clusterLayerRef.current);
 
       map.on("click", (event: any) => {
         if (callbacksRef.current.mode !== "waypoint") return;
         callbacksRef.current.onWaypointAdd(event.latlng.lat, event.latlng.lng);
       });
-
-      const rerenderVisibleSpots = () => setSpotRenderTick((value) => value + 1);
-      map.on("moveend", rerenderVisibleSpots);
-      map.on("zoomend", rerenderVisibleSpots);
 
       setMapReady(true);
       requestAnimationFrame(() => map.invalidateSize());
@@ -88,45 +87,44 @@ export default function AdminCourseMap({
       cancelled = true;
       mapRef.current?.remove();
       mapRef.current = null;
-      spotLayerRef.current = null;
+      clusterLayerRef.current = null;
       selectedLayerRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    const map = mapRef.current;
-    const layer = spotLayerRef.current;
-    if (!mapReady || !map || !layer) return;
+    if (!mapReady) return;
 
     async function renderSpots() {
       const L = await import("leaflet");
+      const layer = clusterLayerRef.current;
+      if (!layer) return;
       layer.clearLayers();
       const icon = redPinIcon(L);
-      const bounds = map.getBounds().pad(0.2);
 
-      spotsRef.current.forEach((spot) => {
+      spots.forEach((spot) => {
         if (!Number.isFinite(spot.lat) || !Number.isFinite(spot.lng)) return;
-        if (!bounds.contains([spot.lat, spot.lng])) return;
-
         const marker = L.marker([spot.lat, spot.lng], { icon }).bindTooltip(spot.name || spot.id);
         marker.on("click", (event: any) => {
           L.DomEvent.stopPropagation(event);
           if (callbacksRef.current.mode === "spot") callbacksRef.current.onSpotSelect(spot);
         });
-        marker.addTo(layer);
+        layer.addLayer(marker);
       });
+
+      layer.refreshClusters?.();
     }
 
     renderSpots();
-  }, [spots, mapReady, spotRenderTick]);
+  }, [spots, mapReady]);
 
   useEffect(() => {
-    const map = mapRef.current;
-    const layer = selectedLayerRef.current;
-    if (!mapReady || !map || !layer) return;
+    if (!mapReady) return;
 
     async function renderSelected() {
       const L = await import("leaflet");
+      const layer = selectedLayerRef.current;
+      if (!layer) return;
       layer.clearLayers();
 
       const positions: [number, number][] = [];
@@ -144,8 +142,8 @@ export default function AdminCourseMap({
       if (positions.length >= 2) {
         L.polyline(positions, { color: "#2563eb", weight: 5, opacity: 0.8 }).addTo(layer);
       }
-      if (positions.length > 0) {
-        map.fitBounds(L.latLngBounds(positions), { padding: [30, 30], maxZoom: 17 });
+      if (positions.length > 0 && mapRef.current) {
+        mapRef.current.fitBounds(L.latLngBounds(positions), { padding: [30, 30], maxZoom: 17 });
       }
     }
 
