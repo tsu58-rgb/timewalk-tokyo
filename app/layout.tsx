@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import ContactFooter from "./components/ContactFooter";
+import NominatimPrefectureGuard from "./components/NominatimPrefectureGuard";
 
 export const metadata: Metadata = {
   title: "TimeWalk | 近くの歴史スポットを探せる街歩きガイド",
@@ -17,6 +18,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
+        <NominatimPrefectureGuard />
         {children}
         <ContactFooter />
         {process.env.NEXT_PUBLIC_GA_ID && (
