@@ -11,12 +11,21 @@ import { fetchSpots } from "../../lib/timewalkData";
 
 export const dynamic = "force-dynamic";
 
-function cleanDescription(value: string) {
-  return String(value || "").replace(/<[^>]*>/g, "");
-}
-
 function getGoogleMapsUrl(lat: number, lng: number) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
+}
+
+function renderDescription(value: string) {
+  const normalized = String(value || "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]*>/g, "");
+
+  return normalized.split("\n").map((line, index, lines) => (
+    <span key={`${index}-${line}`}>
+      {line}
+      {index < lines.length - 1 && <br />}
+    </span>
+  ));
 }
 
 export default async function CoursePage({
@@ -53,6 +62,7 @@ export default async function CoursePage({
     return {
       ...point,
       name: spot.name || point.name,
+      kana: spot.kana || "",
       lat: spot.lat,
       lng: spot.lng,
       imageUrl: spot.spotsImage || point.imageUrl,
@@ -101,6 +111,9 @@ export default async function CoursePage({
                       </div>
 
                       <div className="min-w-0 flex-1">
+                        {point.kana && (
+                          <p className="mb-1 text-xs text-slate-400">{point.kana}</p>
+                        )}
                         <h3 className="font-bold">{point.name || `経由地 ${index + 1}`}</h3>
 
                         <div className="mt-2 flex flex-wrap gap-2">
@@ -111,7 +124,7 @@ export default async function CoursePage({
                               rel="noopener noreferrer"
                               className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-black"
                             >
-                              詳細
+                              別タブで詳細開く
                             </a>
                           )}
 
@@ -139,7 +152,7 @@ export default async function CoursePage({
 
                     {isSpot && point.description && (
                       <p className="text-sm leading-relaxed text-slate-300">
-                        {cleanDescription(point.description)}
+                        {renderDescription(point.description)}
                       </p>
                     )}
                   </div>
