@@ -9,6 +9,8 @@ import {
 } from "../../lib/courses";
 import { fetchSpots } from "../../lib/timewalkData";
 
+export const dynamic = "force-dynamic";
+
 function cleanDescription(value: string) {
   return String(value || "").replace(/<[^>]*>/g, "");
 }
@@ -20,9 +22,9 @@ export default async function CoursePage({
 }) {
   const { id } = await params;
   const [course, storedPoints, spots] = await Promise.all([
-    getCourseById(id),
-    getCoursePointsById(id),
-    fetchSpots(),
+    getCourseById(id, { noStore: true }),
+    getCoursePointsById(id, { noStore: true }),
+    fetchSpots({ noStore: true }),
   ]);
 
   if (!course) {
