@@ -43,6 +43,7 @@ export default function AdminCourseMap({
   const spotsRef = useRef<SelectableSpot[]>(spots);
   const callbacksRef = useRef({ onSpotSelect, onWaypointAdd, mode });
   const [mapReady, setMapReady] = useState(false);
+  const [spotRenderTick, setSpotRenderTick] = useState(0);
 
   useEffect(() => {
     spotsRef.current = spots;
@@ -74,7 +75,7 @@ export default function AdminCourseMap({
         callbacksRef.current.onWaypointAdd(event.latlng.lat, event.latlng.lng);
       });
 
-      const rerenderVisibleSpots = () => setMapReady((value) => !value);
+      const rerenderVisibleSpots = () => setSpotRenderTick((value) => value + 1);
       map.on("moveend", rerenderVisibleSpots);
       map.on("zoomend", rerenderVisibleSpots);
 
@@ -95,7 +96,7 @@ export default function AdminCourseMap({
   useEffect(() => {
     const map = mapRef.current;
     const layer = spotLayerRef.current;
-    if (!map || !layer) return;
+    if (!mapReady || !map || !layer) return;
 
     async function renderSpots() {
       const L = await import("leaflet");
@@ -117,12 +118,12 @@ export default function AdminCourseMap({
     }
 
     renderSpots();
-  }, [spots, mapReady]);
+  }, [spots, mapReady, spotRenderTick]);
 
   useEffect(() => {
     const map = mapRef.current;
     const layer = selectedLayerRef.current;
-    if (!map || !layer) return;
+    if (!mapReady || !map || !layer) return;
 
     async function renderSelected() {
       const L = await import("leaflet");
