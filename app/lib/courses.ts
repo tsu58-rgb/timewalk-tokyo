@@ -20,6 +20,7 @@ export type CoursePoint = {
   spotId: string;
   pointId: string;
   name: string;
+  kana?: string;
   lat: number;
   lng: number;
   imageUrl?: string;
