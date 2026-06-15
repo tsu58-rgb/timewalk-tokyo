@@ -115,28 +115,28 @@ export default async function CoursePage({
                           <p className="mb-1 text-xs text-slate-400">{point.kana}</p>
                         )}
                         <h3 className="font-bold">{point.name || `経由地 ${index + 1}`}</h3>
+                      </div>
 
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {isSpot && (
-                            <a
-                              href={`/spot/${point.spotId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-black"
-                            >
-                              別タブで詳細開く
-                            </a>
-                          )}
-
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        {isSpot && (
                           <a
-                            href={getGoogleMapsUrl(point.lat, point.lng)}
+                            href={`/spot/${point.spotId}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white"
+                            className="whitespace-nowrap rounded-lg bg-white px-3 py-2 text-xs font-bold text-black"
                           >
-                            Googleマップ
+                            別タブで詳細
                           </a>
-                        </div>
+                        )}
+
+                        <a
+                          href={getGoogleMapsUrl(point.lat, point.lng)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="whitespace-nowrap rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white"
+                        >
+                          Googleマップ
+                        </a>
                       </div>
                     </div>
 
