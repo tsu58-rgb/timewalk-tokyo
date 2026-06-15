@@ -1,6 +1,11 @@
 import { COURSE_POINTS_URL, COURSES_URL } from "./sheetUrls";
 import { fetchCsvObjects } from "./timewalkData";
 
+type CourseFetchOptions = {
+  noStore?: boolean;
+  revalidateSeconds?: number;
+};
+
 export type Course = {
   id: string;
   status: string;
@@ -27,8 +32,12 @@ export type CoursePoint = {
   description?: string;
 };
 
-export async function fetchCourses(options: { noStore?: boolean } = {}) {
-  const rows = await fetchCsvObjects(COURSES_URL, options.noStore);
+export async function fetchCourses(options: CourseFetchOptions = {}) {
+  const rows = await fetchCsvObjects(
+    COURSES_URL,
+    options.noStore,
+    options.revalidateSeconds
+  );
 
   return rows
     .map((row): Course => ({
@@ -46,8 +55,12 @@ export async function fetchCourses(options: { noStore?: boolean } = {}) {
     .sort((a, b) => (a.displayOrder || 9999) - (b.displayOrder || 9999));
 }
 
-export async function fetchCoursePoints(options: { noStore?: boolean } = {}) {
-  const rows = await fetchCsvObjects(COURSE_POINTS_URL, options.noStore);
+export async function fetchCoursePoints(options: CourseFetchOptions = {}) {
+  const rows = await fetchCsvObjects(
+    COURSE_POINTS_URL,
+    options.noStore,
+    options.revalidateSeconds
+  );
 
   return rows
     .map((row): CoursePoint => ({
@@ -70,17 +83,17 @@ export async function fetchCoursePoints(options: { noStore?: boolean } = {}) {
     .sort((a, b) => a.pointOrder - b.pointOrder);
 }
 
-export async function getReadyCourses(options: { noStore?: boolean } = {}) {
+export async function getReadyCourses(options: CourseFetchOptions = {}) {
   const courses = await fetchCourses(options);
   return courses.filter((course) => course.status.toLowerCase() === "ready");
 }
 
-export async function getCourseById(id: string, options: { noStore?: boolean } = {}) {
+export async function getCourseById(id: string, options: CourseFetchOptions = {}) {
   const courses = await getReadyCourses(options);
   return courses.find((course) => course.id === id) || null;
 }
 
-export async function getCoursePointsById(id: string, options: { noStore?: boolean } = {}) {
+export async function getCoursePointsById(id: string, options: CourseFetchOptions = {}) {
   const points = await fetchCoursePoints(options);
   return points.filter((point) => point.courseId === id);
 }
