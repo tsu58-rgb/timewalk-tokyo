@@ -15,6 +15,10 @@ function cleanDescription(value: string) {
   return String(value || "").replace(/<[^>]*>/g, "");
 }
 
+function getGoogleMapsUrl(lat: number, lng: number) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
+}
+
 export default async function CoursePage({
   params,
 }: {
@@ -88,13 +92,39 @@ export default async function CoursePage({
             <div className="space-y-3">
               {points.map((point, index) => {
                 const isSpot = point.pointType === "spot" && Boolean(point.spotId);
-                const cardContent = (
-                  <div>
-                    <div className="mb-3 flex items-center gap-3">
+
+                return (
+                  <div key={point.pointId} className="rounded-2xl border border-slate-600 bg-slate-900 p-4">
+                    <div className="mb-3 flex items-start gap-3">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-yellow-300 font-bold text-black">
                         {index + 1}
                       </div>
-                      <h3 className="font-bold">{point.name || `経由地 ${index + 1}`}</h3>
+
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold">{point.name || `経由地 ${index + 1}`}</h3>
+
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {isSpot && (
+                            <a
+                              href={`/spot/${point.spotId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-black"
+                            >
+                              詳細
+                            </a>
+                          )}
+
+                          <a
+                            href={getGoogleMapsUrl(point.lat, point.lng)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white"
+                          >
+                            Googleマップ
+                          </a>
+                        </div>
+                      </div>
                     </div>
 
                     {isSpot && point.imageUrl && (
@@ -112,26 +142,6 @@ export default async function CoursePage({
                         {cleanDescription(point.description)}
                       </p>
                     )}
-                  </div>
-                );
-
-                if (isSpot) {
-                  return (
-                    <a
-                      key={point.pointId}
-                      href={`/spot/${point.spotId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block rounded-2xl border border-slate-600 bg-slate-900 p-4"
-                    >
-                      {cardContent}
-                    </a>
-                  );
-                }
-
-                return (
-                  <div key={point.pointId} className="rounded-2xl border border-slate-600 bg-slate-900 p-4">
-                    {cardContent}
                   </div>
                 );
               })}
