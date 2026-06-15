@@ -1,81 +1,125 @@
-import type { Spot } from "@/types/timewalk";
+import { COURSE_POINTS_URL, COURSES_URL } from "./sheetUrls";
+import { fetchCsvObjects } from "./timewalkData";
 
 export type Course = {
   id: string;
+  status: string;
   title: string;
   description: string;
   area: string;
-  duration: string;
-  distance: string;
-  spotIds: string[];
-  fallbackKeywords: string[];
-  status: "ready" | "draft";
+  distanceKm: number;
+  durationMin: number;
+  durationLabel: string;
+  displayOrder: number;
 };
 
-export const courses: Course[] = [
-  {
-    id: "ueno-history-walk",
-    title: "上野公園 歴史さんぽ",
-    description: "博物館や寺社、近代の記憶が重なる上野エリアを、短時間で歩きやすく楽しむコースです。",
-    area: "上野",
-    duration: "約60〜90分",
-    distance: "約2km",
-    spotIds: [],
-    fallbackKeywords: ["上野", "寛永寺", "西郷", "不忍", "彰義隊"],
-    status: "ready",
-  },
-  {
-    id: "asakusa-edo-culture-walk",
-    title: "浅草 江戸文化さんぽ",
-    description: "浅草寺周辺を中心に、江戸のにぎわいや文化の名残を感じながら歩くコースです。",
-    area: "浅草",
-    duration: "約60〜90分",
-    distance: "約2km",
-    spotIds: [],
-    fallbackKeywords: ["浅草", "浅草寺", "雷門", "蔦屋", "吉原"],
-    status: "ready",
-  },
-  {
-    id: "tokyo-station-modern-walk",
-    title: "東京駅・丸の内 近代建築さんぽ",
-    description: "東京駅から丸の内周辺を歩き、近代東京の都市づくりや建築の雰囲気を楽しむコースです。",
-    area: "東京駅・丸の内",
-    duration: "約45〜75分",
-    distance: "約1.5km",
-    spotIds: [],
-    fallbackKeywords: ["東京駅", "丸の内", "日本橋", "皇居", "大手町"],
-    status: "ready",
-  },
-];
+export type CoursePoint = {
+  courseId: string;
+  pointOrder: number;
+  pointType: "spot" | "waypoint";
+  spotId: string;
+  pointId: string;
+  name: string;
+  lat: number;
+  lng: number;
+  imageUrl: string;
+  description: string;
+};
 
-export function getReadyCourses() {
-  return courses.filter((course) => course.status === "ready");
+export async function fetchCourses(options: { noStore?: boolean } = {}) {
+  const rows = await fetchCsvObjects(COURSES_URL, options.noStore);
+
+  return rows
+    .map((row): Course => ({
+      id: String(row.courseId || "").trim(),
+      status: String(row.status || "").trim(),
+      title: String(row.title || "").trim(),
+      description: String(row.description || "").trim(),
+      area: String(row.area || "").trim(),
+      distanceKm: Number(row.distanceKm),
+      durationMin: Number(row.durationMin),
+      durationLabel: String(row.durationLabel || "").trim(),
+      displayOrder: Number(row.displayOrder),
+    }))
+    .filter((course) => course.id && course.title)
+    .sort((a, b) => (a.displayOrder || 9999) - (b.displayOrder || 9999));
 }
 
-export function getCourseById(id: string) {
-  return courses.find((course) => course.id === id && course.status === "ready") || null;
+export async function fetchCoursePoints(options: { noStore?: boolean } = {}) {
+  const rows = await fetchCsvObjects(COURSE_POINTS_URL, options.noStore);
+
+  return rows
+    .map((row): CoursePoint => ({
+      courseId: String(row.courseId || "").trim(),
+      pointOrder: Number(row.pointOrder),
+      pointType: String(row.pointType || "spot").trim().toLowerCase() === "waypoint" ? "waypoint" : "spot",
+      spotId: String(row.spotId || "").trim(),
+      pointId: String(row.pointId || "").trim(),
+      name: String(row.name || "").trim(),
+      lat: Number(row.lat),
+      lng: Number(row.lng),
+      imageUrl: String(row.imageUrl || "").trim(),
+      description: String(row.description || "").trim(),
+    }))
+    .filter(
+      (point) =>
+        point.courseId &&
+        point.pointId &&
+        Number.isFinite(point.lat) &&
+        Number.isFinite(point.lng)
+    )
+    .sort((a, b) => a.pointOrder - b.pointOrder);
 }
 
-export function resolveCourseSpots(course: Course, spots: Spot[]) {
-  const byId = new Map(spots.map((spot) => [spot.id, spot]));
-  const selected: Spot[] = [];
-  const usedIds = new Set<string>();
+export async function getReadyCourses(options: { noStore?: boolean } = {}) {
+  const courses = await fetchCourses(options);
+  return courses.filter((course) => course.status.toLowerCase() === "ready");
+}
 
-  course.spotIds.forEach((id) => {
-    const spot = byId.get(id);
-    if (!spot || usedIds.has(spot.id)) return;
-    selected.push(spot);
-    usedIds.add(spot.id);
-  });
+export async function getCourseById(id: string, options: { noStore?: boolean } = {}) {
+  const courses = await getReadyCourses(options);
+  return courses.find((course) => course.id === id) || null;
+}
 
-  if (selected.length > 0) return selected;
+export async function getCoursePointsById(id: string, options: { noStore?: boolean } = {}) {
+  const points = await fetchCoursePoints(options);
+  return points.filter((point) => point.courseId === id);
+}
 
-  const keywords = course.fallbackKeywords.map((keyword) => keyword.toLowerCase());
+export function formatCourseDistance(distanceKm: number) {
+  if (!Number.isFinite(distanceKm)) return "約0km";
+  const rounded = Math.round(distanceKm * 10) / 10;
+  return `約${rounded.toString().replace(/\.0$/, "")}km`;
+}
 
-  return spots
-    .filter((spot) => {
-      const text = `${spot.name} ${spot.category} ${spot.description}`.toLowerCase();
-      return keywords.some((keyword) => text.includes(keyword));
-    })
-    .slice(0, 8);
+export function calculateCourseDistanceKm(points: Array<{ lat: number; lng: number }>) {
+  if (points.length < 2) return 0;
+
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const earthRadiusKm = 6371;
+  let directKm = 0;
+
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1];
+    const current = points[index];
+    const dLat = toRad(current.lat - previous.lat);
+    const dLng = toRad(current.lng - previous.lng);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(previous.lat)) *
+        Math.cos(toRad(current.lat)) *
+        Math.sin(dLng / 2) ** 2;
+    directKm += 2 * earthRadiusKm * Math.asin(Math.sqrt(a));
+  }
+
+  return directKm * 1.25;
+}
+
+export function calculateCourseDurationMin(distanceKm: number) {
+  return Math.max(0, Math.round(distanceKm * 20));
+}
+
+export function formatCourseDuration(durationMin: number) {
+  if (!Number.isFinite(durationMin) || durationMin <= 0) return "約0分";
+  return `約${Math.ceil(durationMin / 5) * 5}分`;
 }
