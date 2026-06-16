@@ -71,6 +71,8 @@ export default async function CoursePage({
     };
   });
 
+  const quizUrl = `https://yuru-rekishi-sanpo.com/kentei-course/?courseId=${encodeURIComponent(course.id)}`;
+
   return (
     <main className="min-h-screen bg-slate-900 p-4 text-white flex justify-center">
       <div className="w-full max-w-md rounded-3xl border-4 border-white bg-slate-950 p-5">
@@ -161,6 +163,13 @@ export default async function CoursePage({
               })}
             </div>
           )}
+
+          <a
+            href={quizUrl}
+            className="mt-4 block rounded-xl bg-yellow-300 px-4 py-3 text-center font-bold text-black"
+          >
+            このエリアのクイズに挑戦
+          </a>
         </section>
       </div>
     </main>
