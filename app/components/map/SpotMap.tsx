@@ -21,18 +21,31 @@ type Props = {
   height?: string;
   currentPosition?: [number, number] | null;
   followCurrentLocation?: boolean;
+  recenterRequestKey?: number;
 };
 
 type MapItem = ClusterItem<Spot>;
 
 const defaultCenter: [number, number] = [35.681236, 139.767125];
 
-function RecenterMap({ position, zoom }: { position: [number, number]; zoom: number }) {
+function RecenterMap({
+  position,
+  zoom,
+  requestKey,
+}: {
+  position: [number, number];
+  zoom: number;
+  requestKey: number;
+}) {
   const map = useMap();
+  const previousRequestKey = useRef(0);
 
   useEffect(() => {
+    if (requestKey <= 0 || requestKey === previousRequestKey.current) return;
+
+    previousRequestKey.current = requestKey;
     map.setView(position, zoom);
-  }, [position, zoom, map]);
+  }, [position, zoom, requestKey, map]);
 
   return null;
 }
@@ -87,7 +100,7 @@ export default function SpotMap({
   initialZoom = 16,
   height = "360px",
   currentPosition,
-  followCurrentLocation = true,
+  recenterRequestKey = 0,
 }: Props) {
   const [detectedCurrentPosition, setDetectedCurrentPosition] = useState<[number, number] | null>(null);
   const [mapItems, setMapItems] = useState<MapItem[]>([]);
@@ -140,8 +153,12 @@ export default function SpotMap({
 
         <SpotLayerController spots={spots} onItemsChange={setMapItems} />
 
-        {displayedCurrentPosition && followCurrentLocation && (
-          <RecenterMap position={displayedCurrentPosition} zoom={initialZoom} />
+        {displayedCurrentPosition && recenterRequestKey > 0 && (
+          <RecenterMap
+            position={displayedCurrentPosition}
+            zoom={initialZoom}
+            requestKey={recenterRequestKey}
+          />
         )}
 
         {displayedCurrentPosition !== null && displayedCurrentPosition !== undefined && (
