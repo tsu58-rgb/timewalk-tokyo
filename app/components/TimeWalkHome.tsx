@@ -49,6 +49,7 @@ export default function TimeWalkHome() {
   const [tagsInitialized, setTagsInitialized] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [mapRecenterRequest, setMapRecenterRequest] = useState(0);
 
   const mapCurrentPosition: [number, number] | null = position
     ? [position.latitude, position.longitude]
@@ -95,7 +96,7 @@ export default function TimeWalkHome() {
     }
   }
 
-  function getCurrentLocation() {
+  function getCurrentLocation(shouldRecenterMap = false) {
     if (!navigator.geolocation) {
       setError("このブラウザは位置情報に対応していません");
       return;
@@ -105,7 +106,13 @@ export default function TimeWalkHome() {
     setError("現在地を取得中...");
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => updatePosition(pos, true),
+      (pos) => {
+        updatePosition(pos, true);
+
+        if (shouldRecenterMap) {
+          setMapRecenterRequest((value) => value + 1);
+        }
+      },
       (err) => {
         setError("位置情報が取得できません: " + err.message);
         setLocationLoading(false);
@@ -115,7 +122,7 @@ export default function TimeWalkHome() {
   }
 
   useEffect(() => {
-    getCurrentLocation();
+    getCurrentLocation(false);
   }, []);
 
   useEffect(() => {
@@ -223,7 +230,12 @@ export default function TimeWalkHome() {
           {address ? (
             <>
               <p className="text-sm text-slate-300">📍 {address}</p>
-              <button onClick={getCurrentLocation} className="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-bold whitespace-nowrap">{locationLoading ? "更新中" : "更新"}</button>
+              <button
+                onClick={() => getCurrentLocation(true)}
+                className="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-bold whitespace-nowrap"
+              >
+                {locationLoading ? "取得中" : "現在地"}
+              </button>
             </>
           ) : (
             <a href="https://yuru-rekishi-sanpo.com/timewalk#toc11" target="_blank" rel="noopener noreferrer" className="text-sm text-yellow-300 underline font-bold">位置情報サービスをオンにしてください</a>
@@ -231,7 +243,13 @@ export default function TimeWalkHome() {
         </div>
 
         <div className="mb-4">
-          <SpotMap spots={spots} initialZoom={15} height="360px" currentPosition={mapCurrentPosition} followCurrentLocation />
+          <SpotMap
+            spots={spots}
+            initialZoom={15}
+            height="360px"
+            currentPosition={mapCurrentPosition}
+            recenterRequestKey={mapRecenterRequest}
+          />
         </div>
 
         <a href="/courses" className="mb-4 block w-full rounded-2xl bg-yellow-300 px-4 py-3 text-center font-bold text-black">
