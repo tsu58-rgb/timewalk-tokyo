@@ -53,13 +53,19 @@ export default function ContactFooter() {
       </div>
 
       <div>
-        <a href="/games" className="underline text-blue-400">
+        <a
+          href="https://yuru-rekishi-sanpo.com/games/"
+          className="underline text-blue-400"
+        >
           ゲーム
         </a>
       </div>
 
       <div className="mb-6">
-        <a href="/kentei" className="underline text-blue-400">
+        <a
+          href="https://yuru-rekishi-sanpo.com/kentei/"
+          className="underline text-blue-400"
+        >
           検定
         </a>
       </div>
