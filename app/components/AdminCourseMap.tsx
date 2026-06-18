@@ -45,9 +45,7 @@ export default function AdminCourseMap({
   const callbacksRef = useRef({ onSpotSelect, onWaypointAdd, mode });
   const [mapReady, setMapReady] = useState(false);
 
-  useEffect(() => {
-    callbacksRef.current = { onSpotSelect, onWaypointAdd, mode };
-  }, [onSpotSelect, onWaypointAdd, mode]);
+  callbacksRef.current = { onSpotSelect, onWaypointAdd, mode };
 
   useEffect(() => {
     let cancelled = false;
@@ -93,6 +91,12 @@ export default function AdminCourseMap({
   }, []);
 
   useEffect(() => {
+    if (!mapReady || !mapRef.current) return;
+
+    mapRef.current.getContainer().style.cursor = mode === "waypoint" ? "crosshair" : "grab";
+  }, [mode, mapReady]);
+
+  useEffect(() => {
     if (!mapReady) return;
 
     async function renderSpots() {
@@ -107,7 +111,11 @@ export default function AdminCourseMap({
         const marker = L.marker([spot.lat, spot.lng], { icon }).bindTooltip(spot.name || spot.id);
         marker.on("click", (event: any) => {
           L.DomEvent.stopPropagation(event);
-          if (callbacksRef.current.mode === "spot") callbacksRef.current.onSpotSelect(spot);
+          if (callbacksRef.current.mode === "spot") {
+            callbacksRef.current.onSpotSelect(spot);
+          } else {
+            callbacksRef.current.onWaypointAdd(spot.lat, spot.lng);
+          }
         });
         layer.addLayer(marker);
       });
@@ -150,5 +158,25 @@ export default function AdminCourseMap({
     renderSelected();
   }, [points, mapReady]);
 
-  return <div ref={mapContainerRef} style={{ width: "100%", height: "480px", borderRadius: 12, overflow: "hidden" }} />;
+  return (
+    <>
+      <div
+        ref={mapContainerRef}
+        className="admin-course-map"
+        style={{
+          width: "100%",
+          height: "clamp(520px, 72vh, 820px)",
+          borderRadius: 12,
+          overflow: "hidden",
+        }}
+      />
+      <style jsx global>{`
+        @media (min-width: 1100px) {
+          main:has(.admin-course-map) > div {
+            max-width: 1600px !important;
+          }
+        }
+      `}</style>
+    </>
+  );
 }
