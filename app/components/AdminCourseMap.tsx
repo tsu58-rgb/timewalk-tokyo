@@ -1,8 +1,6 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import "leaflet.markercluster/dist/MarkerCluster.css";
-import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { useEffect, useRef, useState } from "react";
 
 import type { CoursePoint } from "../lib/courses";
@@ -18,7 +16,7 @@ type SelectableSpot = {
 
 function redPinIcon(L: any) {
   return L.divIcon({
-    className: "course-admin-pin",
+    className: "",
     html: '<div style="position:relative;width:26px;height:26px;border-radius:50% 50% 50% 0;background:#dc2626;border:3px solid #fff;transform:rotate(-45deg);box-shadow:0 2px 7px rgba(0,0,0,.45)"><div style="width:8px;height:8px;border-radius:50%;background:#fff;position:absolute;left:6px;top:6px"></div></div>',
     iconSize: [26, 36],
     iconAnchor: [13, 32],
@@ -40,36 +38,32 @@ export default function AdminCourseMap({
 }) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
-  const clusterLayerRef = useRef<any>(null);
+  const spotLayerRef = useRef<any>(null);
   const selectedLayerRef = useRef<any>(null);
   const callbacksRef = useRef({ onSpotSelect, onWaypointAdd, mode });
+  const spotsRef = useRef<SelectableSpot[]>(spots);
   const [mapReady, setMapReady] = useState(false);
 
   callbacksRef.current = { onSpotSelect, onWaypointAdd, mode };
+  spotsRef.current = spots;
 
   useEffect(() => {
     let cancelled = false;
 
     async function initialize() {
       const L = await import("leaflet");
-      await import("leaflet.markercluster");
       if (cancelled || !mapContainerRef.current || mapRef.current) return;
 
       const map = L.map(mapContainerRef.current, { maxZoom: 18 }).setView([35.681236, 139.767125], 14);
       mapRef.current = map;
+
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap contributors",
         maxZoom: 18,
       }).addTo(map);
 
-      clusterLayerRef.current = (L as any).markerClusterGroup({
-        maxClusterRadius: 55,
-        disableClusteringAtZoom: 17,
-        showCoverageOnHover: false,
-        spiderfyOnMaxZoom: true,
-      });
+      spotLayerRef.current = L.layerGroup().addTo(map);
       selectedLayerRef.current = L.layerGroup().addTo(map);
-      map.addLayer(clusterLayerRef.current);
 
       map.on("click", (event: any) => {
         if (callbacksRef.current.mode !== "waypoint") return;
@@ -81,49 +75,63 @@ export default function AdminCourseMap({
     }
 
     initialize();
+
     return () => {
       cancelled = true;
       mapRef.current?.remove();
       mapRef.current = null;
-      clusterLayerRef.current = null;
+      spotLayerRef.current = null;
       selectedLayerRef.current = null;
     };
   }, []);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return;
-
     mapRef.current.getContainer().style.cursor = mode === "waypoint" ? "crosshair" : "grab";
   }, [mode, mapReady]);
 
   useEffect(() => {
-    if (!mapReady) return;
+    if (!mapReady || !mapRef.current || !spotLayerRef.current) return;
 
-    async function renderSpots() {
+    let cancelled = false;
+
+    async function renderVisibleSpots() {
       const L = await import("leaflet");
-      const layer = clusterLayerRef.current;
-      if (!layer) return;
-      layer.clearLayers();
+      if (cancelled || !mapRef.current || !spotLayerRef.current) return;
+
+      const layer = spotLayerRef.current;
+      const bounds = mapRef.current.getBounds().pad(0.15);
       const icon = redPinIcon(L);
 
-      spots.forEach((spot) => {
+      layer.clearLayers();
+
+      spotsRef.current.forEach((spot) => {
         if (!Number.isFinite(spot.lat) || !Number.isFinite(spot.lng)) return;
+        if (!bounds.contains([spot.lat, spot.lng])) return;
+
         const marker = L.marker([spot.lat, spot.lng], { icon }).bindTooltip(spot.name || spot.id);
         marker.on("click", (event: any) => {
           L.DomEvent.stopPropagation(event);
+
           if (callbacksRef.current.mode === "spot") {
             callbacksRef.current.onSpotSelect(spot);
           } else {
             callbacksRef.current.onWaypointAdd(spot.lat, spot.lng);
           }
         });
+
         layer.addLayer(marker);
       });
-
-      layer.refreshClusters?.();
     }
 
-    renderSpots();
+    renderVisibleSpots();
+    const map = mapRef.current;
+    map.on("moveend zoomend", renderVisibleSpots);
+
+    return () => {
+      cancelled = true;
+      map.off("moveend zoomend", renderVisibleSpots);
+    };
   }, [spots, mapReady]);
 
   useEffect(() => {
@@ -139,7 +147,7 @@ export default function AdminCourseMap({
       points.forEach((point, index) => {
         positions.push([point.lat, point.lng]);
         const icon = L.divIcon({
-          className: "course-builder-number",
+          className: "",
           html: `<div style="width:32px;height:32px;border-radius:50%;background:#fde047;color:#111;border:3px solid #111;display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.35)">${index + 1}</div>`,
           iconSize: [32, 32],
           iconAnchor: [16, 16],
