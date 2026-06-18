@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Papa from "papaparse";
 
 const CSV_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?output=csv";
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=1242477641&single=true&output=csv";
 
 function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
   const toRad = (value: number) => (value * Math.PI) / 180;
@@ -32,8 +32,18 @@ export async function POST(request: Request) {
   const centerLat = hasCenter ? (north + south) / 2 : 35.681236;
   const centerLng = hasCenter ? (east + west) / 2 : 139.767125;
 
-  const csv = await fetch(CSV_URL, { cache: "no-store" }).then((r) => r.text());
+  const response = await fetch(`${CSV_URL}&cacheBust=${Date.now()}`, {
+    cache: "no-store",
+  });
 
+  if (!response.ok) {
+    return NextResponse.json(
+      { ok: false, error: `スポットCSV取得失敗: ${response.status}` },
+      { status: 502 }
+    );
+  }
+
+  const csv = await response.text();
   const parsed = Papa.parse(csv, {
     header: true,
     skipEmptyLines: true,
@@ -59,6 +69,7 @@ export async function POST(request: Request) {
       characterIds: String(s.characterIds || "").trim(),
       status: String(s.status || "").trim(),
     }))
+    .filter((spot) => Number.isFinite(Number(spot.lat)) && Number.isFinite(Number(spot.lng)))
     .sort((a, b) => {
       const distanceA = distanceKm(centerLat, centerLng, Number(a.lat), Number(a.lng));
       const distanceB = distanceKm(centerLat, centerLng, Number(b.lat), Number(b.lng));
