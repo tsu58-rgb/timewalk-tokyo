@@ -93,5 +93,6 @@ export function getNewSpotMarkerIcon(L: LeafletLike) {
     className: "",
     iconSize: [26, 40],
     iconAnchor: [13, 40],
+    popupAnchor: [0, -46],
   });
 }
