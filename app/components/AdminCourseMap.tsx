@@ -5,7 +5,11 @@ import { useEffect, useRef, useState } from "react";
 
 import type { CoursePoint } from "../lib/courses";
 import { clusterSpots } from "./map/clusterSpots";
-import { getClusterMarkerIcon, getSpotMarkerIcon } from "./map/mapIcons";
+import {
+  getClusterMarkerIcon,
+  getNewSpotMarkerIcon,
+  getSpotMarkerIcon,
+} from "./map/mapIcons";
 
 type SelectableSpot = {
   id: string;
@@ -19,13 +23,11 @@ type SelectableSpot = {
 export default function AdminCourseMap({
   spots,
   points,
-  mode,
   onSpotSelect,
   onWaypointAdd,
 }: {
   spots: SelectableSpot[];
   points: CoursePoint[];
-  mode: "spot" | "waypoint";
   onSpotSelect: (spot: SelectableSpot) => void;
   onWaypointAdd: (lat: number, lng: number) => void;
 }) {
@@ -33,11 +35,12 @@ export default function AdminCourseMap({
   const mapRef = useRef<any>(null);
   const markerLayerRef = useRef<any>(null);
   const selectedLayerRef = useRef<any>(null);
-  const callbacksRef = useRef({ onSpotSelect, onWaypointAdd, mode });
+  const pendingWaypointMarkerRef = useRef<any>(null);
+  const callbacksRef = useRef({ onSpotSelect, onWaypointAdd });
   const spotsRef = useRef<SelectableSpot[]>(spots);
   const [mapReady, setMapReady] = useState(false);
 
-  callbacksRef.current = { onSpotSelect, onWaypointAdd, mode };
+  callbacksRef.current = { onSpotSelect, onWaypointAdd };
   spotsRef.current = spots;
 
   useEffect(() => {
@@ -62,9 +65,79 @@ export default function AdminCourseMap({
       markerLayerRef.current = L.layerGroup().addTo(map);
       selectedLayerRef.current = L.layerGroup().addTo(map);
 
+      const clearPendingWaypoint = () => {
+        if (!pendingWaypointMarkerRef.current) return;
+        map.removeLayer(pendingWaypointMarkerRef.current);
+        pendingWaypointMarkerRef.current = null;
+      };
+
       map.on("click", (event: any) => {
-        if (callbacksRef.current.mode !== "waypoint") return;
-        callbacksRef.current.onWaypointAdd(event.latlng.lat, event.latlng.lng);
+        clearPendingWaypoint();
+
+        const lat = event.latlng.lat;
+        const lng = event.latlng.lng;
+        const content = document.createElement("div");
+        content.style.display = "flex";
+        content.style.alignItems = "center";
+        content.style.gap = "8px";
+        content.style.whiteSpace = "nowrap";
+
+        const addButton = document.createElement("button");
+        addButton.type = "button";
+        addButton.textContent = "経由地として追加";
+        addButton.style.padding = "8px 12px";
+        addButton.style.border = "0";
+        addButton.style.borderRadius = "8px";
+        addButton.style.background = "#2563eb";
+        addButton.style.color = "#fff";
+        addButton.style.fontWeight = "700";
+        addButton.style.cursor = "pointer";
+
+        const cancelButton = document.createElement("button");
+        cancelButton.type = "button";
+        cancelButton.textContent = "×";
+        cancelButton.setAttribute("aria-label", "選択を取り消す");
+        cancelButton.style.width = "30px";
+        cancelButton.style.height = "30px";
+        cancelButton.style.border = "1px solid #999";
+        cancelButton.style.borderRadius = "50%";
+        cancelButton.style.background = "#fff";
+        cancelButton.style.color = "#111";
+        cancelButton.style.fontSize = "20px";
+        cancelButton.style.lineHeight = "1";
+        cancelButton.style.cursor = "pointer";
+
+        content.append(addButton, cancelButton);
+
+        const pendingMarker = L.marker([lat, lng], {
+          icon: getNewSpotMarkerIcon(L) as any,
+          zIndexOffset: 1200,
+        })
+          .addTo(map)
+          .bindPopup(content, {
+            closeButton: false,
+            closeOnClick: false,
+            autoClose: true,
+          });
+
+        pendingWaypointMarkerRef.current = pendingMarker;
+
+        addButton.addEventListener("click", (buttonEvent) => {
+          buttonEvent.stopPropagation();
+          callbacksRef.current.onWaypointAdd(lat, lng);
+          clearPendingWaypoint();
+        });
+
+        cancelButton.addEventListener("click", (buttonEvent) => {
+          buttonEvent.stopPropagation();
+          clearPendingWaypoint();
+        });
+
+        pendingMarker.on("popupclose", () => {
+          clearPendingWaypoint();
+        });
+
+        pendingMarker.openPopup();
       });
 
       setMapReady(true);
@@ -79,14 +152,9 @@ export default function AdminCourseMap({
       mapRef.current = null;
       markerLayerRef.current = null;
       selectedLayerRef.current = null;
+      pendingWaypointMarkerRef.current = null;
     };
   }, []);
-
-  useEffect(() => {
-    if (!mapReady || !mapRef.current) return;
-    mapRef.current.getContainer().style.cursor =
-      mode === "waypoint" ? "crosshair" : "grab";
-  }, [mode, mapReady]);
 
   useEffect(() => {
     if (!mapReady || !mapRef.current || !markerLayerRef.current) return;
@@ -120,12 +188,7 @@ export default function AdminCourseMap({
 
           marker.on("click", (event: any) => {
             L.DomEvent.stopPropagation(event);
-
-            if (callbacksRef.current.mode === "spot") {
-              callbacksRef.current.onSpotSelect(spot);
-            } else {
-              callbacksRef.current.onWaypointAdd(spot.lat, spot.lng);
-            }
+            callbacksRef.current.onSpotSelect(spot);
           });
 
           marker.addTo(layer);
@@ -138,7 +201,8 @@ export default function AdminCourseMap({
           .addTo(layer)
           .bindPopup(`${item.count}件`);
 
-        clusterMarker.on("click", () => {
+        clusterMarker.on("click", (event: any) => {
+          L.DomEvent.stopPropagation(event);
           map.setView(
             [item.lat, item.lng],
             Math.min(map.getZoom() + 1, map.getMaxZoom())
@@ -225,6 +289,7 @@ export default function AdminCourseMap({
           height: "clamp(520px, 72vh, 820px)",
           borderRadius: 12,
           overflow: "hidden",
+          cursor: "crosshair",
         }}
       />
 
