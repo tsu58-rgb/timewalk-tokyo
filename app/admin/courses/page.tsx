@@ -47,7 +47,6 @@ export default function AdminCoursesPage() {
   const [area, setArea] = useState("");
   const [courseId, setCourseId] = useState("");
   const [status, setStatus] = useState("draft");
-  const [mode, setMode] = useState<"spot" | "waypoint">("spot");
   const [points, setPoints] = useState<CoursePoint[]>([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
@@ -311,7 +310,9 @@ export default function AdminCoursesPage() {
     <main style={{ padding: 16, background: "#f4f4f4", color: "#111", minHeight: "100vh" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <h1>散歩コース管理</h1>
-        <p>赤いピンを選ぶと歴史スポットを追加します。経由地追加モードでは地図上の任意の場所を押してください。</p>
+        <p>
+          登録済みスポットのピンを押すとスポットを追加します。ピン以外の場所を押した場合は、確認後に経由地として追加できます。
+        </p>
 
         <div style={{ display: "flex", gap: 8, alignItems: "end", flexWrap: "wrap", margin: "12px 0 16px" }}>
           <div style={{ flex: "1 1 320px" }}>
@@ -336,11 +337,12 @@ export default function AdminCoursesPage() {
 
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(320px, 1fr)", gap: 16 }}>
           <div>
-            <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-              <button onClick={() => setMode("spot")} style={{ padding: 10, fontWeight: "bold", background: mode === "spot" ? "#111" : "#fff", color: mode === "spot" ? "#fff" : "#111" }}>スポット選択</button>
-              <button onClick={() => setMode("waypoint")} style={{ padding: 10, fontWeight: "bold", background: mode === "waypoint" ? "#2563eb" : "#fff", color: mode === "waypoint" ? "#fff" : "#111" }}>経由地追加</button>
-            </div>
-            <AdminCourseMap spots={spots} points={points} mode={mode} onSpotSelect={addSpot} onWaypointAdd={addWaypoint} />
+            <AdminCourseMap
+              spots={spots}
+              points={points}
+              onSpotSelect={addSpot}
+              onWaypointAdd={addWaypoint}
+            />
           </div>
 
           <div style={{ background: "#fff", padding: 16, borderRadius: 12 }}>
