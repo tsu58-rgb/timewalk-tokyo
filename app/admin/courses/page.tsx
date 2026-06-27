@@ -35,6 +35,14 @@ function makeCourseId(title: string) {
   return latin || `course-${Date.now()}`;
 }
 
+function getTodayDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function AdminCoursesPage() {
   const [pagePassword, setPagePassword] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
@@ -43,6 +51,7 @@ export default function AdminCoursesPage() {
   const [storedCoursePoints, setStoredCoursePoints] = useState<CoursePoint[]>([]);
   const [selectedExistingId, setSelectedExistingId] = useState("");
   const [title, setTitle] = useState("");
+  const [date, setDate] = useState(getTodayDate);
   const [description, setDescription] = useState("");
   const [area, setArea] = useState("");
   const [courseId, setCourseId] = useState("");
@@ -111,6 +120,7 @@ export default function AdminCoursesPage() {
     setSelectedExistingId("");
     setCourseId("");
     setTitle("");
+    setDate(getTodayDate());
     setDescription("");
     setArea("");
     setStatus("draft");
@@ -130,6 +140,7 @@ export default function AdminCoursesPage() {
 
     setCourseId(course.id);
     setTitle(course.title);
+    setDate(course.date || getTodayDate());
     setDescription(course.description);
     setArea(course.area);
     setStatus(course.status || "draft");
@@ -199,17 +210,8 @@ export default function AdminCoursesPage() {
 
   function movePointToIndex(fromIndex: number, toIndex: number) {
     if (fromIndex === toIndex) return;
-
     setPoints((current) => {
-      if (
-        fromIndex < 0 ||
-        fromIndex >= current.length ||
-        toIndex < 0 ||
-        toIndex >= current.length
-      ) {
-        return current;
-      }
-
+      if (fromIndex < 0 || fromIndex >= current.length || toIndex < 0 || toIndex >= current.length) return current;
       const next = [...current];
       const [moved] = next.splice(fromIndex, 1);
       next.splice(toIndex, 0, moved);
@@ -217,24 +219,11 @@ export default function AdminCoursesPage() {
     });
   }
 
-  function handleDragStart(index: number) {
-    setDraggedPointIndex(index);
-    setDragOverPointIndex(index);
-  }
-
-  function handleDrop(index: number) {
-    if (draggedPointIndex === null) return;
-    movePointToIndex(draggedPointIndex, index);
-    setDraggedPointIndex(null);
-    setDragOverPointIndex(null);
-  }
-
-  function handleDragEnd() {
-    setDraggedPointIndex(null);
-    setDragOverPointIndex(null);
-  }
-
   async function saveCourse() {
+    if (!date) {
+      setMessage("日付を入力してください。");
+      return;
+    }
     if (!title.trim()) {
       setMessage("タイトルを入力してください。");
       return;
@@ -259,6 +248,7 @@ export default function AdminCoursesPage() {
             courseId: finalId,
             status,
             title: title.trim(),
+            date,
             description: description.trim(),
             area: area.trim(),
             distanceKm: Math.round(distanceKm * 100) / 100,
@@ -280,6 +270,7 @@ export default function AdminCoursesPage() {
       setSelectedExistingId(finalId);
       if (savedCourse) {
         setStatus(savedCourse.status || status);
+        setDate(savedCourse.date || date);
       }
       setMessage(`${selectedExistingId ? "更新" : "保存"}しました：${finalId}`);
     } catch (error) {
@@ -310,44 +301,31 @@ export default function AdminCoursesPage() {
     <main style={{ padding: 16, background: "#f4f4f4", color: "#111", minHeight: "100vh" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <h1>散歩コース管理</h1>
-        <p>
-          登録済みスポットのピンを押すとスポットを追加します。ピン以外の場所を押した場合は、確認後に経由地として追加できます。
-        </p>
+        <p>登録済みスポットのピンを押すとスポットを追加します。ピン以外の場所を押した場合は、確認後に経由地として追加できます。</p>
 
         <div style={{ display: "flex", gap: 8, alignItems: "end", flexWrap: "wrap", margin: "12px 0 16px" }}>
           <div style={{ flex: "1 1 320px" }}>
             <label>既存コースを編集</label>
-            <select
-              value={selectedExistingId}
-              onChange={(event) => loadExistingCourse(event.target.value)}
-              style={{ ...inputStyle, marginBottom: 0 }}
-            >
+            <select value={selectedExistingId} onChange={(event) => loadExistingCourse(event.target.value)} style={{ ...inputStyle, marginBottom: 0 }}>
               <option value="">新規コース</option>
               {existingCourses.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.title}（{course.status}）
-                </option>
+                <option key={course.id} value={course.id}>{course.title}（{course.status}）</option>
               ))}
             </select>
           </div>
-          <button onClick={startNewCourse} style={{ padding: "10px 16px", fontWeight: "bold" }}>
-            新規作成に戻す
-          </button>
+          <button onClick={startNewCourse} style={{ padding: "10px 16px", fontWeight: "bold" }}>新規作成に戻す</button>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(320px, 1fr)", gap: 16 }}>
           <div>
-            <AdminCourseMap
-              spots={spots}
-              points={points}
-              onSpotSelect={addSpot}
-              onWaypointAdd={addWaypoint}
-            />
+            <AdminCourseMap spots={spots} points={points} onSpotSelect={addSpot} onWaypointAdd={addWaypoint} />
           </div>
 
           <div style={{ background: "#fff", padding: 16, borderRadius: 12 }}>
             <label>courseId（新規は空欄で自動作成）</label>
             <input value={courseId} onChange={(event) => setCourseId(event.target.value)} readOnly={Boolean(selectedExistingId)} style={{ ...inputStyle, background: selectedExistingId ? "#eee" : "#fff" }} />
+            <label>日付</label>
+            <input type="date" value={date} onChange={(event) => setDate(event.target.value)} style={inputStyle} />
             <label>タイトル</label>
             <input value={title} onChange={(event) => setTitle(event.target.value)} style={inputStyle} />
             <label>説明</label>
@@ -366,9 +344,7 @@ export default function AdminCoursesPage() {
             </div>
 
             <h2>歩く順番</h2>
-            <p style={{ marginTop: -6, marginBottom: 10, fontSize: 12, color: "#555" }}>
-              矢印またはカードのドラッグで順番を変更できます。
-            </p>
+            <p style={{ marginTop: -6, marginBottom: 10, fontSize: 12, color: "#555" }}>矢印またはカードのドラッグで順番を変更できます。</p>
             <div style={{ display: "grid", gap: 8 }}>
               {points.map((point, index) => (
                 <div
@@ -377,7 +353,8 @@ export default function AdminCoursesPage() {
                   onDragStart={(event) => {
                     event.dataTransfer.effectAllowed = "move";
                     event.dataTransfer.setData("text/plain", point.pointId);
-                    handleDragStart(index);
+                    setDraggedPointIndex(index);
+                    setDragOverPointIndex(index);
                   }}
                   onDragOver={(event) => {
                     event.preventDefault();
@@ -386,9 +363,14 @@ export default function AdminCoursesPage() {
                   }}
                   onDrop={(event) => {
                     event.preventDefault();
-                    handleDrop(index);
+                    if (draggedPointIndex !== null) movePointToIndex(draggedPointIndex, index);
+                    setDraggedPointIndex(null);
+                    setDragOverPointIndex(null);
                   }}
-                  onDragEnd={handleDragEnd}
+                  onDragEnd={() => {
+                    setDraggedPointIndex(null);
+                    setDragOverPointIndex(null);
+                  }}
                   style={{
                     border: dragOverPointIndex === index ? "2px solid #2563eb" : "1px solid #ccc",
                     borderRadius: 8,
@@ -400,97 +382,18 @@ export default function AdminCoursesPage() {
                 >
                   <div style={{ display: "grid", gridTemplateColumns: "44px minmax(0, 1fr)", gap: 10, alignItems: "center" }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                      <button
-                        type="button"
-                        onClick={() => movePoint(index, -1)}
-                        disabled={index === 0}
-                        aria-label={`${point.name}を1つ上へ移動`}
-                        title="1つ上へ移動"
-                        style={{
-                          width: 36,
-                          height: 30,
-                          borderRadius: 7,
-                          border: "1px solid #999",
-                          background: index === 0 ? "#eee" : "#fff",
-                          color: index === 0 ? "#aaa" : "#111",
-                          fontSize: 20,
-                          fontWeight: 900,
-                          lineHeight: 1,
-                          cursor: index === 0 ? "not-allowed" : "pointer",
-                        }}
-                      >
-                        ▲
-                      </button>
-
-                      <strong
-                        style={{
-                          display: "flex",
-                          width: 34,
-                          height: 34,
-                          alignItems: "center",
-                          justifyContent: "center",
-                          borderRadius: "50%",
-                          background: "#fde047",
-                          border: "2px solid #111",
-                          fontSize: 16,
-                        }}
-                      >
-                        {index + 1}
-                      </strong>
-
-                      <button
-                        type="button"
-                        onClick={() => movePoint(index, 1)}
-                        disabled={index === points.length - 1}
-                        aria-label={`${point.name}を1つ下へ移動`}
-                        title="1つ下へ移動"
-                        style={{
-                          width: 36,
-                          height: 30,
-                          borderRadius: 7,
-                          border: "1px solid #999",
-                          background: index === points.length - 1 ? "#eee" : "#fff",
-                          color: index === points.length - 1 ? "#aaa" : "#111",
-                          fontSize: 20,
-                          fontWeight: 900,
-                          lineHeight: 1,
-                          cursor: index === points.length - 1 ? "not-allowed" : "pointer",
-                        }}
-                      >
-                        ▼
-                      </button>
+                      <button type="button" onClick={() => movePoint(index, -1)} disabled={index === 0} title="1つ上へ移動" style={arrowButtonStyle(index === 0)}>▲</button>
+                      <strong style={{ display: "flex", width: 34, height: 34, alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "#fde047", border: "2px solid #111", fontSize: 16 }}>{index + 1}</strong>
+                      <button type="button" onClick={() => movePoint(index, 1)} disabled={index === points.length - 1} title="1つ下へ移動" style={arrowButtonStyle(index === points.length - 1)}>▼</button>
                     </div>
 
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <span
-                          aria-hidden="true"
-                          title="ドラッグして順番を変更"
-                          style={{
-                            color: "#777",
-                            fontSize: 20,
-                            lineHeight: 1,
-                            cursor: "grab",
-                            userSelect: "none",
-                          }}
-                        >
-                          ⠿
-                        </span>
-                        <input
-                          value={point.name}
-                          onChange={(event) => setPoints((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item))}
-                          style={{ ...inputStyle, marginBottom: 0, flex: 1 }}
-                        />
+                        <span aria-hidden="true" title="ドラッグして順番を変更" style={{ color: "#777", fontSize: 20, lineHeight: 1, cursor: "grab", userSelect: "none" }}>⠿</span>
+                        <input value={point.name} onChange={(event) => setPoints((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item))} style={{ ...inputStyle, marginBottom: 0, flex: 1 }} />
                       </div>
-
                       <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center" }}>
-                        <button
-                          type="button"
-                          onClick={() => setPoints((current) => normalizeOrders(current.filter((_, itemIndex) => itemIndex !== index)))}
-                          style={{ padding: "5px 10px" }}
-                        >
-                          削除
-                        </button>
+                        <button type="button" onClick={() => setPoints((current) => normalizeOrders(current.filter((_, itemIndex) => itemIndex !== index)))} style={{ padding: "5px 10px" }}>削除</button>
                         <span style={{ fontSize: 12, marginLeft: "auto" }}>{point.pointType === "waypoint" ? "経由地" : point.spotId}</span>
                       </div>
                     </div>
@@ -509,6 +412,21 @@ export default function AdminCoursesPage() {
       <style>{`@media (max-width: 800px) { main > div > div { grid-template-columns: 1fr !important; } }`}</style>
     </main>
   );
+}
+
+function arrowButtonStyle(disabled: boolean): React.CSSProperties {
+  return {
+    width: 36,
+    height: 30,
+    borderRadius: 7,
+    border: "1px solid #999",
+    background: disabled ? "#eee" : "#fff",
+    color: disabled ? "#aaa" : "#111",
+    fontSize: 20,
+    fontWeight: 900,
+    lineHeight: 1,
+    cursor: disabled ? "not-allowed" : "pointer",
+  };
 }
 
 const inputStyle: React.CSSProperties = {
