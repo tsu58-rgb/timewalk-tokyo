@@ -16,6 +16,7 @@ export type Course = {
   durationMin: number;
   durationLabel: string;
   displayOrder: number;
+  date: string;
 };
 
 export type CoursePoint = {
@@ -50,6 +51,7 @@ export async function fetchCourses(options: CourseFetchOptions = {}) {
       durationMin: Number(row.durationMin),
       durationLabel: String(row.durationLabel || "").trim(),
       displayOrder: Number(row.displayOrder),
+      date: String(row.date || row.createdAt || "").trim().slice(0, 10),
     }))
     .filter((course) => course.id && course.title)
     .sort((a, b) => (a.displayOrder || 9999) - (b.displayOrder || 9999));
