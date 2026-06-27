@@ -5,20 +5,41 @@ import { useMemo, useState } from "react";
 
 import { formatCourseDistance, type Course } from "../lib/courses";
 
+type NumberedCourse = Course & {
+  sequenceNumber: number;
+};
+
+function compareDateAscending(a: Course, b: Course) {
+  const dateCompare = String(a.date || "").localeCompare(String(b.date || ""));
+  if (dateCompare !== 0) return dateCompare;
+  return (a.displayOrder || 9999) - (b.displayOrder || 9999);
+}
+
 export default function CoursesSearchList({ courses }: { courses: Course[] }) {
   const [keyword, setKeyword] = useState("");
 
+  const numberedCourses = useMemo<NumberedCourse[]>(() => {
+    const oldestFirst = [...courses].sort(compareDateAscending);
+    return oldestFirst
+      .map((course, index) => ({ ...course, sequenceNumber: index + 1 }))
+      .sort((a, b) => {
+        const dateCompare = String(b.date || "").localeCompare(String(a.date || ""));
+        if (dateCompare !== 0) return dateCompare;
+        return b.sequenceNumber - a.sequenceNumber;
+      });
+  }, [courses]);
+
   const visibleCourses = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLocaleLowerCase("ja-JP");
-    if (!normalizedKeyword) return courses;
+    if (!normalizedKeyword) return numberedCourses;
 
-    return courses.filter((course) => {
+    return numberedCourses.filter((course) => {
       const target = [course.title, course.area, course.description]
         .join(" ")
         .toLocaleLowerCase("ja-JP");
       return target.includes(normalizedKeyword);
     });
-  }, [courses, keyword]);
+  }, [numberedCourses, keyword]);
 
   return (
     <>
@@ -44,7 +65,9 @@ export default function CoursesSearchList({ courses }: { courses: Course[] }) {
             href={`/courses/${course.id}`}
             className="block rounded-2xl border border-slate-600 bg-slate-800 p-4 hover:border-yellow-300"
           >
-            <h2 className="mb-2 font-bold text-yellow-300">{course.title}</h2>
+            <h2 className="mb-2 font-bold text-yellow-300">
+              {String(course.sequenceNumber).padStart(2, "0")}.{course.title}
+            </h2>
             <p className="text-sm font-bold text-white">
               {course.area} / {formatCourseDistance(course.distanceKm)} / {course.durationLabel || `約${course.durationMin}分`}
             </p>
