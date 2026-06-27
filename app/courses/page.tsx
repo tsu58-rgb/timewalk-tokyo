@@ -1,12 +1,39 @@
 import Link from "next/link";
 
 import CoursesSearchList from "./CoursesSearchList";
-import { getReadyCourses } from "../lib/courses";
+import { fetchCoursePoints, getReadyCourses } from "../lib/courses";
+import { fetchSpots } from "../lib/timewalkData";
 
 export const revalidate = 300;
 
 export default async function CoursesPage() {
-  const courses = await getReadyCourses({ revalidateSeconds: 300 });
+  const cacheOptions = { revalidateSeconds: 300 };
+  const [courses, coursePoints, spots] = await Promise.all([
+    getReadyCourses(cacheOptions),
+    fetchCoursePoints(cacheOptions),
+    fetchSpots(cacheOptions),
+  ]);
+
+  const spotNameMap = new Map(spots.map((spot) => [spot.id, spot.name]));
+  const courseSearchNames = new Map<string, Set<string>>();
+
+  coursePoints.forEach((point) => {
+    const name =
+      point.pointType === "spot"
+        ? spotNameMap.get(point.spotId) || point.name
+        : point.name;
+
+    if (!name) return;
+
+    const names = courseSearchNames.get(point.courseId) || new Set<string>();
+    names.add(name);
+    courseSearchNames.set(point.courseId, names);
+  });
+
+  const searchableCourses = courses.map((course) => ({
+    ...course,
+    routeSpotNames: Array.from(courseSearchNames.get(course.id) || []).join(" "),
+  }));
 
   return (
     <main className="min-h-screen bg-slate-900 p-4 text-white flex justify-center">
@@ -20,7 +47,7 @@ export default async function CoursesPage() {
           歴史スポットを順番に歩いて楽しめるコースです。
         </p>
 
-        <CoursesSearchList courses={courses} />
+        <CoursesSearchList courses={searchableCourses} />
       </div>
     </main>
   );
