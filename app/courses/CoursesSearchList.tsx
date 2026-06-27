@@ -5,7 +5,11 @@ import { useMemo, useState } from "react";
 
 import { formatCourseDistance, type Course } from "../lib/courses";
 
-type NumberedCourse = Course & {
+type SearchableCourse = Course & {
+  routeSpotNames: string;
+};
+
+type NumberedCourse = SearchableCourse & {
   sequenceNumber: number;
 };
 
@@ -15,7 +19,7 @@ function compareDateAscending(a: Course, b: Course) {
   return (a.displayOrder || 9999) - (b.displayOrder || 9999);
 }
 
-export default function CoursesSearchList({ courses }: { courses: Course[] }) {
+export default function CoursesSearchList({ courses }: { courses: SearchableCourse[] }) {
   const [keyword, setKeyword] = useState("");
 
   const numberedCourses = useMemo<NumberedCourse[]>(() => {
@@ -34,7 +38,12 @@ export default function CoursesSearchList({ courses }: { courses: Course[] }) {
     if (!normalizedKeyword) return numberedCourses;
 
     return numberedCourses.filter((course) => {
-      const target = [course.title, course.area, course.description]
+      const target = [
+        course.title,
+        course.area,
+        course.description,
+        course.routeSpotNames,
+      ]
         .join(" ")
         .toLocaleLowerCase("ja-JP");
       return target.includes(normalizedKeyword);
@@ -48,8 +57,8 @@ export default function CoursesSearchList({ courses }: { courses: Course[] }) {
           type="search"
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
-          placeholder="キーワードで検索"
-          aria-label="コースをキーワード検索"
+          placeholder="コース名・スポット名で検索"
+          aria-label="コースとルート内スポットをキーワード検索"
           className="w-full rounded-xl border border-slate-500 bg-white px-4 py-3 text-black outline-none focus:border-yellow-300"
         />
       </div>
