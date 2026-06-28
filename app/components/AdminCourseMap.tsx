@@ -263,13 +263,6 @@ export default function AdminCourseMap({
           opacity: 0.8,
         }).addTo(layer);
       }
-
-      if (positions.length > 0 && mapRef.current) {
-        mapRef.current.fitBounds(L.latLngBounds(positions), {
-          padding: [30, 30],
-          maxZoom: 17,
-        });
-      }
     }
 
     renderSelected().catch((error) => console.error(error));
