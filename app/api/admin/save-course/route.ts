@@ -10,13 +10,19 @@ export async function POST(request: Request) {
     );
   }
 
+  const selectedDate = String(body.course?.date || "").trim();
+  const course = {
+    ...body.course,
+    notes: selectedDate ? `courseDate:${selectedDate}` : String(body.course?.notes || ""),
+  };
+
   const response = await fetch(process.env.GAS_WEB_APP_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain" },
     body: JSON.stringify({
       adminKey: process.env.GAS_ADMIN_KEY,
       action: "saveCourse",
-      course: body.course,
+      course,
       points: body.points,
     }),
   });
