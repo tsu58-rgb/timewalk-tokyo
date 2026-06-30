@@ -33,6 +33,14 @@ export type CoursePoint = {
   description?: string;
 };
 
+function getCourseDate(row: Record<string, string>) {
+  const notes = String(row.notes || "");
+  const notesMatch = notes.match(/courseDate:(\d{4}-\d{2}-\d{2})/);
+  return String(row.date || notesMatch?.[1] || row.createdAt || "")
+    .trim()
+    .slice(0, 10);
+}
+
 export async function fetchCourses(options: CourseFetchOptions = {}) {
   const rows = await fetchCsvObjects(
     COURSES_URL,
@@ -51,7 +59,7 @@ export async function fetchCourses(options: CourseFetchOptions = {}) {
       durationMin: Number(row.durationMin),
       durationLabel: String(row.durationLabel || "").trim(),
       displayOrder: Number(row.displayOrder),
-      date: String(row.date || row.createdAt || "").trim().slice(0, 10),
+      date: getCourseDate(row),
     }))
     .filter((course) => course.id && course.title)
     .sort((a, b) => (a.displayOrder || 9999) - (b.displayOrder || 9999));
