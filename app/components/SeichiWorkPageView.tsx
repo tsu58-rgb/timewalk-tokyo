@@ -55,14 +55,16 @@ export default function SeichiWorkPageView({ work, spots, lang, languages }: {
                   href={detailHref(spot.id)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="grid h-[96px] grid-cols-[minmax(0,1fr)_104px] overflow-hidden border-4 border-black bg-white shadow-[5px_5px_0_#111] sm:h-[104px] sm:grid-cols-[minmax(0,1fr)_128px]"
+                  className="grid h-[96px] grid-cols-[minmax(0,1fr)_34px_104px] overflow-hidden border-4 border-black bg-white shadow-[5px_5px_0_#111] sm:h-[104px] sm:grid-cols-[minmax(0,1fr)_38px_128px]"
                 >
-                  <div className="relative min-w-0 p-2.5 pr-11 sm:p-3 sm:pr-12">
+                  <div className="min-w-0 p-2.5 sm:p-3">
                     {spot.kana && <p className="truncate text-[10px] font-bold leading-none text-slate-500">{spot.kana}</p>}
                     <h2 className="mt-0.5 line-clamp-1 text-base font-black leading-tight sm:text-lg">{spot.name}</h2>
                     <p className="mt-1 line-clamp-1 text-[10px] font-bold leading-none text-slate-600 sm:text-[11px]">{spot.prefecture}{spot.city}{spot.area}</p>
-                    <span className="absolute bottom-2.5 left-2.5 text-[10px] font-black leading-none sm:bottom-3 sm:left-3 sm:text-[11px]">{labels[3]}</span>
-                    <span className="absolute bottom-2 right-2 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-black bg-[#ffd83d] text-xs font-black sm:bottom-2.5 sm:right-2.5">
+                    <span className="mt-3 block text-[10px] font-black leading-none sm:text-[11px]">{labels[3]}</span>
+                  </div>
+                  <div className="flex items-end justify-center pb-2 sm:pb-2.5">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-black bg-[#ffd83d] text-xs font-black">
                       {index + 1}
                     </span>
                   </div>
