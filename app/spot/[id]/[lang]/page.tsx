@@ -6,7 +6,11 @@ import {
   fetchSpotTranslations,
   normalizeLanguage,
 } from "../../../lib/seichiI18nData";
-import { spotAlternates, htmlLanguageCode } from "../../../lib/seichiSeo";
+import {
+  htmlLanguageCode,
+  spotAlternates,
+  spotDetailUrl,
+} from "../../../lib/seichiSeo";
 import { fetchSpots } from "../../../lib/timewalkData";
 
 export async function generateMetadata({
@@ -43,7 +47,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: spotAlternates(id, normalized)?.canonical,
+      url: spotDetailUrl(id, normalized),
       locale: htmlLanguageCode(normalized),
       type: "article",
     },
