@@ -1,9 +1,11 @@
 import Link from "next/link";
 
+import HtmlLangSetter from "./HtmlLangSetter";
 import NavigationLoadingGuard from "./NavigationLoadingGuard";
 import SeichiLanguageSwitcher from "./SeichiLanguageSwitcher";
 import type { Language, Work } from "@/types/timewalk";
 import type { SupportedLanguage } from "../lib/seichiI18nData";
+import { htmlLanguageCode } from "../lib/seichiSeo";
 
 export default function SeichiWorksIndex({
   works,
@@ -62,6 +64,7 @@ export default function SeichiWorksIndex({
 
   return (
     <NavigationLoadingGuard>
+      <HtmlLangSetter lang={htmlLanguageCode(lang)} />
       <main className="min-h-screen overflow-x-hidden bg-[#fff7df] px-4 py-8 text-[#171717] sm:px-6 lg:px-8">
         <div className="pointer-events-none fixed inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(#ff4f9a 1.5px, transparent 1.5px)", backgroundSize: "18px 18px" }} />
         <div className="relative mx-auto w-full max-w-5xl">
