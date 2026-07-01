@@ -55,22 +55,24 @@ export default function SeichiWorkPageView({ work, spots, lang, languages }: {
                   href={detailHref(spot.id)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="relative grid min-h-32 grid-cols-[minmax(0,1fr)_112px] overflow-hidden border-4 border-black bg-white shadow-[5px_5px_0_#111] sm:grid-cols-[minmax(0,1fr)_140px]"
+                  className="grid min-h-0 grid-cols-[minmax(0,1fr)_104px] overflow-hidden border-4 border-black bg-white shadow-[5px_5px_0_#111] sm:grid-cols-[minmax(0,1fr)_128px]"
                 >
-                  <div className="flex min-w-0 flex-col p-4 pb-12">
-                    {spot.kana && <p className="truncate text-xs font-bold text-slate-500">{spot.kana}</p>}
-                    <h2 className="line-clamp-2 text-lg font-black leading-snug">{spot.name}</h2>
-                    <p className="mt-2 line-clamp-2 text-xs font-bold text-slate-600">{spot.prefecture}{spot.city}{spot.area}</p>
-                    <span className="mt-3 text-xs font-black">{labels[3]}</span>
-                    <div className="absolute bottom-3 right-[124px] inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-black bg-[#ffd83d] font-black sm:right-[152px]">
-                      {index + 1}
+                  <div className="flex min-w-0 flex-col p-3 sm:p-4">
+                    {spot.kana && <p className="truncate text-[11px] font-bold leading-tight text-slate-500">{spot.kana}</p>}
+                    <h2 className="line-clamp-2 text-base font-black leading-snug sm:text-lg">{spot.name}</h2>
+                    <p className="mt-1 line-clamp-1 text-[11px] font-bold leading-tight text-slate-600 sm:text-xs">{spot.prefecture}{spot.city}{spot.area}</p>
+                    <div className="mt-3 flex items-end justify-between gap-3">
+                      <span className="text-[11px] font-black leading-none sm:text-xs">{labels[3]}</span>
+                      <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-black bg-[#ffd83d] text-sm font-black">
+                        {index + 1}
+                      </div>
                     </div>
                   </div>
                   <div className="border-l-4 border-black bg-[#d9f7ff]">
                     {spot.spotsImage ? (
-                      <img src={spot.spotsImage} alt={spot.name} className="h-full min-h-32 w-full object-cover" />
+                      <img src={spot.spotsImage} alt={spot.name} className="h-full min-h-28 w-full object-cover" />
                     ) : (
-                      <div className="flex h-full min-h-32 items-center justify-center text-3xl font-black">{index + 1}</div>
+                      <div className="flex h-full min-h-28 items-center justify-center text-3xl font-black">{index + 1}</div>
                     )}
                   </div>
                 </Link>
