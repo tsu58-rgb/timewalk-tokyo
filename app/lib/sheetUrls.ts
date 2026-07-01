@@ -4,6 +4,9 @@ const SHEETS_BASE_URL =
 export const EVENTS_URL = `${SHEETS_BASE_URL}?gid=1015785763&single=true&output=csv`;
 export const SPOTS_URL = `${SHEETS_BASE_URL}?gid=1242477641&single=true&output=csv`;
 export const WORKS_URL = `${SHEETS_BASE_URL}?gid=697753165&single=true&output=csv`;
+export const LANGUAGES_URL = `${SHEETS_BASE_URL}?gid=31001&single=true&output=csv`;
+export const WORK_I18N_URL = `${SHEETS_BASE_URL}?gid=31002&single=true&output=csv`;
+export const SPOT_I18N_URL = `${SHEETS_BASE_URL}?gid=31003&single=true&output=csv`;
 export const CHARACTERS_URL = `${SHEETS_BASE_URL}?gid=1745190060&single=true&output=csv`;
 export const SPOT_QUIZZES_URL = `${SHEETS_BASE_URL}?gid=987654321&single=true&output=csv`;
 export const COURSES_URL = `${SHEETS_BASE_URL}?gid=21001&single=true&output=csv`;
