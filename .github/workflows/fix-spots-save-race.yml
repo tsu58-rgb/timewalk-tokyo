@@ -1,0 +1,122 @@
+name: Fix spots save race condition
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-spots-save-race.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch spots admin safeguards
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app/admin/spots-map/page.tsx')
+          s = p.read_text()
+
+          s = s.replace(
+            '    map.on("zoomend", loadExistingSpots);\n    map.on("moveend", loadExistingSpots);',
+            '    map.on("zoomend", () => { if (!savingRef.current) loadExistingSpots(); });\n    map.on("moveend", () => { if (!savingRef.current) loadExistingSpots(); });'
+          )
+
+          s = s.replace(
+            '        marker.on("click", () => { setSpot(normalizeSpot(item.spot)); setPendingMove(null); setImageBase64(""); });',
+            '        marker.on("click", () => { if (savingRef.current) return; setSpot(normalizeSpot(item.spot)); setPendingMove(null); setImageBase64(""); if (fileInputRef.current) fileInputRef.current.value = ""; });'
+          )
+
+          s = s.replace(
+            '        marker.on("dragend", (e: any) => { const p = e.target.getLatLng(); setPendingMove({ lat: p.lat, lng: p.lng }); setSpot(normalizeSpot(item.spot)); });',
+            '        marker.on("dragend", (e: any) => { if (savingRef.current) { loadExistingSpots(); return; } const p = e.target.getLatLng(); setPendingMove({ lat: p.lat, lng: p.lng }); setSpot(normalizeSpot(item.spot)); });'
+          )
+
+          start = s.index('  async function saveSpot() {')
+          end = s.index('\n  if (!pagePassword)', start)
+          replacement = '''  async function saveSpot() {
+    if (savingRef.current) return;
+
+    const savingSpot = {
+      ...spot,
+      id: spot.id && spot.id !== "新規" ? spot.id : "",
+      imageBase64,
+    };
+
+    if (!savingSpot.name && !savingSpot.description && !savingSpot.lat && !savingSpot.lng) {
+      setMessage("保存する内容が空です");
+      return;
+    }
+
+    const savingIdLabel = savingSpot.id || "新規スポット";
+    savingRef.current = true;
+    setIsSaving(true);
+    setMessage(`保存中：${savingIdLabel}。完了まで他の地点は選択できません。`);
+
+    try {
+      const res = await fetch("/api/admin/save-spot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spot: savingSpot }),
+      });
+      const json = await res.json();
+
+      if (!json.ok) {
+        setMessage(json.error || "保存失敗");
+        return;
+      }
+
+      const { imageBase64: _unusedImageBase64, ...savedSpot } = savingSpot;
+      setSpot({
+        ...savedSpot,
+        id: json.id,
+        spotsImage: json.spotsImage || savedSpot.spotsImage || "",
+      });
+      setImageBase64("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setMessage(`保存しました：${json.id}`);
+      await loadExistingSpots(true);
+    } catch (error) {
+      console.error(error);
+      setMessage("保存に失敗しました。");
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
+    }
+  }
+'''
+          s = s[:start] + replacement + s[end:]
+
+          s = s.replace(
+            '  async function loadExistingSpots() {\n    if (!pagePassword || !mapRef.current) return;',
+            '  async function loadExistingSpots(force = false) {\n    if ((!force && savingRef.current) || !pagePassword || !mapRef.current) return;'
+          )
+
+          s = s.replace(
+            'onClick={() => { setSpot(item.spot); setViewMode("map"); mapRef.current?.setView([item.spot.lat,item.spot.lng],16); }}',
+            'onClick={() => { if (savingRef.current) return; setSpot(item.spot); setPendingMove(null); setImageBase64(""); if (fileInputRef.current) fileInputRef.current.value = ""; setViewMode("map"); mapRef.current?.setView([item.spot.lat,item.spot.lng],16); }}'
+          )
+
+          marker = '    <style>{`.spots-admin-form'
+          overlay = '''    {isSaving && <div style={{ position: "fixed", inset: 0, zIndex: 10000, background: "rgba(255,255,255,.72)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "wait" }}><div style={{ padding: "18px 24px", border: "2px solid #111", borderRadius: 10, background: "#fff", color: "#111", fontWeight: 800, boxShadow: "0 6px 24px rgba(0,0,0,.25)" }}>保存中です。完了まで他の地点は選択できません。</div></div>}
+    <style>{`.spots-admin-form'''
+          if marker not in s:
+            raise SystemExit('style marker not found')
+          s = s.replace(marker, overlay, 1)
+
+          p.write_text(s)
+          PY
+
+      - name: Commit safeguard fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/admin/spots-map/page.tsx
+          git commit -m "Prevent spot selection changes during save"
+          git push
