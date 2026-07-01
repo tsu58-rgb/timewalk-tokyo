@@ -1,0 +1,42 @@
+name: Patch seichi i18n save message
+
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-seichi-i18n-message.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch save result message
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/admin/seichi-map/page.tsx')
+          text = path.read_text()
+          old = '      setMessage(`保存しました：${json.id}`);'
+          new = '''      if (json.i18nOk) {
+        setMessage(`保存しました：${json.id}（spot_i18n ${json.i18nExpected}言語を確認）`);
+      } else {
+        setMessage(`スポットは保存しましたが、spot_i18nの自動追加に失敗しました：${json.i18nError || "GAS未対応"}`);
+      }'''
+          if old not in text:
+              raise SystemExit('target line not found')
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/admin/seichi-map/page.tsx
+          git commit -m "Show seichi spot i18n sync result"
+          git push
