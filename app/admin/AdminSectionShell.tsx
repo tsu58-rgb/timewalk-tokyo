@@ -6,23 +6,35 @@ import type { ReactNode } from "react";
 export default function AdminSectionShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isSpotsMap = pathname === "/admin/spots-map";
+  const isSeichiMap = pathname === "/admin/seichi-map";
   const isCourses = pathname === "/admin/courses";
-  const showSwitcher = isSpotsMap || isCourses;
+  const showSwitcher = isSpotsMap || isSeichiMap || isCourses;
 
   if (!showSwitcher) return <>{children}</>;
 
-  const href = isSpotsMap ? "/admin/courses" : "/admin/spots-map";
-  const label = isSpotsMap
-    ? "散歩コース管理を新しいタブで開く ↗"
-    : "スポット管理を新しいタブで開く ↗";
+  const currentTitle = isSpotsMap
+    ? "通常スポット管理"
+    : isSeichiMap
+      ? "聖地巡礼スポット管理"
+      : "散歩コース管理";
+
+  const links = [
+    { href: "/admin/spots-map", label: "通常スポット管理 ↗", active: isSpotsMap },
+    { href: "/admin/seichi-map", label: "聖地巡礼スポット管理 ↗", active: isSeichiMap },
+    { href: "/admin/courses", label: "散歩コース管理 ↗", active: isCourses },
+  ].filter((item) => !item.active);
 
   return (
     <div className="admin-section-shell">
       <div className="admin-section-switcher">
-        <strong>{isSpotsMap ? "スポット管理" : "散歩コース管理"}</strong>
-        <a href={href} target="_blank" rel="noopener noreferrer">
-          {label}
-        </a>
+        <strong>{currentTitle}</strong>
+        <div className="admin-section-links">
+          {links.map((link) => (
+            <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer">
+              {link.label}
+            </a>
+          ))}
+        </div>
       </div>
       <div className="admin-section-content">{children}</div>
 
@@ -46,6 +58,12 @@ export default function AdminSectionShell({ children }: { children: ReactNode })
           position: relative;
           z-index: 5000;
         }
+        .admin-section-links {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          gap: 8px;
+        }
         .admin-section-switcher a {
           display: inline-flex;
           align-items: center;
@@ -66,10 +84,14 @@ export default function AdminSectionShell({ children }: { children: ReactNode })
           height: calc(100vh - 56px) !important;
           min-height: calc(100vh - 56px) !important;
         }
-        @media (max-width: 640px) {
+        @media (max-width: 700px) {
           .admin-section-switcher {
             align-items: stretch;
             flex-direction: column;
+          }
+          .admin-section-links {
+            display: grid;
+            grid-template-columns: 1fr;
           }
           .admin-section-switcher a {
             width: 100%;
@@ -77,7 +99,7 @@ export default function AdminSectionShell({ children }: { children: ReactNode })
           }
           .admin-section-content > main {
             height: auto !important;
-            min-height: calc(100vh - 96px) !important;
+            min-height: calc(100vh - 140px) !important;
           }
         }
       `}</style>
