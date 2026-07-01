@@ -1,11 +1,12 @@
 import Papa from "papaparse";
 
-import { CHARACTERS_URL, EVENTS_URL, SPOTS_URL } from "./sheetUrls";
-import type { Character, EventItem, Spot } from "@/types/timewalk";
+import { CHARACTERS_URL, EVENTS_URL, SPOTS_URL, WORKS_URL } from "./sheetUrls";
+import type { Character, EventItem, Spot, Work } from "@/types/timewalk";
 
 type FetchOptions = {
   noStore?: boolean;
   revalidateSeconds?: number;
+  includeWorkSpots?: boolean;
 };
 
 function parseCsvObjects(text: string) {
@@ -53,19 +54,42 @@ export async function fetchSpots(options: FetchOptions = {}) {
       spotsImage: row.spotsImage || "",
       lat: Number(row.lat),
       lng: Number(row.lng),
+      country: row.country || "",
+      prefecture: row.prefecture || "",
+      city: row.city || "",
+      area: row.area || "",
       category: row.category || "",
       characterIds: row.characterIds || "",
       status: String(row.status || "").trim(),
       mode: row.mode || "",
+      workId: String(row.workId || "").trim(),
       description: row.description || "",
+      trivia: row.trivia || "",
     }))
     .filter(
       (spot) =>
         spot.status.toLowerCase() === "ready" &&
         Number.isFinite(spot.lat) &&
         Number.isFinite(spot.lng) &&
-        !String(spot.mode || "").includes("除外")
+        !String(spot.mode || "").includes("除外") &&
+        (options.includeWorkSpots || !spot.workId)
     );
+}
+
+export async function fetchWorks(options: FetchOptions = {}) {
+  const rows = await fetchCsvObjects(
+    WORKS_URL,
+    options.noStore,
+    options.revalidateSeconds
+  );
+
+  return rows
+    .map((row): Work => ({
+      workId: String(row.workId || "").trim(),
+      workTitle: String(row.workTitle || "").trim(),
+      workDescription: String(row.workDescription || "").trim(),
+    }))
+    .filter((work) => work.workId && work.workTitle);
 }
 
 export async function fetchCharacters(options: FetchOptions = {}) {
