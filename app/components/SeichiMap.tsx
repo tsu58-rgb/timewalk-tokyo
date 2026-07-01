@@ -52,9 +52,11 @@ export default function SeichiMap({ spots }: { spots: Spot[] }) {
                 <strong style={{ display: "block", marginBottom: 8 }}>{index + 1}. {spot.name}</strong>
                 <a
                   href={`/spot/${spot.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{ display: "inline-block", padding: "7px 10px", borderRadius: 8, background: "#111", color: "#fff", fontWeight: 700, textDecoration: "none" }}
                 >
-                  詳細を開く
+                  詳細を開く ↗
                 </a>
               </div>
             </Popup>
