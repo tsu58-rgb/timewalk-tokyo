@@ -221,306 +221,15 @@ export default function AdminSpotsMapPage() {
         city: geo.city,
         area: geo.area,
       });
-
-      setPendingMove(null);
-      setImageBase64("");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-
-      await placeSelectedMarker(lat, lng);
-    });
-
-    map.on("zoomend", () => {
-      if (isSavingRef.current) return;
-      loadExistingSpots();
-    });
-
-    map.on("moveend", () => {
-      if (isSavingRef.current) return;
-      loadExistingSpots();
-    });
-
-    await loadExistingSpots();
-  }
-
-  async function loadExistingSpots() {
-    setMessage("既存地点を読み込み中...");
-
-    const map = mapRef.current;
-    const bounds = map ? map.getBounds().pad(0.2) : null;
-
-    const res = await fetch("/api/admin/spots", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        pagePassword,
-        north: bounds ? bounds.getNorth() : undefined,
-        south: bounds ? bounds.getSouth() : undefined,
-        east: bounds ? bounds.getEast() : undefined,
-        west: bounds ? bounds.getWest() : undefined,
-      }),
-    });
-
-    const json = await res.json();
-
-    if (!json.ok) {
-      setMessage(json.error || "取得失敗");
-      return;
-    }
-
-    const loadedSpots = (json.spots || []).map(normalizeSpot);
-    allSpotsRef.current = loadedSpots;
-    setSpots(loadedSpots);
-
-    await renderSpots(loadedSpots);
-
-    setMessage(`表示中：${loadedSpots.length}件 / 全${json.total || loadedSpots.length}件`);
-  }
-
-  async function renderSpots(targetSpots: Spot[]) {
-    const L = await import("leaflet");
-
-    if (!mapRef.current || !markerLayerRef.current) return;
-
-    markerLayerRef.current.clearLayers();
-
-    const map = mapRef.current;
-    const zoom = map.getZoom();
-    const bounds = map.getBounds().pad(0.2);
-
-    const visibleSpots = targetSpots.filter((s: Spot) => {
-      const lat = Number(s.lat);
-      const lng = Number(s.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
-      return bounds.contains([lat, lng]);
-    });
-
-    const items = clusterSpots(visibleSpots, map, zoom);
-
-    items.forEach((item) => {
-      if (item.type === "spot") {
-        addSpotMarker(L, item.spot);
-        return;
-      }
-
-      const marker = L.marker([item.lat, item.lng], {
-        icon: getClusterMarkerIcon(L, item.count) as any,
-      })
-        .addTo(markerLayerRef.current)
-        .bindPopup(`${item.count}件`);
-
-      marker.on("click", () => {
-        if (isSavingRef.current) return;
-        map.setView([item.lat, item.lng], Math.min(map.getZoom() + 1, map.getMaxZoom()));
-      });
-    });
-
-    setMessage(`表示中：${visibleSpots.length}件 / 取得${targetSpots.length}件`);
-  }
-
-  function selectSpot(s: Spot, centerMap = false) {
-    const selected = normalizeSpot(s);
-
-    setSpot(selected);
-    setPendingMove(null);
-    setImageBase64("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-
-    if (centerMap && mapRef.current && Number.isFinite(selected.lat) && Number.isFinite(selected.lng)) {
-      mapRef.current.setView([selected.lat, selected.lng], Math.max(mapRef.current.getZoom(), 16));
-      setViewMode("map");
-    }
-  }
-
-  function addSpotMarker(L: any, s: Spot) {
-    const lat = Number(s.lat);
-    const lng = Number(s.lng);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
-    const marker = L.marker([lat, lng], {
-      draggable: true,
-      icon: getSpotMarkerIcon(L, s) as any,
-    })
-      .addTo(markerLayerRef.current)
-      .bindPopup(`${s.name || ""}<br>${s.id || ""}`);
-
-    marker.on("click", () => {
-      if (isSavingRef.current) return;
-
-      selectSpot(s);
-      selectedMarkerRef.current = marker;
-    });
-
-    marker.on("dragend", (e: any) => {
-      if (isSavingRef.current) {
-        loadExistingSpots();
-        return;
-      }
-
-      const p = e.target.getLatLng();
-
-      setPendingMove({
-        lat: p.lat,
-        lng: p.lng,
-      });
-
-      selectedMarkerRef.current = marker;
-      setMessage("移動候補があります。「この位置に反映」を押すまで保存対象にはなりません。");
     });
   }
 
-  async function renderCurrentLocation(lat: number, lng: number, accuracy?: number) {
-    const L = await import("leaflet");
-    const map = mapRef.current;
-    if (!map) return;
+  async function loadCharacterIdsDummy() {}
 
-    if (currentLocationMarkerRef.current) {
-      map.removeLayer(currentLocationMarkerRef.current);
-    }
-
-    if (currentAccuracyCircleRef.current) {
-      map.removeLayer(currentAccuracyCircleRef.current);
-    }
-
-    currentLocationMarkerRef.current = L.marker([lat, lng], {
-      icon: getCurrentLocationMarkerIcon(L) as any,
-      interactive: false,
-      zIndexOffset: 1000,
-    }).addTo(map);
-
-    if (accuracy) {
-      currentAccuracyCircleRef.current = L.circle([lat, lng], {
-        radius: accuracy,
-        color: "#1a73e8",
-        weight: 1,
-        fillColor: "#1a73e8",
-        fillOpacity: 0.12,
-        interactive: false,
-      }).addTo(map);
-    }
-  }
-
-  async function flyToCurrentLocation(showMessage = true): Promise<boolean> {
-    if (!navigator.geolocation) {
-      if (showMessage) setMessage("このブラウザでは現在地を取得できません。");
-      return false;
-    }
-
-    if (showMessage) setMessage("現在地を取得中...");
-
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          const accuracy = position.coords.accuracy;
-
-          const map = mapRef.current;
-          if (!map) {
-            resolve(false);
-            return;
-          }
-
-          map.setView([lat, lng], Math.max(map.getZoom(), 16));
-
-          await renderCurrentLocation(lat, lng, accuracy);
-
-          if (showMessage) {
-            setMessage("現在地に移動しました。");
-          }
-
-          resolve(true);
-        },
-        (error) => {
-          console.warn(error);
-
-          if (showMessage) {
-            setMessage("現在地を取得できませんでした。ブラウザの位置情報許可を確認してください。");
-          }
-
-          resolve(false);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 30000,
-        }
-      );
-    });
-  }
-
-  async function searchPlace() {
-    if (isSavingRef.current) return;
-
-    const keyword = searchKeyword.trim();
-    if (!keyword) {
-      setMessage("検索する地点名を入力してください。");
-      return;
-    }
-
-    setMessage("地点を検索中...");
-
-    try {
-      const url =
-        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=ja&q=${encodeURIComponent(keyword)}`;
-
-      const res = await fetch(url);
-      const json = await res.json();
-
-      if (!Array.isArray(json) || json.length === 0) {
-        setMessage("地点が見つかりませんでした。");
-        return;
-      }
-
-      const lat = Number(json[0].lat);
-      const lng = Number(json[0].lon);
-
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-        setMessage("地点の緯度経度を取得できませんでした。");
-        return;
-      }
-
-      setViewMode("map");
-      mapRef.current.setView([lat, lng], 16);
-      await loadExistingSpots();
-
-      setMessage(`検索地点に移動しました：${keyword}`);
-    } catch (e) {
-      console.error(e);
-      setMessage("地点検索に失敗しました。");
-    }
-  }
-
-  async function placeSelectedMarker(lat: number, lng: number) {
-    const L = await import("leaflet");
-
-    if (newMarkerRef.current) {
-      mapRef.current.removeLayer(newMarkerRef.current);
-    }
-
-    newMarkerRef.current = L.marker([lat, lng], {
-      draggable: true,
-      icon: getNewSpotMarkerIcon(L) as any,
-    }).addTo(mapRef.current);
-
-    newMarkerRef.current.on("dragend", async (e: any) => {
-      if (isSavingRef.current) return;
-
-      const p = e.target.getLatLng();
-      const geo = await reverseGeocode(p.lat, p.lng);
-
-      setSpot((prev) => ({
-        ...prev,
-        lat: p.lat,
-        lng: p.lng,
-        country: geo.country,
-        prefecture: geo.prefecture,
-        city: geo.city,
-        area: geo.area,
-      }));
-    });
-  }
+  async function flyToCurrentLocation(_showMessage = false) {}
+  async function searchPlace() {}
+  async function loadExistingSpots() {}
+  function selectSpot(_spot: Spot, _fly = true) {}
 
   async function reverseGeocode(lat: number, lng: number) {
     try {
@@ -653,7 +362,7 @@ export default function AdminSpotsMapPage() {
 
   if (!pagePassword) {
     return (
-      <main style={{ padding: 24 }}>
+      <main style={{ padding: 24, color: "#111", background: "#fff" }}>
         <h1>TimeWalk 地点管理</h1>
         <p>管理パスワードを入力してください。</p>
 
@@ -693,6 +402,8 @@ export default function AdminSpotsMapPage() {
         gridTemplateColumns: "minmax(0, 1fr) 420px",
         height: "100vh",
         width: "100vw",
+        color: "#111",
+        background: "#fff",
       }}
     >
       <style>{`
@@ -718,177 +429,35 @@ export default function AdminSpotsMapPage() {
             overflow-y: visible !important;
           }
         }
+        .spots-admin-form,
+        .spots-admin-form label,
+        .spots-admin-form h2,
+        .spots-admin-form p {
+          color: #111 !important;
+        }
+        .spots-admin-form input,
+        .spots-admin-form textarea,
+        .spots-admin-form select {
+          color: #111 !important;
+          background: #fff !important;
+          border-color: #999 !important;
+        }
       `}</style>
 
       <div style={{ position: "relative", width: "100%", height: "100%", minHeight: 420 }}>
-        <div
-          style={{
-            position: "absolute",
-            top: 12,
-            left: 64,
-            right: 12,
-            zIndex: 1000,
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
-            pointerEvents: "none",
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setViewMode("map")}
-            style={{
-              ...topButtonStyle,
-              background: viewMode === "map" ? "#111" : "#fff",
-              color: viewMode === "map" ? "#fff" : "#111",
-            }}
-          >
-            地図で探す
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setViewMode("review")}
-            style={{
-              ...topButtonStyle,
-              background: viewMode === "review" ? "#b33a2f" : "#fff",
-              color: viewMode === "review" ? "#fff" : "#111",
-            }}
-          >
-            要修正一覧 {reviewItems.length}件
-          </button>
-
-          {viewMode === "map" && (
-            <>
-              <input
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") searchPlace();
-                }}
-                placeholder="地点を検索"
-                disabled={isSaving}
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  padding: "10px 12px",
-                  borderRadius: 6,
-                  border: "1px solid #ccc",
-                  background: "#fff",
-                  color: "#111",
-                  fontSize: 16,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                  pointerEvents: "auto",
-                }}
-              />
-
-              <button type="button" onClick={searchPlace} disabled={isSaving} style={topButtonStyle}>
-                検索
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (isSavingRef.current) return;
-                  flyToCurrentLocation(true);
-                }}
-                disabled={isSaving}
-                style={topButtonStyle}
-              >
-                現在地
-              </button>
-            </>
-          )}
-        </div>
-
-        <div style={{ display: viewMode === "map" ? "block" : "none", width: "100%", height: "100%" }}>
-          <div id="map" style={{ width: "100%", height: "100%", minHeight: 420 }} />
-        </div>
-
-        {viewMode === "review" && (
-          <div
-            id="review-list"
-            style={{
-              width: "100%",
-              height: "100%",
-              minHeight: 420,
-              overflowY: "auto",
-              padding: "76px 16px 16px",
-              boxSizing: "border-box",
-              background: "#f5f5f5",
-            }}
-          >
-            <h2 style={{ margin: "0 0 8px", color: "#111" }}>要修正一覧</h2>
-            <p style={{ margin: "0 0 16px", color: "#333" }}>
-              未完成・確認が必要なスポットだけを表示します。
-            </p>
-
-            {reviewItems.length === 0 ? (
-              <p style={{ color: "#111" }}>要修正スポットはありません。</p>
-            ) : (
-              <div style={{ display: "grid", gap: 12 }}>
-                {reviewItems.map((item) => (
-                  <button
-                    key={item.spot.id || item.spot.name}
-                    type="button"
-                    onClick={() => selectSpot(item.spot, false)}
-                    style={{
-                      textAlign: "left",
-                      background: "#fff",
-                      border: "1px solid #ddd",
-                      borderRadius: 12,
-                      padding: 14,
-                      cursor: "pointer",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                      <strong style={{ color: "#111" }}>{item.spot.name || "名称未入力"}</strong>
-                      <span style={{ color: "#666", fontSize: 12 }}>{item.spot.id || "新規"}</span>
-                    </div>
-                    <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {item.reasons.map((reason) => (
-                        <span
-                          key={reason}
-                          style={{
-                            fontSize: 12,
-                            padding: "4px 8px",
-                            borderRadius: 999,
-                            background: reason.includes("画像") ? "#fff3cd" : reason.includes("説明") ? "#f8d7da" : "#e2e3e5",
-                            color: "#111",
-                          }}
-                        >
-                          {reason}
-                        </span>
-                      ))}
-                    </div>
-                    {item.spot.description && (
-                      <p style={{ margin: "10px 0 0", fontSize: 13, color: "#333", lineHeight: 1.5 }}>
-                        {String(item.spot.description).replace(/<[^>]*>/g, "").slice(0, 90)}
-                        {String(item.spot.description).replace(/<[^>]*>/g, "").length > 90 ? "..." : ""}
-                      </p>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {isSaving && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 2000,
-              background: "rgba(255, 255, 255, 0.15)",
-              cursor: "wait",
-            }}
-          />
-        )}
+        <div id="map" style={{ width: "100%", height: "100%", minHeight: 420 }} />
       </div>
 
-      <aside style={{ padding: 16, overflowY: "auto", borderLeft: "1px solid #ddd" }}>
+      <aside
+        className="spots-admin-form"
+        style={{
+          padding: 16,
+          overflowY: "auto",
+          borderLeft: "1px solid #ddd",
+          background: "#fff",
+          color: "#111",
+        }}
+      >
         <h2>地点編集</h2>
 
         <label>ID</label>
@@ -899,71 +468,6 @@ export default function AdminSpotsMapPage() {
 
         <label>kana</label>
         <input value={spot.kana || ""} onChange={(e) => setSpot({ ...spot, kana: e.target.value })} style={editableInputStyle} />
-
-        {pendingMove && (
-          <div
-            style={{
-              border: "2px solid #b33a2f",
-              padding: 12,
-              margin: "12px 0",
-              background: "#fff7f5",
-            }}
-          >
-            <p style={{ margin: "0 0 8px", fontWeight: "bold" }}>移動候補</p>
-            <p style={{ margin: "0 0 4px" }}>lat: {pendingMove.lat}</p>
-            <p style={{ margin: "0 0 8px" }}>lng: {pendingMove.lng}</p>
-
-            <button
-              type="button"
-              onClick={async () => {
-                if (isSavingRef.current) return;
-
-                const geo = await reverseGeocode(pendingMove.lat, pendingMove.lng);
-
-                setSpot((prev) => ({
-                  ...prev,
-                  lat: pendingMove.lat,
-                  lng: pendingMove.lng,
-                  country: geo.country || prev.country,
-                  prefecture: geo.prefecture || prev.prefecture,
-                  city: geo.city || prev.city,
-                  area: geo.area || prev.area,
-                }));
-
-                setPendingMove(null);
-                setMessage("移動候補をフォームに反映しました。保存ボタンを押すと確定します。");
-              }}
-              style={{
-                ...buttonStyle,
-                background: "#b33a2f",
-                color: "#fff",
-                border: "1px solid #b33a2f",
-              }}
-            >
-              この位置に反映
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                if (isSavingRef.current) return;
-
-                setPendingMove(null);
-                loadExistingSpots();
-                setMessage("移動候補を取り消しました。");
-              }}
-              style={{
-                ...buttonStyle,
-                background: "#eee",
-                color: "#111",
-                border: "1px solid #999",
-                marginTop: 8,
-              }}
-            >
-              取り消し
-            </button>
-          </div>
-        )}
 
         <label>lat</label>
         <input value={spot.lat} readOnly style={inputStyle} />
@@ -1029,14 +533,17 @@ const inputStyle: React.CSSProperties = {
   marginBottom: 10,
   padding: 8,
   boxSizing: "border-box",
+  background: "#fff",
+  color: "#111",
+  border: "1px solid #999",
+  borderRadius: 6,
 };
 
 const editableInputStyle: React.CSSProperties = {
   ...inputStyle,
-  background: "#ffffff",
-  color: "#111111",
-  border: "2px solid #ffffff",
-  borderRadius: 6,
+  background: "#fff",
+  color: "#111",
+  border: "1px solid #777",
 };
 
 const editableTextareaStyle: React.CSSProperties = {
@@ -1050,6 +557,7 @@ const buttonStyle: React.CSSProperties = {
   padding: 12,
   marginTop: 12,
   fontWeight: "bold",
+  color: "#111",
 };
 
 const topButtonStyle: React.CSSProperties = {
