@@ -27,30 +27,34 @@ export function seichiIndexUrl(lang: SupportedLanguage) {
   return `${TIMEWALK_BASE_URL}/seichi${code ? `/${code}` : ""}`;
 }
 
-export function spotAlternates(spotId: string, currentLang: SupportedLanguage): Metadata["alternates"] {
+function languageAlternates(urlFor: (lang: SupportedLanguage) => string) {
   const languages: Record<string, string> = {};
 
   supportedLanguages.forEach((lang) => {
-    languages[htmlLanguageCode(lang)] = spotDetailUrl(spotId, lang);
+    languages[htmlLanguageCode(lang)] = urlFor(lang);
   });
-  languages["x-default"] = spotDetailUrl(spotId, "ja");
+  languages["x-default"] = urlFor("ja");
 
+  return languages;
+}
+
+export function seichiIndexAlternates(currentLang: SupportedLanguage): Metadata["alternates"] {
+  return {
+    canonical: seichiIndexUrl(currentLang),
+    languages: languageAlternates(seichiIndexUrl),
+  };
+}
+
+export function spotAlternates(spotId: string, currentLang: SupportedLanguage): Metadata["alternates"] {
   return {
     canonical: spotDetailUrl(spotId, currentLang),
-    languages,
+    languages: languageAlternates((lang) => spotDetailUrl(spotId, lang)),
   };
 }
 
 export function workAlternates(workId: string, currentLang: SupportedLanguage): Metadata["alternates"] {
-  const languages: Record<string, string> = {};
-
-  supportedLanguages.forEach((lang) => {
-    languages[htmlLanguageCode(lang)] = workUrl(workId, lang);
-  });
-  languages["x-default"] = workUrl(workId, "ja");
-
   return {
     canonical: workUrl(workId, currentLang),
-    languages,
+    languages: languageAlternates((lang) => workUrl(workId, lang)),
   };
 }
