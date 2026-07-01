@@ -66,14 +66,17 @@ export async function fetchSpots(options: FetchOptions = {}) {
       description: row.description || "",
       trivia: row.trivia || "",
     }))
-    .filter(
-      (spot) =>
-        spot.status.toLowerCase() === "ready" &&
+    .filter((spot) => {
+      const isPublishedRegularSpot = spot.status.toLowerCase() === "ready" && !spot.workId;
+      const isWorkSpot = Boolean(options.includeWorkSpots && spot.workId);
+
+      return (
+        (isPublishedRegularSpot || isWorkSpot) &&
         Number.isFinite(spot.lat) &&
         Number.isFinite(spot.lng) &&
-        !String(spot.mode || "").includes("除外") &&
-        (options.includeWorkSpots || !spot.workId)
-    );
+        !String(spot.mode || "").includes("除外")
+      );
+    });
 }
 
 export async function fetchWorks(options: FetchOptions = {}) {
