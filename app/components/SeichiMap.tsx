@@ -29,11 +29,13 @@ function numberIcon(number: number) {
   });
 }
 
-export default function SeichiMap({ spots }: { spots: Spot[] }) {
+export default function SeichiMap({ spots, lang }: { spots: Spot[]; lang: string }) {
   const center = useMemo<[number, number]>(() => {
     if (spots.length === 0) return [35.681236, 139.767125];
     return [spots[0].lat, spots[0].lng];
   }, [spots]);
+  const code = lang === "ja" ? "" : lang.toLowerCase();
+  const detailLabel = lang === "vn" ? "Xem chi tiết ↗" : lang === "en" ? "View details ↗" : "詳細を開く ↗";
 
   return (
     <div className="overflow-hidden border-4 border-black bg-white shadow-[7px_7px_0_#111]">
@@ -51,12 +53,12 @@ export default function SeichiMap({ spots }: { spots: Spot[] }) {
                 {spot.kana && <div style={{ fontSize: 11, color: "#666" }}>{spot.kana}</div>}
                 <strong style={{ display: "block", marginBottom: 8 }}>{index + 1}. {spot.name}</strong>
                 <a
-                  href={`/spot/${spot.id}`}
+                  href={code ? `/spot/${spot.id}/${code}` : `/spot/${spot.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ display: "inline-block", padding: "7px 10px", borderRadius: 8, background: "#111", color: "#fff", fontWeight: 700, textDecoration: "none" }}
                 >
-                  詳細を開く ↗
+                  {detailLabel}
                 </a>
               </div>
             </Popup>
