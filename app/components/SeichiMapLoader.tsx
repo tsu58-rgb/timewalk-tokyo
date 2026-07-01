@@ -12,6 +12,6 @@ const SeichiMap = dynamic(() => import("./SeichiMap"), {
   ),
 });
 
-export default function SeichiMapLoader({ spots }: { spots: Spot[] }) {
-  return <SeichiMap spots={spots} />;
+export default function SeichiMapLoader({ spots, lang }: { spots: Spot[]; lang: string }) {
+  return <SeichiMap spots={spots} lang={lang} />;
 }
