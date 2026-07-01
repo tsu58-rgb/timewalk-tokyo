@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import HtmlLangSetter from "../../components/HtmlLangSetter";
 import NavigationLoadingGuard from "../../components/NavigationLoadingGuard";
 import {
   fetchSpotTranslations,
@@ -9,6 +10,7 @@ import {
   localizeWork,
   normalizeLanguage,
 } from "../../lib/seichiI18nData";
+import { htmlLanguageCode } from "../../lib/seichiSeo";
 import { fetchSpots, fetchWorks } from "../../lib/timewalkData";
 
 export default async function SeichiSpotDetail({
@@ -48,6 +50,7 @@ export default async function SeichiSpotDetail({
 
   return (
     <NavigationLoadingGuard>
+      <HtmlLangSetter lang={htmlLanguageCode(lang)} />
       <main className="min-h-screen overflow-x-hidden bg-[#fff7df] px-4 py-7 text-[#171717] sm:px-6">
         <div className="pointer-events-none fixed inset-0 opacity-25" style={{ backgroundImage: "radial-gradient(#ff4f9a 1.5px, transparent 1.5px)", backgroundSize: "18px 18px" }} />
         <article className="relative mx-auto w-full max-w-2xl">
