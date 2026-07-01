@@ -4,12 +4,24 @@ export type Spot = {
   kana: string;
   lat: number;
   lng: number;
+  country: string;
+  prefecture: string;
+  city: string;
+  area: string;
   category: string;
   characterIds: string;
   spotsImage: string;
   status: string;
   mode: string;
+  workId: string;
   description: string;
+  trivia: string;
+};
+
+export type Work = {
+  workId: string;
+  workTitle: string;
+  workDescription: string;
 };
 
 export type Character = {
