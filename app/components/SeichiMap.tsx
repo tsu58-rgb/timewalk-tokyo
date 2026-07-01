@@ -51,7 +51,7 @@ export default function SeichiMap({ spots }: { spots: Spot[] }) {
                 {spot.kana && <div style={{ fontSize: 11, color: "#666" }}>{spot.kana}</div>}
                 <strong style={{ display: "block", marginBottom: 8 }}>{index + 1}. {spot.name}</strong>
                 <a
-                  href={`/spot/${spot.id}`}
+                  href={`/seichi/spot/${spot.id}`}
                   style={{ display: "inline-block", padding: "7px 10px", borderRadius: 8, background: "#111", color: "#fff", fontWeight: 700, textDecoration: "none" }}
                 >
                   詳細を開く
