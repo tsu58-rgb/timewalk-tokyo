@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import SeichiSpotDetail from "./SeichiSpotDetail";
 import SpotPageClient from "./SpotPageClient";
-import { spotAlternates } from "../../lib/seichiSeo";
+import { spotAlternates, spotDetailUrl } from "../../lib/seichiSeo";
 import { fetchSpots } from "../../lib/timewalkData";
 
 export async function generateMetadata({
@@ -30,7 +30,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: spotAlternates(id, "ja")?.canonical,
+      url: spotDetailUrl(id, "ja"),
       locale: "ja_JP",
       type: "article",
     },
