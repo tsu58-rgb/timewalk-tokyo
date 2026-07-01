@@ -24,6 +24,43 @@ export type Work = {
   workDescription: string;
 };
 
+export type Language = {
+  lang: string;
+  label: string;
+  nativeLabel: string;
+  urlPrefix: string;
+  isActive: boolean;
+  note: string;
+};
+
+export type WorkTranslation = {
+  workId: string;
+  lang: string;
+  workTitle: string;
+  workDescription: string;
+  metaTitle: string;
+  metaDescription: string;
+  h1: string;
+  leadText: string;
+  ogTitle: string;
+  ogDescription: string;
+  status: string;
+};
+
+export type SpotTranslation = {
+  spotId: string;
+  lang: string;
+  name: string;
+  kana: string;
+  description: string;
+  sceneTitle: string;
+  sceneDescription: string;
+  photoCaption: string;
+  metaTitle: string;
+  metaDescription: string;
+  status: string;
+};
+
 export type Character = {
   characterId: string;
   characterName: string;
