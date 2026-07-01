@@ -1,9 +1,11 @@
 import Link from "next/link";
+import HtmlLangSetter from "./HtmlLangSetter";
 import NavigationLoadingGuard from "./NavigationLoadingGuard";
 import SeichiLanguageSwitcher from "./SeichiLanguageSwitcher";
 import SeichiMapLoader from "./SeichiMapLoader";
 import type { Language, Spot, Work } from "@/types/timewalk";
 import type { SupportedLanguage } from "../lib/seichiI18nData";
+import { htmlLanguageCode } from "../lib/seichiSeo";
 
 const textByLanguage = {
   ja: ["作品一覧", "MAP", "SPOT LIST", "詳細を見る ↗"],
@@ -26,6 +28,7 @@ export default function SeichiWorkPageView({ work, spots, lang, languages }: {
 
   return (
     <NavigationLoadingGuard>
+      <HtmlLangSetter lang={htmlLanguageCode(lang)} />
       <main className="min-h-screen bg-[#fff7df] px-4 py-7 text-[#171717] sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-6xl">
           <div className="mb-5 flex items-center justify-between gap-3">
