@@ -12,6 +12,13 @@ import {
   normalizeLanguage,
   type SupportedLanguage,
 } from "../../lib/seichiI18nData";
+import {
+  htmlLanguageCode,
+  seichiIndexAlternates,
+  seichiIndexUrl,
+  workAlternates,
+  workUrl,
+} from "../../lib/seichiSeo";
 import { fetchSpots, fetchWorks } from "../../lib/timewalkData";
 
 export const revalidate = 300;
@@ -49,7 +56,16 @@ function genericMetadata(lang: SupportedLanguage): Metadata {
   return {
     title: values[0],
     description: values[1],
-    openGraph: { title: values[0], description: values[1] },
+    alternates: seichiIndexAlternates(lang),
+    openGraph: {
+      title: values[0],
+      description: values[1],
+      url: seichiIndexUrl(lang),
+      locale: htmlLanguageCode(lang),
+    },
+    other: {
+      "content-language": htmlLanguageCode(lang),
+    },
   };
 }
 
@@ -80,9 +96,15 @@ export async function generateMetadata({ params }: {
   return {
     title,
     description,
+    alternates: workAlternates(route.workId, route.lang),
     openGraph: {
       title: localized.ogTitle || title,
       description: localized.ogDescription || description,
+      url: workUrl(route.workId, route.lang),
+      locale: htmlLanguageCode(route.lang),
+    },
+    other: {
+      "content-language": htmlLanguageCode(route.lang),
     },
   };
 }
