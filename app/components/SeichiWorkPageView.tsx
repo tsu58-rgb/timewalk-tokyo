@@ -22,6 +22,7 @@ export default function SeichiWorkPageView({ work, spots, lang, languages }: {
 }) {
   const labels = textByLanguage[lang];
   const code = lang === "ja" ? "" : lang.toLowerCase();
+  const detailHref = (spotId: string) => code ? `/spot/${spotId}/${code}` : `/spot/${spotId}`;
 
   return (
     <NavigationLoadingGuard>
@@ -39,13 +40,13 @@ export default function SeichiWorkPageView({ work, spots, lang, languages }: {
           </section>
           <section className="mb-9">
             <div className="mb-3 inline-block border-4 border-black bg-[#ffd83d] px-5 py-2 text-xl font-black shadow-[4px_4px_0_#111]">{labels[1]}</div>
-            <SeichiMapLoader spots={spots} />
+            <SeichiMapLoader spots={spots} lang={lang} />
           </section>
           <section>
             <div className="mb-4 inline-block border-4 border-black bg-[#a8ef6f] px-5 py-2 text-xl font-black shadow-[4px_4px_0_#111]">{labels[2]}</div>
             <div className="grid gap-4 md:grid-cols-2">
               {spots.map((spot, index) => (
-                <Link key={spot.id} href={`/spot/${spot.id}`} target="_blank" rel="noopener noreferrer" className="grid min-h-40 grid-cols-[minmax(0,1fr)_120px] overflow-hidden border-4 border-black bg-white shadow-[5px_5px_0_#111] sm:grid-cols-[minmax(0,1fr)_150px]">
+                <Link key={spot.id} href={detailHref(spot.id)} target="_blank" rel="noopener noreferrer" className="grid min-h-40 grid-cols-[minmax(0,1fr)_120px] overflow-hidden border-4 border-black bg-white shadow-[5px_5px_0_#111] sm:grid-cols-[minmax(0,1fr)_150px]">
                   <div className="flex min-w-0 flex-col p-4">
                     <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full border-2 border-black bg-[#ffd83d] font-black">{index + 1}</div>
                     {spot.kana && <p className="truncate text-xs font-bold text-slate-500">{spot.kana}</p>}
