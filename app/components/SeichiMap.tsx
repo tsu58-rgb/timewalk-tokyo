@@ -7,14 +7,15 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 
 import type { Spot } from "@/types/timewalk";
 
-function FitAllSpots({ spots }: { spots: Spot[] }) {
+function FitAllSpots({ spots, resetKey }: { spots: Spot[]; resetKey: number }) {
   const map = useMap();
 
   useEffect(() => {
     if (spots.length === 0) return;
     const bounds = L.latLngBounds(spots.map((spot) => [spot.lat, spot.lng] as [number, number]));
+    map.closePopup();
     map.fitBounds(bounds, { padding: [36, 36], maxZoom: 16 });
-  }, [map, spots]);
+  }, [map, spots, resetKey]);
 
   return null;
 }
@@ -29,7 +30,15 @@ function numberIcon(number: number) {
   });
 }
 
-export default function SeichiMap({ spots, lang }: { spots: Spot[]; lang: string }) {
+export default function SeichiMap({
+  spots,
+  lang,
+  resetKey,
+}: {
+  spots: Spot[];
+  lang: string;
+  resetKey: number;
+}) {
   const center = useMemo<[number, number]>(() => {
     if (spots.length === 0) return [35.681236, 139.767125];
     return [spots[0].lat, spots[0].lng];
@@ -45,7 +54,7 @@ export default function SeichiMap({ spots, lang }: { spots: Spot[]; lang: string
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={18}
         />
-        <FitAllSpots spots={spots} />
+        <FitAllSpots spots={spots} resetKey={resetKey} />
         {spots.map((spot, index) => (
           <Marker key={spot.id} position={[spot.lat, spot.lng]} icon={numberIcon(index + 1)}>
             <Popup>
