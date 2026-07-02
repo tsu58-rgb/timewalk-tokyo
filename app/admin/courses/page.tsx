@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   calculateCourseDistanceKm,
@@ -80,7 +80,12 @@ function serializeCourseForm(form: CourseFormState) {
   });
 }
 
+function isCloudinaryUrl(value: unknown) {
+  return /^https:\/\/res\.cloudinary\.com\//i.test(String(value || "").trim());
+}
+
 export default function AdminCoursesPage() {
+  const eyecatchInputRef = useRef<HTMLInputElement | null>(null);
   const [pagePassword, setPagePassword] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [spots, setSpots] = useState<SelectableSpot[]>([]);
@@ -100,6 +105,7 @@ export default function AdminCoursesPage() {
   const [points, setPoints] = useState<CoursePoint[]>([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [readingEyecatch, setReadingEyecatch] = useState(false);
   const [savedSnapshot, setSavedSnapshot] = useState("");
   const [explicitDirty, setExplicitDirty] = useState(false);
   const [draggedPointIndex, setDraggedPointIndex] = useState<number | null>(null);
@@ -210,6 +216,10 @@ export default function AdminCoursesPage() {
     return window.confirm("未保存の変更があります。保存せずに画面を切り替えますか？");
   }
 
+  function resetEyecatchInput() {
+    setEyecatchInputKey((value) => value + 1);
+  }
+
   function applyNewCourse() {
     const nextDate = getTodayDate();
     const nextPoints: CoursePoint[] = [];
@@ -224,7 +234,7 @@ export default function AdminCoursesPage() {
     setEyecatchImage("");
     setEyecatchImageBase64("");
     setRemoveEyecatchImage(false);
-    setEyecatchInputKey((value) => value + 1);
+    resetEyecatchInput();
     setPoints(nextPoints);
     setExplicitDirty(false);
     setSavedSnapshot(
@@ -272,7 +282,7 @@ export default function AdminCoursesPage() {
     setEyecatchImage(nextImage);
     setEyecatchImageBase64("");
     setRemoveEyecatchImage(false);
-    setEyecatchInputKey((value) => value + 1);
+    resetEyecatchInput();
     setPoints(nextPoints);
     setExplicitDirty(false);
     setSavedSnapshot(
@@ -387,16 +397,21 @@ export default function AdminCoursesPage() {
     }
 
     setExplicitDirty(true);
+    setReadingEyecatch(true);
+    setMessage("アイキャッチ画像を読み込み中です...");
 
     try {
       const dataUrl = await fileToDataUrl(file);
       setEyecatchImageBase64(dataUrl);
       setEyecatchImage(dataUrl);
       setRemoveEyecatchImage(false);
-      setMessage("アイキャッチ画像を選択しました。コース保存時にCloudinaryへ登録します。");
+      setMessage("アイキャッチ画像を選択しました。未保存です。コース更新時にCloudinaryへ登録します。");
     } catch (error) {
+      setEyecatchImageBase64("");
       setExplicitDirty(false);
       setMessage(error instanceof Error ? error.message : "画像を読み込めませんでした。");
+    } finally {
+      setReadingEyecatch(false);
     }
   }
 
@@ -405,7 +420,7 @@ export default function AdminCoursesPage() {
     setEyecatchImage("");
     setEyecatchImageBase64("");
     setRemoveEyecatchImage(true);
-    setEyecatchInputKey((value) => value + 1);
+    resetEyecatchInput();
     setMessage("アイキャッチ画像を削除対象にしました。保存すると反映されます。");
   }
 
@@ -434,6 +449,26 @@ export default function AdminCoursesPage() {
     setMessage(selectedExistingId ? "既存コースを更新中..." : "新規コースを保存中...");
 
     try {
+      let imageBase64ForSave = eyecatchImageBase64;
+      const selectedFile = eyecatchInputRef.current?.files?.[0];
+
+      if (selectedFile) {
+        if (!selectedFile.type.startsWith("image/")) {
+          throw new Error("画像ファイルを選択してください。");
+        }
+        if (selectedFile.size > 12 * 1024 * 1024) {
+          throw new Error("アイキャッチ画像は12MB以下にしてください。");
+        }
+
+        setReadingEyecatch(true);
+        setMessage("アイキャッチ画像を読み込んでいます...");
+        imageBase64ForSave = await fileToDataUrl(selectedFile);
+        setEyecatchImageBase64(imageBase64ForSave);
+        setEyecatchImage(imageBase64ForSave);
+        setRemoveEyecatchImage(false);
+        setMessage(selectedExistingId ? "画像を含めて既存コースを更新中..." : "画像を含めて新規コースを保存中...");
+      }
+
       const response = await fetch("/api/admin/save-course", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -450,7 +485,7 @@ export default function AdminCoursesPage() {
             durationMin,
             durationLabel: formatCourseDuration(durationMin),
             eyecatchImage: eyecatchImage.startsWith("data:") ? "" : eyecatchImage,
-            eyecatchImageBase64,
+            eyecatchImageBase64: imageBase64ForSave,
             removeEyecatchImage,
           },
           points: normalizedPoints,
@@ -458,6 +493,10 @@ export default function AdminCoursesPage() {
       });
       const json = await response.json();
       if (!json.ok) throw new Error(json.error || "保存に失敗しました。");
+
+      if (imageBase64ForSave && !isCloudinaryUrl(json.eyecatchImage)) {
+        throw new Error("コース情報は更新されましたが、アイキャッチ画像のCloudinary登録に失敗しました。GASの画像保存処理を確認してください。");
+      }
 
       const refreshed = await loadCourseData();
       const refreshedCourses: Course[] = refreshed.courses || [];
@@ -503,7 +542,7 @@ export default function AdminCoursesPage() {
       setEyecatchImage(nextImage);
       setEyecatchImageBase64("");
       setRemoveEyecatchImage(false);
-      setEyecatchInputKey((value) => value + 1);
+      resetEyecatchInput();
       setPoints(nextPoints);
       setExplicitDirty(false);
       setSavedSnapshot(
@@ -520,10 +559,12 @@ export default function AdminCoursesPage() {
           points: nextPoints,
         })
       );
-      setMessage(`${selectedExistingId ? "更新" : "保存"}しました：${finalId}`);
+      setMessage(`${selectedExistingId ? "更新" : "保存"}しました：${finalId}${nextImage ? "（アイキャッチ画像登録済み）" : ""}`);
     } catch (error) {
+      setExplicitDirty(true);
       setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
     } finally {
+      setReadingEyecatch(false);
       setSaving(false);
     }
   }
@@ -601,16 +642,23 @@ export default function AdminCoursesPage() {
             <label>アイキャッチ画像</label>
             <div style={{ margin: "4px 0 12px", border: "1px solid #aaa", borderRadius: 8, padding: 10, background: "#fafafa" }}>
               <input
+                ref={eyecatchInputRef}
                 key={eyecatchInputKey}
                 type="file"
                 accept="image/*"
+                onClick={(event) => {
+                  event.currentTarget.value = "";
+                }}
                 onChange={onEyecatchChange}
-                disabled={saving}
+                disabled={saving || readingEyecatch}
                 style={{ display: "block", width: "100%", color: "#111" }}
               />
               <p style={{ margin: "8px 0", fontSize: 12, color: "#555" }}>
                 16:9・横1200px以上を推奨。保存時にWebPへ変換してCloudinaryへ登録します。
               </p>
+              {readingEyecatch && (
+                <p style={{ margin: "6px 0", fontSize: 12, fontWeight: 700, color: "#b45309" }}>画像を読み込み中です...</p>
+              )}
               {eyecatchImage ? (
                 <>
                   <p style={{ margin: "6px 0", fontSize: 12, fontWeight: 700, color: eyecatchImage.startsWith("data:") ? "#dc2626" : "#166534" }}>
@@ -624,7 +672,7 @@ export default function AdminCoursesPage() {
                   <button
                     type="button"
                     onClick={clearEyecatch}
-                    disabled={saving}
+                    disabled={saving || readingEyecatch}
                     style={{ marginTop: 8, padding: "7px 12px", border: "1px solid #b91c1c", borderRadius: 6, background: "#fff", color: "#b91c1c", fontWeight: 700 }}
                   >
                     画像を削除
@@ -707,14 +755,14 @@ export default function AdminCoursesPage() {
                 marginBottom: 6,
                 fontSize: 18,
                 fontWeight: 900,
-                color: saving ? "#b45309" : isDirty ? "#dc2626" : "#16a34a",
+                color: saving || readingEyecatch ? "#b45309" : isDirty ? "#dc2626" : "#16a34a",
               }}
             >
-              {saving ? "保存中" : isDirty ? "未保存" : "保存済み"}
+              {saving ? "保存中" : readingEyecatch ? "画像読込中" : isDirty ? "未保存" : "保存済み"}
             </div>
 
-            <button onClick={saveCourse} disabled={saving} style={{ width: "100%", padding: 14, fontWeight: "bold", background: "#111", color: "#fff" }}>
-              {saving ? "保存中..." : selectedExistingId ? "コースを更新" : "コースを保存"}
+            <button onClick={saveCourse} disabled={saving || readingEyecatch} style={{ width: "100%", padding: 14, fontWeight: "bold", background: "#111", color: "#fff", opacity: saving || readingEyecatch ? 0.65 : 1 }}>
+              {readingEyecatch ? "画像読込中..." : saving ? "保存中..." : selectedExistingId ? "コースを更新" : "コースを保存"}
             </button>
             <p>{message}</p>
           </div>
