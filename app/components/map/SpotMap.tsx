@@ -148,6 +148,7 @@ export default function SpotMap({
           url={selectedLayer.url}
           minNativeZoom={selectedLayer.minNativeZoom}
           maxNativeZoom={selectedLayer.maxNativeZoom}
+          tms={selectedLayer.tms}
           maxZoom={18}
         />
 
