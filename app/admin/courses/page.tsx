@@ -668,8 +668,8 @@ export default function AdminCoursesPage() {
                 key={eyecatchInputKey}
                 type="file"
                 accept="image/*"
-                onInput={() => { if (eyecatchInputRef.current?.files?.[0]) setExplicitDirty(true); }}
-                onChange={(event) => { setExplicitDirty(true); void onEyecatchChange(event); }}
+                onInput={() => { if (eyecatchInputRef.current?.files?.[0]) setImageDirty(true); }}
+                onChange={(event) => { setImageDirty(true); void onEyecatchChange(event); }}
                 disabled={saving}
                 style={{ display: "block", width: "100%", color: "#111" }}
               />
