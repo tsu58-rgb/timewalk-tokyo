@@ -26,6 +26,19 @@ type SelectableSpot = {
   description?: string;
 };
 
+type CourseFormState = {
+  courseId: string;
+  title: string;
+  date: string;
+  description: string;
+  area: string;
+  status: string;
+  eyecatchImage: string;
+  eyecatchImageBase64: string;
+  removeEyecatchImage: boolean;
+  points: CoursePoint[];
+};
+
 function makeCourseId(title: string) {
   const latin = title
     .normalize("NFKC")
@@ -52,6 +65,21 @@ function getTodayDate() {
   return `${year}-${month}-${day}`;
 }
 
+function serializeCourseForm(form: CourseFormState) {
+  return JSON.stringify({
+    courseId: form.courseId,
+    title: form.title,
+    date: form.date,
+    description: form.description,
+    area: form.area,
+    status: form.status,
+    eyecatchImage: form.eyecatchImage,
+    eyecatchImageBase64: form.eyecatchImageBase64,
+    removeEyecatchImage: form.removeEyecatchImage,
+    points: form.points,
+  });
+}
+
 export default function AdminCoursesPage() {
   const [pagePassword, setPagePassword] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
@@ -72,6 +100,7 @@ export default function AdminCoursesPage() {
   const [points, setPoints] = useState<CoursePoint[]>([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [savedSnapshot, setSavedSnapshot] = useState("");
   const [draggedPointIndex, setDraggedPointIndex] = useState<number | null>(null);
   const [dragOverPointIndex, setDragOverPointIndex] = useState<number | null>(null);
 
@@ -123,17 +152,71 @@ export default function AdminCoursesPage() {
   const distanceKm = useMemo(() => calculateCourseDistanceKm(points), [points]);
   const durationMin = useMemo(() => calculateCourseDurationMin(distanceKm), [distanceKm]);
 
+  const currentSnapshot = useMemo(
+    () =>
+      serializeCourseForm({
+        courseId,
+        title,
+        date,
+        description,
+        area,
+        status,
+        eyecatchImage,
+        eyecatchImageBase64,
+        removeEyecatchImage,
+        points,
+      }),
+    [
+      courseId,
+      title,
+      date,
+      description,
+      area,
+      status,
+      eyecatchImage,
+      eyecatchImageBase64,
+      removeEyecatchImage,
+      points,
+    ]
+  );
+
+  useEffect(() => {
+    if (!savedSnapshot) setSavedSnapshot(currentSnapshot);
+  }, [currentSnapshot, savedSnapshot]);
+
+  const isDirty = Boolean(savedSnapshot) && currentSnapshot !== savedSnapshot;
+
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
   function login() {
     if (!passwordInput) return;
     localStorage.setItem("timewalkAdminPassword", passwordInput);
     setPagePassword(passwordInput);
   }
 
-  function startNewCourse() {
+  function confirmDiscardChanges() {
+    if (!isDirty) return true;
+    return window.confirm("未保存の変更があります。保存せずに画面を切り替えますか？");
+  }
+
+  function applyNewCourse() {
+    const nextDate = getTodayDate();
+    const nextPoints: CoursePoint[] = [];
+
     setSelectedExistingId("");
     setCourseId("");
     setTitle("");
-    setDate(getTodayDate());
+    setDate(nextDate);
     setDescription("");
     setArea("");
     setStatus("draft");
@@ -141,39 +224,85 @@ export default function AdminCoursesPage() {
     setEyecatchImageBase64("");
     setRemoveEyecatchImage(false);
     setEyecatchInputKey((value) => value + 1);
-    setPoints([]);
+    setPoints(nextPoints);
+    setSavedSnapshot(
+      serializeCourseForm({
+        courseId: "",
+        title: "",
+        date: nextDate,
+        description: "",
+        area: "",
+        status: "draft",
+        eyecatchImage: "",
+        eyecatchImageBase64: "",
+        removeEyecatchImage: false,
+        points: nextPoints,
+      })
+    );
     setMessage("新規コースを作成します。");
   }
 
-  function loadExistingCourse(id: string) {
-    setSelectedExistingId(id);
-    if (!id) {
-      startNewCourse();
-      return;
-    }
+  function requestNewCourse() {
+    if (!confirmDiscardChanges()) return;
+    applyNewCourse();
+  }
 
+  function applyExistingCourse(id: string) {
     const course = existingCourses.find((item) => item.id === id);
     if (!course) return;
 
+    const nextPoints = storedCoursePoints
+      .filter((point) => point.courseId === id)
+      .sort((a, b) => a.pointOrder - b.pointOrder);
+    const nextDate = course.date || getTodayDate();
+    const nextDescription = course.description || "";
+    const nextArea = course.area || "";
+    const nextStatus = course.status || "draft";
+    const nextImage = course.eyecatchImage || "";
+
+    setSelectedExistingId(id);
     setCourseId(course.id);
     setTitle(course.title);
-    setDate(course.date || getTodayDate());
-    setDescription(course.description);
-    setArea(course.area);
-    setStatus(course.status || "draft");
-    setEyecatchImage(course.eyecatchImage || "");
+    setDate(nextDate);
+    setDescription(nextDescription);
+    setArea(nextArea);
+    setStatus(nextStatus);
+    setEyecatchImage(nextImage);
     setEyecatchImageBase64("");
     setRemoveEyecatchImage(false);
     setEyecatchInputKey((value) => value + 1);
-    setPoints(
-      storedCoursePoints
-        .filter((point) => point.courseId === id)
-        .sort((a, b) => a.pointOrder - b.pointOrder)
+    setPoints(nextPoints);
+    setSavedSnapshot(
+      serializeCourseForm({
+        courseId: course.id,
+        title: course.title,
+        date: nextDate,
+        description: nextDescription,
+        area: nextArea,
+        status: nextStatus,
+        eyecatchImage: nextImage,
+        eyecatchImageBase64: "",
+        removeEyecatchImage: false,
+        points: nextPoints,
+      })
     );
     setMessage(`既存コースを読み込みました：${course.title}`);
   }
 
+  function requestLoadExistingCourse(id: string) {
+    if (id === selectedExistingId) return;
+    if (!confirmDiscardChanges()) return;
+
+    if (!id) {
+      applyNewCourse();
+      return;
+    }
+
+    applyExistingCourse(id);
+  }
+
   function addSpot(spot: SelectableSpot) {
+    if (saving) return;
     setPoints((current) => {
       const nextOrder = current.length + 1;
       return [
@@ -195,6 +324,7 @@ export default function AdminCoursesPage() {
   }
 
   function addWaypoint(lat: number, lng: number) {
+    if (saving) return;
     setPoints((current) => {
       const nextOrder = current.length + 1;
       return [
@@ -220,6 +350,7 @@ export default function AdminCoursesPage() {
   }
 
   function movePoint(index: number, direction: -1 | 1) {
+    if (saving) return;
     setPoints((current) => {
       const target = index + direction;
       if (target < 0 || target >= current.length) return current;
@@ -230,7 +361,7 @@ export default function AdminCoursesPage() {
   }
 
   function movePointToIndex(fromIndex: number, toIndex: number) {
-    if (fromIndex === toIndex) return;
+    if (saving || fromIndex === toIndex) return;
     setPoints((current) => {
       if (fromIndex < 0 || fromIndex >= current.length || toIndex < 0 || toIndex >= current.length) return current;
       const next = [...current];
@@ -285,6 +416,11 @@ export default function AdminCoursesPage() {
     }
 
     const finalId = courseId.trim() || makeCourseId(title);
+    const normalizedPoints = normalizeOrders(points).map((point) => ({
+      ...point,
+      courseId: finalId,
+    }));
+
     setCourseId(finalId);
     setSaving(true);
     setMessage(selectedExistingId ? "既存コースを更新中..." : "新規コースを保存中...");
@@ -309,7 +445,7 @@ export default function AdminCoursesPage() {
             eyecatchImageBase64,
             removeEyecatchImage,
           },
-          points: normalizeOrders(points).map((point) => ({ ...point, courseId: finalId })),
+          points: normalizedPoints,
         }),
       });
       const json = await response.json();
@@ -319,19 +455,49 @@ export default function AdminCoursesPage() {
       const refreshedCourses: Course[] = refreshed.courses || [];
       const refreshedPoints: CoursePoint[] = refreshed.points || [];
       const savedCourse = refreshedCourses.find((item) => item.id === finalId);
+      const savedPointsFromDb = refreshedPoints
+        .filter((point) => point.courseId === finalId)
+        .sort((a, b) => a.pointOrder - b.pointOrder);
+      const nextPoints = savedPointsFromDb.length ? savedPointsFromDb : normalizedPoints;
+
+      const nextTitle = savedCourse?.title || title.trim();
+      const nextDate = savedCourse?.date || date;
+      const nextDescription = savedCourse?.description || description.trim();
+      const nextArea = savedCourse?.area || area.trim();
+      const nextStatus = savedCourse?.status || status;
+      const responseHasEyecatch = Object.prototype.hasOwnProperty.call(json, "eyecatchImage");
+      const nextImage = responseHasEyecatch
+        ? String(json.eyecatchImage || "")
+        : savedCourse?.eyecatchImage || (removeEyecatchImage ? "" : eyecatchImage.startsWith("data:") ? "" : eyecatchImage);
+
       setExistingCourses(refreshedCourses);
       setStoredCoursePoints(refreshedPoints);
       setSelectedExistingId(finalId);
-      if (savedCourse) {
-        setStatus(savedCourse.status || status);
-        setDate(savedCourse.date || date);
-        setEyecatchImage(savedCourse.eyecatchImage || json.eyecatchImage || eyecatchImage);
-      } else if (json.eyecatchImage) {
-        setEyecatchImage(json.eyecatchImage);
-      }
+      setCourseId(finalId);
+      setTitle(nextTitle);
+      setDate(nextDate);
+      setDescription(nextDescription);
+      setArea(nextArea);
+      setStatus(nextStatus);
+      setEyecatchImage(nextImage);
       setEyecatchImageBase64("");
       setRemoveEyecatchImage(false);
       setEyecatchInputKey((value) => value + 1);
+      setPoints(nextPoints);
+      setSavedSnapshot(
+        serializeCourseForm({
+          courseId: finalId,
+          title: nextTitle,
+          date: nextDate,
+          description: nextDescription,
+          area: nextArea,
+          status: nextStatus,
+          eyecatchImage: nextImage,
+          eyecatchImageBase64: "",
+          removeEyecatchImage: false,
+          points: nextPoints,
+        })
+      );
       setMessage(`${selectedExistingId ? "更新" : "保存"}しました：${finalId}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
@@ -366,14 +532,26 @@ export default function AdminCoursesPage() {
         <div style={{ display: "flex", gap: 8, alignItems: "end", flexWrap: "wrap", margin: "12px 0 16px" }}>
           <div style={{ flex: "1 1 320px" }}>
             <label>既存コースを編集</label>
-            <select value={selectedExistingId} onChange={(event) => loadExistingCourse(event.target.value)} style={{ ...inputStyle, marginBottom: 0 }}>
+            <select
+              value={selectedExistingId}
+              onChange={(event) => requestLoadExistingCourse(event.target.value)}
+              disabled={saving}
+              style={{ ...inputStyle, marginBottom: 0 }}
+            >
               <option value="">新規コース</option>
               {existingCourses.map((course) => (
                 <option key={course.id} value={course.id}>{course.title}（{course.status}）</option>
               ))}
             </select>
           </div>
-          <button onClick={startNewCourse} style={{ padding: "10px 16px", fontWeight: "bold" }}>新規作成に戻す</button>
+          <button
+            type="button"
+            onClick={requestNewCourse}
+            disabled={saving}
+            style={{ padding: "10px 16px", fontWeight: "bold" }}
+          >
+            新規作成に戻す
+          </button>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(320px, 1fr)", gap: 16 }}>
@@ -383,17 +561,17 @@ export default function AdminCoursesPage() {
 
           <div style={{ background: "#fff", padding: 16, borderRadius: 12 }}>
             <label>courseId（新規は空欄で自動作成）</label>
-            <input value={courseId} onChange={(event) => setCourseId(event.target.value)} readOnly={Boolean(selectedExistingId)} style={{ ...inputStyle, background: selectedExistingId ? "#eee" : "#fff" }} />
+            <input value={courseId} onChange={(event) => setCourseId(event.target.value)} readOnly={Boolean(selectedExistingId)} disabled={saving} style={{ ...inputStyle, background: selectedExistingId ? "#eee" : "#fff" }} />
             <label>日付</label>
-            <input type="date" value={date} onChange={(event) => setDate(event.target.value)} style={inputStyle} />
+            <input type="date" value={date} onChange={(event) => setDate(event.target.value)} disabled={saving} style={inputStyle} />
             <label>タイトル</label>
-            <input value={title} onChange={(event) => setTitle(event.target.value)} style={inputStyle} />
+            <input value={title} onChange={(event) => setTitle(event.target.value)} disabled={saving} style={inputStyle} />
             <label>説明</label>
-            <textarea value={description} onChange={(event) => setDescription(event.target.value)} style={{ ...inputStyle, height: 100 }} />
+            <textarea value={description} onChange={(event) => setDescription(event.target.value)} disabled={saving} style={{ ...inputStyle, height: 100 }} />
             <label>エリア</label>
-            <input value={area} onChange={(event) => setArea(event.target.value)} style={inputStyle} />
+            <input value={area} onChange={(event) => setArea(event.target.value)} disabled={saving} style={inputStyle} />
             <label>公開状態</label>
-            <select value={status} onChange={(event) => setStatus(event.target.value)} style={inputStyle}>
+            <select value={status} onChange={(event) => setStatus(event.target.value)} disabled={saving} style={inputStyle}>
               <option value="draft">draft</option>
               <option value="ready">ready</option>
             </select>
@@ -441,7 +619,7 @@ export default function AdminCoursesPage() {
               {points.map((point, index) => (
                 <div
                   key={point.pointId}
-                  draggable
+                  draggable={!saving}
                   onDragStart={(event) => {
                     event.dataTransfer.effectAllowed = "move";
                     event.dataTransfer.setData("text/plain", point.pointId);
@@ -469,23 +647,23 @@ export default function AdminCoursesPage() {
                     padding: 10,
                     background: draggedPointIndex === index ? "#eef5ff" : "#fff",
                     opacity: draggedPointIndex === index ? 0.65 : 1,
-                    cursor: "grab",
+                    cursor: saving ? "not-allowed" : "grab",
                   }}
                 >
                   <div style={{ display: "grid", gridTemplateColumns: "44px minmax(0, 1fr)", gap: 10, alignItems: "center" }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                      <button type="button" onClick={() => movePoint(index, -1)} disabled={index === 0} title="1つ上へ移動" style={arrowButtonStyle(index === 0)}>▲</button>
+                      <button type="button" onClick={() => movePoint(index, -1)} disabled={saving || index === 0} title="1つ上へ移動" style={arrowButtonStyle(saving || index === 0)}>▲</button>
                       <strong style={{ display: "flex", width: 34, height: 34, alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "#fde047", border: "2px solid #111", fontSize: 16 }}>{index + 1}</strong>
-                      <button type="button" onClick={() => movePoint(index, 1)} disabled={index === points.length - 1} title="1つ下へ移動" style={arrowButtonStyle(index === points.length - 1)}>▼</button>
+                      <button type="button" onClick={() => movePoint(index, 1)} disabled={saving || index === points.length - 1} title="1つ下へ移動" style={arrowButtonStyle(saving || index === points.length - 1)}>▼</button>
                     </div>
 
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <span aria-hidden="true" title="ドラッグして順番を変更" style={{ color: "#777", fontSize: 20, lineHeight: 1, cursor: "grab", userSelect: "none" }}>⠿</span>
-                        <input value={point.name} onChange={(event) => setPoints((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item))} style={{ ...inputStyle, marginBottom: 0, flex: 1 }} />
+                        <span aria-hidden="true" title="ドラッグして順番を変更" style={{ color: "#777", fontSize: 20, lineHeight: 1, cursor: saving ? "not-allowed" : "grab", userSelect: "none" }}>⠿</span>
+                        <input value={point.name} disabled={saving} onChange={(event) => setPoints((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item))} style={{ ...inputStyle, marginBottom: 0, flex: 1 }} />
                       </div>
                       <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center" }}>
-                        <button type="button" onClick={() => setPoints((current) => normalizeOrders(current.filter((_, itemIndex) => itemIndex !== index)))} style={{ padding: "5px 10px" }}>削除</button>
+                        <button type="button" disabled={saving} onClick={() => setPoints((current) => normalizeOrders(current.filter((_, itemIndex) => itemIndex !== index)))} style={{ padding: "5px 10px" }}>削除</button>
                         <span style={{ fontSize: 12, marginLeft: "auto" }}>{point.pointType === "waypoint" ? "経由地" : point.spotId}</span>
                       </div>
                     </div>
@@ -494,7 +672,21 @@ export default function AdminCoursesPage() {
               ))}
             </div>
 
-            <button onClick={saveCourse} disabled={saving} style={{ width: "100%", padding: 14, marginTop: 16, fontWeight: "bold", background: "#111", color: "#fff" }}>
+            <div
+              role="status"
+              aria-live="polite"
+              style={{
+                marginTop: 16,
+                marginBottom: 6,
+                fontSize: 18,
+                fontWeight: 900,
+                color: saving ? "#b45309" : isDirty ? "#dc2626" : "#16a34a",
+              }}
+            >
+              {saving ? "保存中" : isDirty ? "未保存" : "保存済み"}
+            </div>
+
+            <button onClick={saveCourse} disabled={saving} style={{ width: "100%", padding: 14, fontWeight: "bold", background: "#111", color: "#fff" }}>
               {saving ? "保存中..." : selectedExistingId ? "コースを更新" : "コースを保存"}
             </button>
             <p>{message}</p>
