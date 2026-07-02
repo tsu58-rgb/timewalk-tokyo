@@ -1,6 +1,0 @@
-edo_no_ext	200	*/*	96214	https://mapwarper.h-gis.jp/mosaics/tile/25/14/14552/6451	file=PNG image data, 256 x 256, 8-bit/color RGBA, non-interlaced	stderr=
-edo_png	200	image/png	96214	https://mapwarper.h-gis.jp/mosaics/tile/25/14/14552/6451.png	file=PNG image data, 256 x 256, 8-bit/color RGBA, non-interlaced	stderr=
-tokyo5000_aginfo	ERROR	Command '['curl', '-L', '--max-time', '30', '--retry', '1', '-A', 'Mozilla/5.0 TimeWalk tile diagnostic', '-sS', '-o', '/tmp/maptiles/tokyo5000_aginfo.bin', '-w', '%{http_code}\t%{content_type}\t%{size_download}\t%{url_effective}', 'https://aginfo.cgk.affrc.go.jp/ws/tmc/1.0.0/Tokyo5000-900913-L/14/14552/6451.png']' timed out after 40 seconds
-rapid_aginfo	ERROR	Command '['curl', '-L', '--max-time', '30', '--retry', '1', '-A', 'Mozilla/5.0 TimeWalk tile diagnostic', '-sS', '-o', '/tmp/maptiles/rapid_aginfo.bin', '-w', '%{http_code}\t%{content_type}\t%{size_download}\t%{url_effective}', 'https://aginfo.cgk.affrc.go.jp/ws/tmc/1.0.0/Kanto_Rapid-900913-L/14/14552/6451.png']' timed out after 40 seconds
-tokyo5000_habs_xyz	404	text/html	155	https://habs.rad.naro.go.jp/tokyo5k/14/14552/6451.png	file=HTML document, ASCII text	stderr=
-tokyo5000_habs_tms	404	text/html	155	https://habs.rad.naro.go.jp/tokyo5k/14/14552/9932.png	file=HTML document, ASCII text	stderr=
