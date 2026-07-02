@@ -2,6 +2,8 @@ export type MapLayerId =
   | "osm"
   | "gsi-pale"
   | "edo-kiriezu"
+  | "meiji-rapid"
+  | "meiji-tokyo-5000"
   | "gsi-hillshade"
   | "gsi-photo"
   | "gsi-photo-1945"
@@ -15,6 +17,7 @@ export type MapLayer = {
   attribution: string;
   minNativeZoom?: number;
   maxNativeZoom?: number;
+  tms?: boolean;
 };
 
 export const GSI_ATTRIBUTION =
@@ -22,6 +25,9 @@ export const GSI_ATTRIBUTION =
 
 const EDO_KIRIEZU_ATTRIBUTION =
   '<a href="https://mapwarper.h-gis.jp/layers/25" target="_blank" rel="noopener noreferrer">江戸切絵図</a>（<a href="https://codh.rois.ac.jp/edo-maps/" target="_blank" rel="noopener noreferrer">CODH</a>・<a href="https://dl.ndl.go.jp/" target="_blank" rel="noopener noreferrer">国立国会図書館</a>）';
+
+const HABS_ATTRIBUTION =
+  '<a href="https://habs.rad.naro.go.jp/" target="_blank" rel="noopener noreferrer">農研機構農業環境研究部門・歴史的農業環境閲覧システム</a>';
 
 export const mapLayers: MapLayer[] = [
   {
@@ -46,6 +52,26 @@ export const mapLayers: MapLayer[] = [
     description: "江戸市中の切絵図を現在の位置に重ねた古地図",
     attribution: EDO_KIRIEZU_ATTRIBUTION,
     url: "https://mapwarper.h-gis.jp/mosaics/tile/25/{z}/{x}/{y}",
+  },
+  {
+    id: "meiji-rapid",
+    label: "明治時代 迅速測図",
+    description: "1880年代の関東地方を広域で見られる2万分の1迅速測図",
+    attribution: HABS_ATTRIBUTION,
+    url: "https://habs.rad.naro.go.jp/rapid16/{z}/{x}/{y}.png",
+    minNativeZoom: 8,
+    maxNativeZoom: 16,
+    tms: true,
+  },
+  {
+    id: "meiji-tokyo-5000",
+    label: "明治時代 東京五千分一",
+    description: "1880年代の東京中心部を精密に見られる五千分の一測量図",
+    attribution: HABS_ATTRIBUTION,
+    url: "https://habs.rad.naro.go.jp/tokyo5k/{z}/{x}/{y}.png",
+    minNativeZoom: 8,
+    maxNativeZoom: 17,
+    tms: true,
   },
   {
     id: "gsi-hillshade",
