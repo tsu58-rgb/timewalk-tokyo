@@ -1,0 +1,3 @@
+edo|200|image/png|96214|https://mapwarper.h-gis.jp/mosaics/tile/25/14/14552/6451.png|file=PNG image data, 256 x 256, 8-bit/color RGBA, non-interlaced
+tokyo5000|200|image/jpeg|27149|https://boiledorange73.sakura.ne.jp/ws/tile/Tokyo5000-900913/14/14552/6451.jpg|file=JPEG image data, JFIF standard 1.01, resolution (DPCM), density 28x28, segment length 16, comment: "Created with GIMP", baseline, precision 8, 256x256, components 3
+rapid|200|image/jpeg|31002|https://boiledorange73.sakura.ne.jp/ws/tile/Kanto_Rapid-900913/14/14552/6451.jpg|file=JPEG image data, JFIF standard 1.01, resolution (DPCM), density 28x28, segment length 16, baseline, precision 8, 256x256, components 3
