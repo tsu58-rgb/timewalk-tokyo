@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+const MAX_IMAGE_DATA_URL_LENGTH = 16_000_000;
+
 export async function POST(request: Request) {
   const body = await request.json();
 
@@ -10,9 +12,26 @@ export async function POST(request: Request) {
     );
   }
 
+  const imageBase64 = String(body.course?.eyecatchImageBase64 || "");
+  if (imageBase64 && !imageBase64.startsWith("data:image/")) {
+    return NextResponse.json(
+      { ok: false, error: "アイキャッチ画像の形式が不正です。" },
+      { status: 400 }
+    );
+  }
+  if (imageBase64.length > MAX_IMAGE_DATA_URL_LENGTH) {
+    return NextResponse.json(
+      { ok: false, error: "アイキャッチ画像が大きすぎます。12MB以下の画像を選択してください。" },
+      { status: 400 }
+    );
+  }
+
   const selectedDate = String(body.course?.date || "").trim();
   const course = {
     ...body.course,
+    eyecatchImage: String(body.course?.eyecatchImage || "").trim(),
+    eyecatchImageBase64: imageBase64,
+    removeEyecatchImage: Boolean(body.course?.removeEyecatchImage),
     notes: selectedDate ? `courseDate:${selectedDate}` : String(body.course?.notes || ""),
   };
 
