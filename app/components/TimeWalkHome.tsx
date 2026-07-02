@@ -98,7 +98,7 @@ export default function TimeWalkHome() {
 
   function getCurrentLocation(shouldRecenterMap = false) {
     if (!navigator.geolocation) {
-      setError("このブラウザは位置情報に対応していません");
+      setError("位置情報が取得できないため表示できません。");
       return;
     }
 
@@ -113,8 +113,8 @@ export default function TimeWalkHome() {
           setMapRecenterRequest((value) => value + 1);
         }
       },
-      (err) => {
-        setError("位置情報が取得できません: " + err.message);
+      () => {
+        setError("位置情報が取得できないため表示できません。");
         setLocationLoading(false);
       },
       { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
@@ -226,21 +226,17 @@ export default function TimeWalkHome() {
         <p className="text-center text-xs text-slate-300 mb-3">近くの歴史スポットがわかるアプリ</p>
         <button onClick={() => setScreen("today")} className="mb-4 w-full bg-yellow-300 text-black py-3 rounded-xl font-bold">今日は何の日？</button>
 
-        <div className="flex items-center justify-center gap-2 mb-4">
-          {address ? (
-            <>
-              <p className="text-sm text-slate-300">📍 {address}</p>
-              <button
-                onClick={() => getCurrentLocation(true)}
-                className="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-bold whitespace-nowrap"
-              >
-                {locationLoading ? "取得中" : "現在地"}
-              </button>
-            </>
-          ) : (
-            <a href="https://yuru-rekishi-sanpo.com/timewalk#toc11" target="_blank" rel="noopener noreferrer" className="text-sm text-yellow-300 underline font-bold">位置情報サービスをオンにしてください</a>
-          )}
-        </div>
+        {address && (
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <p className="text-sm text-slate-300">📍 {address}</p>
+            <button
+              onClick={() => getCurrentLocation(true)}
+              className="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-bold whitespace-nowrap"
+            >
+              {locationLoading ? "取得中" : "現在地"}
+            </button>
+          </div>
+        )}
 
         <div className="mb-4">
           <SpotMap
@@ -282,8 +278,6 @@ export default function TimeWalkHome() {
           )}
         </section>
 
-        {error && !position && <p className="bg-red-900 rounded-xl p-3 mb-4 text-sm">{error}</p>}
-        {!position && !error && <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">基準地点を取得中です。</p>}
         {position && selectedTags.length === 0 && <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">タグが選択されていません。</p>}
 
         <div className="mb-3">
@@ -291,7 +285,10 @@ export default function TimeWalkHome() {
           <p className="text-xs text-slate-400 mt-1">{visibleSpots.length}件（最大{DISPLAY_LIMIT}件表示）</p>
         </div>
 
-        {visibleSpots.length === 0 ? (
+        {error && !position && <p className="bg-red-900 rounded-xl p-3 mb-4 text-sm">位置情報が取得できないため表示できません。</p>}
+        {!position && !error && <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">基準地点を取得中です。</p>}
+
+        {!position ? null : visibleSpots.length === 0 ? (
           <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">条件に合う登録スポットがありません。</p>
         ) : (
           <div className="space-y-3">
