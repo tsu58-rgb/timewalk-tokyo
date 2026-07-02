@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import ContactFooter from "./components/ContactFooter";
+import InternalNavigationManager from "./components/InternalNavigationManager";
 import NominatimPrefectureGuard from "./components/NominatimPrefectureGuard";
 import PwaRegister from "./components/PwaRegister";
 
@@ -43,6 +44,7 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <PwaRegister />
+        <InternalNavigationManager />
         <NominatimPrefectureGuard />
         {children}
         <ContactFooter />
