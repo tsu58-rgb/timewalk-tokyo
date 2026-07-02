@@ -1,0 +1,49 @@
+name: Include every spot on course maps
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/include-all-course-map-spots.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Include course spots in red background dots
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/components/CourseRouteMap.tsx')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('''  const courseSpotIds = useMemo(
+    () => new Set(points.filter((point) => point.pointType === "spot").map((point) => point.spotId)),
+    [points]
+  );
+''', '')
+          text = text.replace('''          {allSpots
+            .filter(
+              (spot) =>
+                Number.isFinite(spot.lat) &&
+                Number.isFinite(spot.lng) &&
+                !courseSpotIds.has(spot.id)
+            )
+            .map((spot) => (''', '''          {allSpots
+            .filter((spot) => Number.isFinite(spot.lat) && Number.isFinite(spot.lng))
+            .map((spot) => (''')
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "TimeWalk Bot"
+          git config user.email "timewalk-bot@users.noreply.github.com"
+          git add app/components/CourseRouteMap.tsx
+          git commit -m "Show every registered spot on course maps"
+          git push
