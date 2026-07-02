@@ -412,7 +412,6 @@ export default function AdminCoursesPage() {
 
   function onEyecatchChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0] || null;
-    event.currentTarget.value = "";
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
