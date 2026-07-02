@@ -101,6 +101,7 @@ export default function AdminCoursesPage() {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedSnapshot, setSavedSnapshot] = useState("");
+  const [explicitDirty, setExplicitDirty] = useState(false);
   const [draggedPointIndex, setDraggedPointIndex] = useState<number | null>(null);
   const [dragOverPointIndex, setDragOverPointIndex] = useState<number | null>(null);
 
@@ -184,7 +185,7 @@ export default function AdminCoursesPage() {
     if (!savedSnapshot) setSavedSnapshot(currentSnapshot);
   }, [currentSnapshot, savedSnapshot]);
 
-  const isDirty = Boolean(savedSnapshot) && currentSnapshot !== savedSnapshot;
+  const isDirty = explicitDirty || (Boolean(savedSnapshot) && currentSnapshot !== savedSnapshot);
 
   useEffect(() => {
     if (!isDirty) return;
@@ -225,6 +226,7 @@ export default function AdminCoursesPage() {
     setRemoveEyecatchImage(false);
     setEyecatchInputKey((value) => value + 1);
     setPoints(nextPoints);
+    setExplicitDirty(false);
     setSavedSnapshot(
       serializeCourseForm({
         courseId: "",
@@ -272,6 +274,7 @@ export default function AdminCoursesPage() {
     setRemoveEyecatchImage(false);
     setEyecatchInputKey((value) => value + 1);
     setPoints(nextPoints);
+    setExplicitDirty(false);
     setSavedSnapshot(
       serializeCourseForm({
         courseId: course.id,
@@ -383,6 +386,8 @@ export default function AdminCoursesPage() {
       return;
     }
 
+    setExplicitDirty(true);
+
     try {
       const dataUrl = await fileToDataUrl(file);
       setEyecatchImageBase64(dataUrl);
@@ -390,15 +395,18 @@ export default function AdminCoursesPage() {
       setRemoveEyecatchImage(false);
       setMessage("アイキャッチ画像を選択しました。コース保存時にCloudinaryへ登録します。");
     } catch (error) {
+      setExplicitDirty(false);
       setMessage(error instanceof Error ? error.message : "画像を読み込めませんでした。");
     }
   }
 
   function clearEyecatch() {
+    setExplicitDirty(true);
     setEyecatchImage("");
     setEyecatchImageBase64("");
     setRemoveEyecatchImage(true);
     setEyecatchInputKey((value) => value + 1);
+    setMessage("アイキャッチ画像を削除対象にしました。保存すると反映されます。");
   }
 
   async function saveCourse() {
@@ -469,8 +477,21 @@ export default function AdminCoursesPage() {
       const nextImage = responseHasEyecatch
         ? String(json.eyecatchImage || "")
         : savedCourse?.eyecatchImage || (removeEyecatchImage ? "" : eyecatchImage.startsWith("data:") ? "" : eyecatchImage);
+      const nextCourses = refreshedCourses.map((course) =>
+        course.id === finalId
+          ? {
+              ...course,
+              title: nextTitle,
+              date: nextDate,
+              description: nextDescription,
+              area: nextArea,
+              status: nextStatus,
+              eyecatchImage: nextImage,
+            }
+          : course
+      );
 
-      setExistingCourses(refreshedCourses);
+      setExistingCourses(nextCourses);
       setStoredCoursePoints(refreshedPoints);
       setSelectedExistingId(finalId);
       setCourseId(finalId);
@@ -484,6 +505,7 @@ export default function AdminCoursesPage() {
       setRemoveEyecatchImage(false);
       setEyecatchInputKey((value) => value + 1);
       setPoints(nextPoints);
+      setExplicitDirty(false);
       setSavedSnapshot(
         serializeCourseForm({
           courseId: finalId,
@@ -589,8 +611,11 @@ export default function AdminCoursesPage() {
               <p style={{ margin: "8px 0", fontSize: 12, color: "#555" }}>
                 16:9・横1200px以上を推奨。保存時にWebPへ変換してCloudinaryへ登録します。
               </p>
-              {eyecatchImage && (
+              {eyecatchImage ? (
                 <>
+                  <p style={{ margin: "6px 0", fontSize: 12, fontWeight: 700, color: eyecatchImage.startsWith("data:") ? "#dc2626" : "#166534" }}>
+                    {eyecatchImage.startsWith("data:") ? "新しく選択した画像（未保存）" : "現在登録済みの画像"}
+                  </p>
                   <img
                     src={eyecatchImage}
                     alt="アイキャッチ画像プレビュー"
@@ -605,6 +630,8 @@ export default function AdminCoursesPage() {
                     画像を削除
                   </button>
                 </>
+              ) : (
+                <p style={{ margin: "6px 0 0", fontSize: 12, color: "#666" }}>登録済みのアイキャッチ画像はありません。</p>
               )}
             </div>
 
