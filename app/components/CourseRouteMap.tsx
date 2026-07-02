@@ -71,10 +71,6 @@ export default function CourseRouteMap({
   );
   const center = positions[0] || ([35.681236, 139.767125] as [number, number]);
   const selectedLayer = mapLayers.find((layer) => layer.id === selectedLayerId) || mapLayers[0];
-  const courseSpotIds = useMemo(
-    () => new Set(points.filter((point) => point.pointType === "spot").map((point) => point.spotId)),
-    [points]
-  );
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -162,12 +158,7 @@ export default function CourseRouteMap({
 
         <Pane name="course-background-spots" style={{ zIndex: 430 }}>
           {allSpots
-            .filter(
-              (spot) =>
-                Number.isFinite(spot.lat) &&
-                Number.isFinite(spot.lng) &&
-                !courseSpotIds.has(spot.id)
-            )
+            .filter((spot) => Number.isFinite(spot.lat) && Number.isFinite(spot.lng))
             .map((spot) => (
               <CircleMarker
                 key={`background-${spot.id}`}
