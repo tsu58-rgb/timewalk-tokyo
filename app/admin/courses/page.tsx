@@ -1,7 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type CSSProperties,
+} from "react";
 
 import {
   calculateCourseDistanceKm,
@@ -14,7 +21,11 @@ import {
 
 const AdminCourseMap = dynamic(() => import("../../components/AdminCourseMap"), {
   ssr: false,
-  loading: () => <div style={{ height: 480, background: "#eee", padding: 16 }}>地図を読み込み中です。</div>,
+  loading: () => (
+    <div style={{ height: 480, background: "#eee", padding: 16 }}>
+      地図を読み込み中です。
+    </div>
+  ),
 });
 
 type SelectableSpot = {
@@ -26,16 +37,13 @@ type SelectableSpot = {
   description?: string;
 };
 
-type CourseFormState = {
+type PersistedCourseForm = {
   courseId: string;
   title: string;
   date: string;
   description: string;
   area: string;
   status: string;
-  eyecatchImage: string;
-  eyecatchImageBase64: string;
-  removeEyecatchImage: boolean;
   points: CoursePoint[];
 };
 
@@ -48,15 +56,6 @@ function makeCourseId(title: string) {
   return latin || `course-${Date.now()}`;
 }
 
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("画像を読み込めませんでした。"));
-    reader.readAsDataURL(file);
-  });
-}
-
 function getTodayDate() {
   const now = new Date();
   const year = now.getFullYear();
@@ -65,19 +64,35 @@ function getTodayDate() {
   return `${year}-${month}-${day}`;
 }
 
-function serializeCourseForm(form: CourseFormState) {
-  return JSON.stringify({
-    courseId: form.courseId,
-    title: form.title,
-    date: form.date,
-    description: form.description,
-    area: form.area,
-    status: form.status,
-    eyecatchImage: form.eyecatchImage,
-    eyecatchImageBase64: form.eyecatchImageBase64,
-    removeEyecatchImage: form.removeEyecatchImage,
-    points: form.points,
+function serializeCourseForm(form: PersistedCourseForm) {
+  return JSON.stringify(form);
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("画像を読み込めませんでした。"));
+    reader.onabort = () => reject(new Error("画像の読み込みが中断されました。"));
+    reader.readAsDataURL(file);
   });
+}
+
+async function fileToDataUrlWithTimeout(file: File, timeoutMs = 20000) {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  try {
+    return await Promise.race([
+      fileToDataUrl(file),
+      new Promise<string>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error("画像の読み込みが20秒以内に完了しませんでした。画像を小さくして再度お試しください。"));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 }
 
 function isCloudinaryUrl(value: unknown) {
@@ -85,29 +100,33 @@ function isCloudinaryUrl(value: unknown) {
 }
 
 export default function AdminCoursesPage() {
-  const eyecatchInputRef = useRef<HTMLInputElement | null>(null);
+  const previewObjectUrlRef = useRef("");
+
   const [pagePassword, setPagePassword] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [spots, setSpots] = useState<SelectableSpot[]>([]);
   const [existingCourses, setExistingCourses] = useState<Course[]>([]);
   const [storedCoursePoints, setStoredCoursePoints] = useState<CoursePoint[]>([]);
   const [selectedExistingId, setSelectedExistingId] = useState("");
+
+  const [courseId, setCourseId] = useState("");
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(getTodayDate);
   const [description, setDescription] = useState("");
   const [area, setArea] = useState("");
-  const [courseId, setCourseId] = useState("");
   const [status, setStatus] = useState("draft");
-  const [eyecatchImage, setEyecatchImage] = useState("");
-  const [eyecatchImageBase64, setEyecatchImageBase64] = useState("");
-  const [removeEyecatchImage, setRemoveEyecatchImage] = useState(false);
-  const [eyecatchInputKey, setEyecatchInputKey] = useState(0);
   const [points, setPoints] = useState<CoursePoint[]>([]);
+
+  const [registeredEyecatchImage, setRegisteredEyecatchImage] = useState("");
+  const [eyecatchPreview, setEyecatchPreview] = useState("");
+  const [selectedEyecatchFile, setSelectedEyecatchFile] = useState<File | null>(null);
+  const [removeEyecatchImage, setRemoveEyecatchImage] = useState(false);
+  const [imageDirty, setImageDirty] = useState(false);
+  const [eyecatchInputKey, setEyecatchInputKey] = useState(0);
+
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [readingEyecatch, setReadingEyecatch] = useState(false);
   const [savedSnapshot, setSavedSnapshot] = useState("");
-  const [explicitDirty, setExplicitDirty] = useState(false);
   const [draggedPointIndex, setDraggedPointIndex] = useState<number | null>(null);
   const [dragOverPointIndex, setDragOverPointIndex] = useState<number | null>(null);
 
@@ -116,11 +135,32 @@ export default function AdminCoursesPage() {
     if (saved) setPagePassword(saved);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (previewObjectUrlRef.current) {
+        URL.revokeObjectURL(previewObjectUrlRef.current);
+      }
+    };
+  }, []);
+
+  function replacePreviewObjectUrl(file: File | null) {
+    if (previewObjectUrlRef.current) {
+      URL.revokeObjectURL(previewObjectUrlRef.current);
+      previewObjectUrlRef.current = "";
+    }
+
+    if (!file) return "";
+    const objectUrl = URL.createObjectURL(file);
+    previewObjectUrlRef.current = objectUrl;
+    return objectUrl;
+  }
+
   async function loadCourseData() {
     const response = await fetch("/api/admin/courses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pagePassword }),
+      cache: "no-store",
     });
     const json = await response.json();
     if (!json.ok) throw new Error(json.error || "コース取得失敗");
@@ -137,6 +177,7 @@ export default function AdminCoursesPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pagePassword }),
+        cache: "no-store",
       }).then((response) => response.json()),
       loadCourseData(),
     ])
@@ -168,30 +209,16 @@ export default function AdminCoursesPage() {
         description,
         area,
         status,
-        eyecatchImage,
-        eyecatchImageBase64,
-        removeEyecatchImage,
         points,
       }),
-    [
-      courseId,
-      title,
-      date,
-      description,
-      area,
-      status,
-      eyecatchImage,
-      eyecatchImageBase64,
-      removeEyecatchImage,
-      points,
-    ]
+    [courseId, title, date, description, area, status, points]
   );
 
   useEffect(() => {
     if (!savedSnapshot) setSavedSnapshot(currentSnapshot);
   }, [currentSnapshot, savedSnapshot]);
 
-  const isDirty = explicitDirty || (Boolean(savedSnapshot) && currentSnapshot !== savedSnapshot);
+  const isDirty = imageDirty || (Boolean(savedSnapshot) && currentSnapshot !== savedSnapshot);
 
   useEffect(() => {
     if (!isDirty) return;
@@ -216,7 +243,13 @@ export default function AdminCoursesPage() {
     return window.confirm("未保存の変更があります。保存せずに画面を切り替えますか？");
   }
 
-  function resetEyecatchInput() {
+  function clearSelectedImageState(nextRegisteredImage = "") {
+    replacePreviewObjectUrl(null);
+    setSelectedEyecatchFile(null);
+    setRegisteredEyecatchImage(nextRegisteredImage);
+    setEyecatchPreview(nextRegisteredImage);
+    setRemoveEyecatchImage(false);
+    setImageDirty(false);
     setEyecatchInputKey((value) => value + 1);
   }
 
@@ -231,12 +264,8 @@ export default function AdminCoursesPage() {
     setDescription("");
     setArea("");
     setStatus("draft");
-    setEyecatchImage("");
-    setEyecatchImageBase64("");
-    setRemoveEyecatchImage(false);
-    resetEyecatchInput();
     setPoints(nextPoints);
-    setExplicitDirty(false);
+    clearSelectedImageState("");
     setSavedSnapshot(
       serializeCourseForm({
         courseId: "",
@@ -245,9 +274,6 @@ export default function AdminCoursesPage() {
         description: "",
         area: "",
         status: "draft",
-        eyecatchImage: "",
-        eyecatchImageBase64: "",
-        removeEyecatchImage: false,
         points: nextPoints,
       })
     );
@@ -279,12 +305,8 @@ export default function AdminCoursesPage() {
     setDescription(nextDescription);
     setArea(nextArea);
     setStatus(nextStatus);
-    setEyecatchImage(nextImage);
-    setEyecatchImageBase64("");
-    setRemoveEyecatchImage(false);
-    resetEyecatchInput();
     setPoints(nextPoints);
-    setExplicitDirty(false);
+    clearSelectedImageState(nextImage);
     setSavedSnapshot(
       serializeCourseForm({
         courseId: course.id,
@@ -293,9 +315,6 @@ export default function AdminCoursesPage() {
         description: nextDescription,
         area: nextArea,
         status: nextStatus,
-        eyecatchImage: nextImage,
-        eyecatchImageBase64: "",
-        removeEyecatchImage: false,
         points: nextPoints,
       })
     );
@@ -376,7 +395,14 @@ export default function AdminCoursesPage() {
   function movePointToIndex(fromIndex: number, toIndex: number) {
     if (saving || fromIndex === toIndex) return;
     setPoints((current) => {
-      if (fromIndex < 0 || fromIndex >= current.length || toIndex < 0 || toIndex >= current.length) return current;
+      if (
+        fromIndex < 0 ||
+        fromIndex >= current.length ||
+        toIndex < 0 ||
+        toIndex >= current.length
+      ) {
+        return current;
+      }
       const next = [...current];
       const [moved] = next.splice(fromIndex, 1);
       next.splice(toIndex, 0, moved);
@@ -384,9 +410,11 @@ export default function AdminCoursesPage() {
     });
   }
 
-  async function onEyecatchChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+  function onEyecatchChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0] || null;
+    event.currentTarget.value = "";
     if (!file) return;
+
     if (!file.type.startsWith("image/")) {
       setMessage("画像ファイルを選択してください。");
       return;
@@ -396,35 +424,26 @@ export default function AdminCoursesPage() {
       return;
     }
 
-    setExplicitDirty(true);
-    setReadingEyecatch(true);
-    setMessage("アイキャッチ画像を読み込み中です...");
-
-    try {
-      const dataUrl = await fileToDataUrl(file);
-      setEyecatchImageBase64(dataUrl);
-      setEyecatchImage(dataUrl);
-      setRemoveEyecatchImage(false);
-      setMessage("アイキャッチ画像を選択しました。未保存です。コース更新時にCloudinaryへ登録します。");
-    } catch (error) {
-      setEyecatchImageBase64("");
-      setExplicitDirty(false);
-      setMessage(error instanceof Error ? error.message : "画像を読み込めませんでした。");
-    } finally {
-      setReadingEyecatch(false);
-    }
+    const objectUrl = replacePreviewObjectUrl(file);
+    setSelectedEyecatchFile(file);
+    setEyecatchPreview(objectUrl);
+    setRemoveEyecatchImage(false);
+    setImageDirty(true);
+    setMessage(`アイキャッチ画像を選択しました：${file.name}。未保存です。`);
   }
 
   function clearEyecatch() {
-    setExplicitDirty(true);
-    setEyecatchImage("");
-    setEyecatchImageBase64("");
+    replacePreviewObjectUrl(null);
+    setSelectedEyecatchFile(null);
+    setEyecatchPreview("");
     setRemoveEyecatchImage(true);
-    resetEyecatchInput();
-    setMessage("アイキャッチ画像を削除対象にしました。保存すると反映されます。");
+    setImageDirty(true);
+    setEyecatchInputKey((value) => value + 1);
+    setMessage("アイキャッチ画像を削除対象にしました。未保存です。");
   }
 
   async function saveCourse() {
+    if (saving) return;
     if (!date) {
       setMessage("日付を入力してください。");
       return;
@@ -444,30 +463,13 @@ export default function AdminCoursesPage() {
       courseId: finalId,
     }));
 
-    setCourseId(finalId);
     setSaving(true);
-    setMessage(selectedExistingId ? "既存コースを更新中..." : "新規コースを保存中...");
+    setMessage(selectedEyecatchFile ? "画像を読み込んでコースを更新中です..." : "コースを更新中です...");
 
     try {
-      let imageBase64ForSave = eyecatchImageBase64;
-      const selectedFile = eyecatchInputRef.current?.files?.[0];
-
-      if (selectedFile) {
-        if (!selectedFile.type.startsWith("image/")) {
-          throw new Error("画像ファイルを選択してください。");
-        }
-        if (selectedFile.size > 12 * 1024 * 1024) {
-          throw new Error("アイキャッチ画像は12MB以下にしてください。");
-        }
-
-        setReadingEyecatch(true);
-        setMessage("アイキャッチ画像を読み込んでいます...");
-        imageBase64ForSave = await fileToDataUrl(selectedFile);
-        setEyecatchImageBase64(imageBase64ForSave);
-        setEyecatchImage(imageBase64ForSave);
-        setRemoveEyecatchImage(false);
-        setMessage(selectedExistingId ? "画像を含めて既存コースを更新中..." : "画像を含めて新規コースを保存中...");
-      }
+      const imageBase64 = selectedEyecatchFile
+        ? await fileToDataUrlWithTimeout(selectedEyecatchFile)
+        : "";
 
       const response = await fetch("/api/admin/save-course", {
         method: "POST",
@@ -484,18 +486,19 @@ export default function AdminCoursesPage() {
             distanceKm: Math.round(distanceKm * 100) / 100,
             durationMin,
             durationLabel: formatCourseDuration(durationMin),
-            eyecatchImage: eyecatchImage.startsWith("data:") ? "" : eyecatchImage,
-            eyecatchImageBase64: imageBase64ForSave,
+            eyecatchImage: registeredEyecatchImage,
+            eyecatchImageBase64: imageBase64,
             removeEyecatchImage,
           },
           points: normalizedPoints,
         }),
       });
+
       const json = await response.json();
       if (!json.ok) throw new Error(json.error || "保存に失敗しました。");
 
-      if (imageBase64ForSave && !isCloudinaryUrl(json.eyecatchImage)) {
-        throw new Error("コース情報は更新されましたが、アイキャッチ画像のCloudinary登録に失敗しました。GASの画像保存処理を確認してください。");
+      if (selectedEyecatchFile && !isCloudinaryUrl(json.eyecatchImage)) {
+        throw new Error("コース情報は更新されましたが、アイキャッチ画像のCloudinary登録に失敗しました。");
       }
 
       const refreshed = await loadCourseData();
@@ -512,10 +515,10 @@ export default function AdminCoursesPage() {
       const nextDescription = savedCourse?.description || description.trim();
       const nextArea = savedCourse?.area || area.trim();
       const nextStatus = savedCourse?.status || status;
-      const responseHasEyecatch = Object.prototype.hasOwnProperty.call(json, "eyecatchImage");
-      const nextImage = responseHasEyecatch
+      const nextImage = Object.prototype.hasOwnProperty.call(json, "eyecatchImage")
         ? String(json.eyecatchImage || "")
-        : savedCourse?.eyecatchImage || (removeEyecatchImage ? "" : eyecatchImage.startsWith("data:") ? "" : eyecatchImage);
+        : savedCourse?.eyecatchImage || "";
+
       const nextCourses = refreshedCourses.map((course) =>
         course.id === finalId
           ? {
@@ -539,12 +542,8 @@ export default function AdminCoursesPage() {
       setDescription(nextDescription);
       setArea(nextArea);
       setStatus(nextStatus);
-      setEyecatchImage(nextImage);
-      setEyecatchImageBase64("");
-      setRemoveEyecatchImage(false);
-      resetEyecatchInput();
       setPoints(nextPoints);
-      setExplicitDirty(false);
+      clearSelectedImageState(nextImage);
       setSavedSnapshot(
         serializeCourseForm({
           courseId: finalId,
@@ -553,18 +552,17 @@ export default function AdminCoursesPage() {
           description: nextDescription,
           area: nextArea,
           status: nextStatus,
-          eyecatchImage: nextImage,
-          eyecatchImageBase64: "",
-          removeEyecatchImage: false,
           points: nextPoints,
         })
       );
-      setMessage(`${selectedExistingId ? "更新" : "保存"}しました：${finalId}${nextImage ? "（アイキャッチ画像登録済み）" : ""}`);
+      setMessage(
+        `${selectedExistingId ? "更新" : "保存"}しました：${finalId}${
+          nextImage ? "（アイキャッチ画像登録済み）" : ""
+        }`
+      );
     } catch (error) {
-      setExplicitDirty(true);
       setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
     } finally {
-      setReadingEyecatch(false);
       setSaving(false);
     }
   }
@@ -581,7 +579,9 @@ export default function AdminCoursesPage() {
           placeholder="管理パスワード"
           style={{ display: "block", width: "100%", maxWidth: 420, padding: 10, marginBottom: 10 }}
         />
-        <button onClick={login} style={{ padding: "10px 20px", fontWeight: "bold" }}>ログイン</button>
+        <button onClick={login} style={{ padding: "10px 20px", fontWeight: "bold" }}>
+          ログイン
+        </button>
       </main>
     );
   }
@@ -590,7 +590,9 @@ export default function AdminCoursesPage() {
     <main style={{ padding: 16, background: "#f4f4f4", color: "#111", minHeight: "100vh" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <h1>散歩コース管理</h1>
-        <p>登録済みスポットのピンを押すとスポットを追加します。ピン以外の場所を押した場合は、確認後に経由地として追加できます。</p>
+        <p>
+          登録済みスポットのピンを押すとスポットを追加します。ピン以外の場所を押した場合は、確認後に経由地として追加できます。
+        </p>
 
         <div style={{ display: "flex", gap: 8, alignItems: "end", flexWrap: "wrap", margin: "12px 0 16px" }}>
           <div style={{ flex: "1 1 320px" }}>
@@ -603,7 +605,9 @@ export default function AdminCoursesPage() {
             >
               <option value="">新規コース</option>
               {existingCourses.map((course) => (
-                <option key={course.id} value={course.id}>{course.title}（{course.status}）</option>
+                <option key={course.id} value={course.id}>
+                  {course.title}（{course.status}）
+                </option>
               ))}
             </select>
           </div>
@@ -619,20 +623,36 @@ export default function AdminCoursesPage() {
 
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(320px, 1fr)", gap: 16 }}>
           <div>
-            <AdminCourseMap spots={spots} points={points} onSpotSelect={addSpot} onWaypointAdd={addWaypoint} />
+            <AdminCourseMap
+              spots={spots}
+              points={points}
+              onSpotSelect={addSpot}
+              onWaypointAdd={addWaypoint}
+            />
           </div>
 
           <div style={{ background: "#fff", padding: 16, borderRadius: 12 }}>
             <label>courseId（新規は空欄で自動作成）</label>
-            <input value={courseId} onChange={(event) => setCourseId(event.target.value)} readOnly={Boolean(selectedExistingId)} disabled={saving} style={{ ...inputStyle, background: selectedExistingId ? "#eee" : "#fff" }} />
+            <input
+              value={courseId}
+              onChange={(event) => setCourseId(event.target.value)}
+              readOnly={Boolean(selectedExistingId)}
+              disabled={saving}
+              style={{ ...inputStyle, background: selectedExistingId ? "#eee" : "#fff" }}
+            />
+
             <label>日付</label>
             <input type="date" value={date} onChange={(event) => setDate(event.target.value)} disabled={saving} style={inputStyle} />
+
             <label>タイトル</label>
             <input value={title} onChange={(event) => setTitle(event.target.value)} disabled={saving} style={inputStyle} />
+
             <label>説明</label>
             <textarea value={description} onChange={(event) => setDescription(event.target.value)} disabled={saving} style={{ ...inputStyle, height: 100 }} />
+
             <label>エリア</label>
             <input value={area} onChange={(event) => setArea(event.target.value)} disabled={saving} style={inputStyle} />
+
             <label>公開状態</label>
             <select value={status} onChange={(event) => setStatus(event.target.value)} disabled={saving} style={inputStyle}>
               <option value="draft">draft</option>
@@ -642,54 +662,64 @@ export default function AdminCoursesPage() {
             <label>アイキャッチ画像</label>
             <div style={{ margin: "4px 0 12px", border: "1px solid #aaa", borderRadius: 8, padding: 10, background: "#fafafa" }}>
               <input
-                ref={eyecatchInputRef}
                 key={eyecatchInputKey}
                 type="file"
                 accept="image/*"
-                onClick={(event) => {
-                  event.currentTarget.value = "";
-                }}
                 onChange={onEyecatchChange}
-                disabled={saving || readingEyecatch}
+                disabled={saving}
                 style={{ display: "block", width: "100%", color: "#111" }}
               />
               <p style={{ margin: "8px 0", fontSize: 12, color: "#555" }}>
                 16:9・横1200px以上を推奨。保存時にWebPへ変換してCloudinaryへ登録します。
               </p>
-              {readingEyecatch && (
-                <p style={{ margin: "6px 0", fontSize: 12, fontWeight: 700, color: "#b45309" }}>画像を読み込み中です...</p>
-              )}
-              {eyecatchImage ? (
+
+              {eyecatchPreview ? (
                 <>
-                  <p style={{ margin: "6px 0", fontSize: 12, fontWeight: 700, color: eyecatchImage.startsWith("data:") ? "#dc2626" : "#166534" }}>
-                    {eyecatchImage.startsWith("data:") ? "新しく選択した画像（未保存）" : "現在登録済みの画像"}
+                  <p
+                    style={{
+                      margin: "6px 0",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: imageDirty ? "#dc2626" : "#166534",
+                    }}
+                  >
+                    {imageDirty ? "新しく選択した画像（未保存）" : "現在登録済みの画像"}
                   </p>
                   <img
-                    src={eyecatchImage}
+                    src={eyecatchPreview}
                     alt="アイキャッチ画像プレビュー"
                     style={{ display: "block", width: "100%", aspectRatio: "16 / 9", objectFit: "cover", borderRadius: 6, background: "#111" }}
                   />
                   <button
                     type="button"
                     onClick={clearEyecatch}
-                    disabled={saving || readingEyecatch}
+                    disabled={saving}
                     style={{ marginTop: 8, padding: "7px 12px", border: "1px solid #b91c1c", borderRadius: 6, background: "#fff", color: "#b91c1c", fontWeight: 700 }}
                   >
                     画像を削除
                   </button>
                 </>
               ) : (
-                <p style={{ margin: "6px 0 0", fontSize: 12, color: "#666" }}>登録済みのアイキャッチ画像はありません。</p>
+                <p style={{ margin: "6px 0 0", fontSize: 12, color: removeEyecatchImage ? "#dc2626" : "#666" }}>
+                  {removeEyecatchImage ? "画像を削除予定です（未保存）" : "登録済みのアイキャッチ画像はありません。"}
+                </p>
               )}
             </div>
 
             <div style={{ padding: 12, background: "#eef5ff", marginBottom: 12 }}>
-              <strong>{formatCourseDistance(distanceKm)} / {formatCourseDuration(durationMin)}</strong>
-              <div style={{ fontSize: 12, marginTop: 4 }}>直線距離の合計×1.25、1kmあたり20分で計算</div>
+              <strong>
+                {formatCourseDistance(distanceKm)} / {formatCourseDuration(durationMin)}
+              </strong>
+              <div style={{ fontSize: 12, marginTop: 4 }}>
+                直線距離の合計×1.25、1kmあたり20分で計算
+              </div>
             </div>
 
             <h2>歩く順番</h2>
-            <p style={{ marginTop: -6, marginBottom: 10, fontSize: 12, color: "#555" }}>矢印またはカードのドラッグで順番を変更できます。</p>
+            <p style={{ marginTop: -6, marginBottom: 10, fontSize: 12, color: "#555" }}>
+              矢印またはカードのドラッグで順番を変更できます。
+            </p>
+
             <div style={{ display: "grid", gap: 8 }}>
               {points.map((point, index) => (
                 <div
@@ -727,19 +757,51 @@ export default function AdminCoursesPage() {
                 >
                   <div style={{ display: "grid", gridTemplateColumns: "44px minmax(0, 1fr)", gap: 10, alignItems: "center" }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                      <button type="button" onClick={() => movePoint(index, -1)} disabled={saving || index === 0} title="1つ上へ移動" style={arrowButtonStyle(saving || index === 0)}>▲</button>
-                      <strong style={{ display: "flex", width: 34, height: 34, alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "#fde047", border: "2px solid #111", fontSize: 16 }}>{index + 1}</strong>
-                      <button type="button" onClick={() => movePoint(index, 1)} disabled={saving || index === points.length - 1} title="1つ下へ移動" style={arrowButtonStyle(saving || index === points.length - 1)}>▼</button>
+                      <button type="button" onClick={() => movePoint(index, -1)} disabled={saving || index === 0} title="1つ上へ移動" style={arrowButtonStyle(saving || index === 0)}>
+                        ▲
+                      </button>
+                      <strong style={{ display: "flex", width: 34, height: 34, alignItems: "center", justifyContent: "center", borderRadius: "50%", background: "#fde047", border: "2px solid #111", fontSize: 16 }}>
+                        {index + 1}
+                      </strong>
+                      <button type="button" onClick={() => movePoint(index, 1)} disabled={saving || index === points.length - 1} title="1つ下へ移動" style={arrowButtonStyle(saving || index === points.length - 1)}>
+                        ▼
+                      </button>
                     </div>
 
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <span aria-hidden="true" title="ドラッグして順番を変更" style={{ color: "#777", fontSize: 20, lineHeight: 1, cursor: saving ? "not-allowed" : "grab", userSelect: "none" }}>⠿</span>
-                        <input value={point.name} disabled={saving} onChange={(event) => setPoints((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item))} style={{ ...inputStyle, marginBottom: 0, flex: 1 }} />
+                        <span aria-hidden="true" title="ドラッグして順番を変更" style={{ color: "#777", fontSize: 20, lineHeight: 1, cursor: saving ? "not-allowed" : "grab", userSelect: "none" }}>
+                          ⠿
+                        </span>
+                        <input
+                          value={point.name}
+                          disabled={saving}
+                          onChange={(event) =>
+                            setPoints((current) =>
+                              current.map((item, itemIndex) =>
+                                itemIndex === index ? { ...item, name: event.target.value } : item
+                              )
+                            )
+                          }
+                          style={{ ...inputStyle, marginBottom: 0, flex: 1 }}
+                        />
                       </div>
                       <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center" }}>
-                        <button type="button" disabled={saving} onClick={() => setPoints((current) => normalizeOrders(current.filter((_, itemIndex) => itemIndex !== index)))} style={{ padding: "5px 10px" }}>削除</button>
-                        <span style={{ fontSize: 12, marginLeft: "auto" }}>{point.pointType === "waypoint" ? "経由地" : point.spotId}</span>
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={() =>
+                            setPoints((current) =>
+                              normalizeOrders(current.filter((_, itemIndex) => itemIndex !== index))
+                            )
+                          }
+                          style={{ padding: "5px 10px" }}
+                        >
+                          削除
+                        </button>
+                        <span style={{ fontSize: 12, marginLeft: "auto" }}>
+                          {point.pointType === "waypoint" ? "経由地" : point.spotId}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -755,25 +817,38 @@ export default function AdminCoursesPage() {
                 marginBottom: 6,
                 fontSize: 18,
                 fontWeight: 900,
-                color: saving || readingEyecatch ? "#b45309" : isDirty ? "#dc2626" : "#16a34a",
+                color: saving ? "#b45309" : isDirty ? "#dc2626" : "#16a34a",
               }}
             >
-              {saving ? "保存中" : readingEyecatch ? "画像読込中" : isDirty ? "未保存" : "保存済み"}
+              {saving ? "保存中" : isDirty ? "未保存" : "保存済み"}
             </div>
 
-            <button onClick={saveCourse} disabled={saving || readingEyecatch} style={{ width: "100%", padding: 14, fontWeight: "bold", background: "#111", color: "#fff", opacity: saving || readingEyecatch ? 0.65 : 1 }}>
-              {readingEyecatch ? "画像読込中..." : saving ? "保存中..." : selectedExistingId ? "コースを更新" : "コースを保存"}
+            <button
+              onClick={saveCourse}
+              disabled={saving}
+              style={{
+                width: "100%",
+                padding: 14,
+                fontWeight: "bold",
+                background: "#111",
+                color: "#fff",
+                opacity: saving ? 0.65 : 1,
+                cursor: saving ? "wait" : "pointer",
+              }}
+            >
+              {saving ? "保存中..." : selectedExistingId ? "コースを更新" : "コースを保存"}
             </button>
             <p>{message}</p>
           </div>
         </div>
       </div>
+
       <style>{`@media (max-width: 800px) { main > div > div { grid-template-columns: 1fr !important; } }`}</style>
     </main>
   );
 }
 
-function arrowButtonStyle(disabled: boolean): React.CSSProperties {
+function arrowButtonStyle(disabled: boolean): CSSProperties {
   return {
     width: 36,
     height: 30,
@@ -788,7 +863,7 @@ function arrowButtonStyle(disabled: boolean): React.CSSProperties {
   };
 }
 
-const inputStyle: React.CSSProperties = {
+const inputStyle: CSSProperties = {
   display: "block",
   width: "100%",
   boxSizing: "border-box",
