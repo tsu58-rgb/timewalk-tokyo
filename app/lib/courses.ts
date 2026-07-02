@@ -17,6 +17,7 @@ export type Course = {
   durationLabel: string;
   displayOrder: number;
   date: string;
+  eyecatchImage: string;
 };
 
 export type CoursePoint = {
@@ -60,6 +61,7 @@ export async function fetchCourses(options: CourseFetchOptions = {}) {
       durationLabel: String(row.durationLabel || "").trim(),
       displayOrder: Number(row.displayOrder),
       date: getCourseDate(row),
+      eyecatchImage: String(row.eyecatchImage || "").trim().replace(/^"+|"+$/g, ""),
     }))
     .filter((course) => course.id && course.title)
     .sort((a, b) => (a.displayOrder || 9999) - (b.displayOrder || 9999));
