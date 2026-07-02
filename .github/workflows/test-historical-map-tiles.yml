@@ -26,24 +26,22 @@ jobs:
           from pathlib import Path
 
           urls = [
-              ('edo_no_ext', 'https://mapwarper.h-gis.jp/mosaics/tile/25/14/14552/6451'),
               ('edo_png', 'https://mapwarper.h-gis.jp/mosaics/tile/25/14/14552/6451.png'),
-              ('tokyo5000_aginfo', 'https://aginfo.cgk.affrc.go.jp/ws/tmc/1.0.0/Tokyo5000-900913-L/14/14552/6451.png'),
-              ('rapid_aginfo', 'https://aginfo.cgk.affrc.go.jp/ws/tmc/1.0.0/Kanto_Rapid-900913-L/14/14552/6451.png'),
-              ('tokyo5000_habs_xyz', 'https://habs.rad.naro.go.jp/tokyo5k/14/14552/6451.png'),
-              ('tokyo5000_habs_tms', 'https://habs.rad.naro.go.jp/tokyo5k/14/14552/9932.png'),
+              ('tokyo5000_mirror_jpg', 'https://boiledorange73.sakura.ne.jp/ws/tile/Tokyo5000-900913/14/14552/6451.jpg'),
+              ('rapid_mirror_jpg', 'https://boiledorange73.sakura.ne.jp/ws/tile/Kanto_Rapid-900913/14/14552/6451.jpg'),
+              ('tokyo5000_aginfo_png', 'https://aginfo.cgk.affrc.go.jp/ws/tmc/1.0.0/Tokyo5000-900913-L/14/14552/6451.png'),
           ]
 
           lines = []
           for name, url in urls:
               out = Path('/tmp/maptiles') / f'{name}.bin'
               cmd = [
-                  'curl', '-L', '--max-time', '30', '--retry', '1',
+                  'curl', '-L', '--max-time', '20',
                   '-A', 'Mozilla/5.0 TimeWalk tile diagnostic',
                   '-sS', '-o', str(out), '-w', '%{http_code}\t%{content_type}\t%{size_download}\t%{url_effective}', url
               ]
               try:
-                  result = subprocess.run(cmd, capture_output=True, text=True, timeout=40)
+                  result = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
                   file_type = subprocess.run(['file', '-b', str(out)], capture_output=True, text=True).stdout.strip() if out.exists() else ''
                   lines.append(f'{name}\t{result.stdout.strip()}\tfile={file_type}\tstderr={result.stderr.strip()}')
               except Exception as exc:
@@ -57,5 +55,5 @@ jobs:
           git config user.name "TimeWalk Bot"
           git config user.email "timewalk-bot@users.noreply.github.com"
           git add diagnostics/map-tile-test.txt
-          git commit -m "Record historical map tile diagnostic"
+          git commit -m "Update historical map tile diagnostic"
           git push
