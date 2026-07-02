@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import CourseRouteMapLoader from "../../components/CourseRouteMapLoader";
@@ -10,6 +11,50 @@ import {
 import { fetchSpots } from "../../lib/timewalkData";
 
 export const revalidate = 300;
+
+const BASE_URL = "https://timewalk.yuru-rekishi-sanpo.com";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const course = await getCourseById(id, { revalidateSeconds: 300 });
+
+  if (!course) {
+    return {
+      title: "コースが見つかりません｜TimeWalk",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const title = `${course.title}｜TimeWalk`;
+  const description = course.description || `${course.area}を歩く歴史散歩コースです。`;
+  const url = `${BASE_URL}/courses/${course.id}`;
+  const images = course.eyecatchImage
+    ? [{ url: course.eyecatchImage, alt: `${course.title}のアイキャッチ画像` }]
+    : undefined;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      type: "article",
+      images,
+    },
+    twitter: {
+      card: course.eyecatchImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: course.eyecatchImage ? [course.eyecatchImage] : undefined,
+    },
+  };
+}
 
 function getGoogleMapsUrl(lat: number, lng: number) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
@@ -82,6 +127,15 @@ export default async function CoursePage({
 
         <p className="mb-2 text-xs font-bold text-yellow-300">歴史さんぽコース</p>
         <h1 className="mb-3 text-2xl font-bold">{course.title}</h1>
+
+        {course.eyecatchImage && (
+          <img
+            src={course.eyecatchImage}
+            alt={`${course.title}のアイキャッチ画像`}
+            className="mb-4 aspect-video w-full rounded-2xl bg-black object-cover"
+          />
+        )}
+
         <p className="mb-4 text-sm leading-relaxed text-slate-300">{course.description}</p>
         <p className="mb-4 rounded-xl bg-slate-800 p-3 text-center text-sm font-bold">
           {course.area} / {formatCourseDistance(course.distanceKm)} / {course.durationLabel || `約${course.durationMin}分`}
