@@ -35,6 +35,15 @@ function makeCourseId(title: string) {
   return latin || `course-${Date.now()}`;
 }
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("画像を読み込めませんでした。"));
+    reader.readAsDataURL(file);
+  });
+}
+
 function getTodayDate() {
   const now = new Date();
   const year = now.getFullYear();
@@ -56,6 +65,10 @@ export default function AdminCoursesPage() {
   const [area, setArea] = useState("");
   const [courseId, setCourseId] = useState("");
   const [status, setStatus] = useState("draft");
+  const [eyecatchImage, setEyecatchImage] = useState("");
+  const [eyecatchImageBase64, setEyecatchImageBase64] = useState("");
+  const [removeEyecatchImage, setRemoveEyecatchImage] = useState(false);
+  const [eyecatchInputKey, setEyecatchInputKey] = useState(0);
   const [points, setPoints] = useState<CoursePoint[]>([]);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
@@ -124,6 +137,10 @@ export default function AdminCoursesPage() {
     setDescription("");
     setArea("");
     setStatus("draft");
+    setEyecatchImage("");
+    setEyecatchImageBase64("");
+    setRemoveEyecatchImage(false);
+    setEyecatchInputKey((value) => value + 1);
     setPoints([]);
     setMessage("新規コースを作成します。");
   }
@@ -144,6 +161,10 @@ export default function AdminCoursesPage() {
     setDescription(course.description);
     setArea(course.area);
     setStatus(course.status || "draft");
+    setEyecatchImage(course.eyecatchImage || "");
+    setEyecatchImageBase64("");
+    setRemoveEyecatchImage(false);
+    setEyecatchInputKey((value) => value + 1);
     setPoints(
       storedCoursePoints
         .filter((point) => point.courseId === id)
@@ -219,6 +240,36 @@ export default function AdminCoursesPage() {
     });
   }
 
+  async function onEyecatchChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setMessage("画像ファイルを選択してください。");
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      setMessage("アイキャッチ画像は12MB以下にしてください。");
+      return;
+    }
+
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setEyecatchImageBase64(dataUrl);
+      setEyecatchImage(dataUrl);
+      setRemoveEyecatchImage(false);
+      setMessage("アイキャッチ画像を選択しました。コース保存時にCloudinaryへ登録します。");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "画像を読み込めませんでした。");
+    }
+  }
+
+  function clearEyecatch() {
+    setEyecatchImage("");
+    setEyecatchImageBase64("");
+    setRemoveEyecatchImage(true);
+    setEyecatchInputKey((value) => value + 1);
+  }
+
   async function saveCourse() {
     if (!date) {
       setMessage("日付を入力してください。");
@@ -254,6 +305,9 @@ export default function AdminCoursesPage() {
             distanceKm: Math.round(distanceKm * 100) / 100,
             durationMin,
             durationLabel: formatCourseDuration(durationMin),
+            eyecatchImage: eyecatchImage.startsWith("data:") ? "" : eyecatchImage,
+            eyecatchImageBase64,
+            removeEyecatchImage,
           },
           points: normalizeOrders(points).map((point) => ({ ...point, courseId: finalId })),
         }),
@@ -271,7 +325,13 @@ export default function AdminCoursesPage() {
       if (savedCourse) {
         setStatus(savedCourse.status || status);
         setDate(savedCourse.date || date);
+        setEyecatchImage(savedCourse.eyecatchImage || json.eyecatchImage || eyecatchImage);
+      } else if (json.eyecatchImage) {
+        setEyecatchImage(json.eyecatchImage);
       }
+      setEyecatchImageBase64("");
+      setRemoveEyecatchImage(false);
+      setEyecatchInputKey((value) => value + 1);
       setMessage(`${selectedExistingId ? "更新" : "保存"}しました：${finalId}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "保存に失敗しました。");
@@ -337,6 +397,38 @@ export default function AdminCoursesPage() {
               <option value="draft">draft</option>
               <option value="ready">ready</option>
             </select>
+
+            <label>アイキャッチ画像</label>
+            <div style={{ margin: "4px 0 12px", border: "1px solid #aaa", borderRadius: 8, padding: 10, background: "#fafafa" }}>
+              <input
+                key={eyecatchInputKey}
+                type="file"
+                accept="image/*"
+                onChange={onEyecatchChange}
+                disabled={saving}
+                style={{ display: "block", width: "100%", color: "#111" }}
+              />
+              <p style={{ margin: "8px 0", fontSize: 12, color: "#555" }}>
+                16:9・横1200px以上を推奨。保存時にWebPへ変換してCloudinaryへ登録します。
+              </p>
+              {eyecatchImage && (
+                <>
+                  <img
+                    src={eyecatchImage}
+                    alt="アイキャッチ画像プレビュー"
+                    style={{ display: "block", width: "100%", aspectRatio: "16 / 9", objectFit: "cover", borderRadius: 6, background: "#111" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={clearEyecatch}
+                    disabled={saving}
+                    style={{ marginTop: 8, padding: "7px 12px", border: "1px solid #b91c1c", borderRadius: 6, background: "#fff", color: "#b91c1c", fontWeight: 700 }}
+                  >
+                    画像を削除
+                  </button>
+                </>
+              )}
+            </div>
 
             <div style={{ padding: 12, background: "#eef5ff", marginBottom: 12 }}>
               <strong>{formatCourseDistance(distanceKm)} / {formatCourseDuration(durationMin)}</strong>
