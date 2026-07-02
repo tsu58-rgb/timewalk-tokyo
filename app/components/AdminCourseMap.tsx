@@ -36,6 +36,7 @@ export default function AdminCourseMap({
   const markerLayerRef = useRef<any>(null);
   const selectedLayerRef = useRef<any>(null);
   const pendingWaypointMarkerRef = useRef<any>(null);
+  const lastFittedCourseKeyRef = useRef("");
   const callbacksRef = useRef({ onSpotSelect, onWaypointAdd });
   const spotsRef = useRef<SelectableSpot[]>(spots);
   const [mapReady, setMapReady] = useState(false);
@@ -153,6 +154,7 @@ export default function AdminCourseMap({
       markerLayerRef.current = null;
       selectedLayerRef.current = null;
       pendingWaypointMarkerRef.current = null;
+      lastFittedCourseKeyRef.current = "";
     };
   }, []);
 
@@ -225,20 +227,23 @@ export default function AdminCourseMap({
   }, [spots, mapReady]);
 
   useEffect(() => {
-    if (!mapReady || !selectedLayerRef.current) return;
+    if (!mapReady || !mapRef.current || !selectedLayerRef.current) return;
 
     let cancelled = false;
 
     async function renderSelected() {
       const L = await import("leaflet");
-      if (cancelled || !selectedLayerRef.current) return;
+      if (cancelled || !mapRef.current || !selectedLayerRef.current) return;
 
+      const map = mapRef.current;
       const layer = selectedLayerRef.current;
       layer.clearLayers();
 
       const positions: [number, number][] = [];
 
       points.forEach((point, index) => {
+        if (!Number.isFinite(point.lat) || !Number.isFinite(point.lng)) return;
+
         positions.push([point.lat, point.lng]);
 
         const icon = L.divIcon({
@@ -263,6 +268,28 @@ export default function AdminCourseMap({
           opacity: 0.8,
         }).addTo(layer);
       }
+
+      if (positions.length === 0) {
+        lastFittedCourseKeyRef.current = "";
+        return;
+      }
+
+      const courseKey = String(points[0]?.courseId || "").trim();
+      if (!courseKey || lastFittedCourseKeyRef.current === courseKey) return;
+
+      lastFittedCourseKeyRef.current = courseKey;
+      requestAnimationFrame(() => {
+        map.invalidateSize();
+        if (positions.length === 1) {
+          map.setView(positions[0], 16);
+          return;
+        }
+
+        map.fitBounds(L.latLngBounds(positions), {
+          padding: [48, 48],
+          maxZoom: 16,
+        });
+      });
     }
 
     renderSelected().catch((error) => console.error(error));
