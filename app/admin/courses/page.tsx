@@ -100,6 +100,7 @@ function isCloudinaryUrl(value: unknown) {
 }
 
 export default function AdminCoursesPage() {
+  const eyecatchInputRef = useRef<HTMLInputElement | null>(null);
   const previewObjectUrlRef = useRef("");
 
   const [pagePassword, setPagePassword] = useState("");
@@ -462,12 +463,14 @@ export default function AdminCoursesPage() {
       courseId: finalId,
     }));
 
+    const selectedEyecatch = eyecatchInputRef.current?.files?.[0] || selectedEyecatchFile;
+
     setSaving(true);
-    setMessage(selectedEyecatchFile ? "画像を読み込んでコースを更新中です..." : "コースを更新中です...");
+    setMessage(selectedEyecatch ? "画像を読み込んでコースを更新中です..." : "コースを更新中です...");
 
     try {
-      const imageBase64 = selectedEyecatchFile
-        ? await fileToDataUrlWithTimeout(selectedEyecatchFile)
+      const imageBase64 = selectedEyecatch
+        ? await fileToDataUrlWithTimeout(selectedEyecatch)
         : "";
 
       const response = await fetch("/api/admin/save-course", {
@@ -496,7 +499,7 @@ export default function AdminCoursesPage() {
       const json = await response.json();
       if (!json.ok) throw new Error(json.error || "保存に失敗しました。");
 
-      if (selectedEyecatchFile && !isCloudinaryUrl(json.eyecatchImage)) {
+      if (selectedEyecatch && !isCloudinaryUrl(json.eyecatchImage)) {
         throw new Error("コース情報は更新されましたが、アイキャッチ画像のCloudinary登録に失敗しました。");
       }
 
@@ -661,10 +664,12 @@ export default function AdminCoursesPage() {
             <label>アイキャッチ画像</label>
             <div style={{ margin: "4px 0 12px", border: "1px solid #aaa", borderRadius: 8, padding: 10, background: "#fafafa" }}>
               <input
+                ref={eyecatchInputRef}
                 key={eyecatchInputKey}
                 type="file"
                 accept="image/*"
-                onChange={onEyecatchChange}
+                onInput={() => { if (eyecatchInputRef.current?.files?.[0]) setExplicitDirty(true); }}
+                onChange={(event) => { setExplicitDirty(true); void onEyecatchChange(event); }}
                 disabled={saving}
                 style={{ display: "block", width: "100%", color: "#111" }}
               />
