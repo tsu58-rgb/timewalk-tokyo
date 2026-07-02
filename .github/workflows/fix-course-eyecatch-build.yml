@@ -1,0 +1,38 @@
+name: Fix course eyecatch build
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Correct dirty state setter
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/admin/courses/page.tsx')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('setExplicitDirty(true)', 'setImageDirty(true)')
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit when needed
+        run: |
+          if git diff --quiet; then
+            echo "No patch needed"
+            exit 0
+          fi
+          git config user.name "TimeWalk Bot"
+          git config user.email "timewalk-bot@users.noreply.github.com"
+          git add app/admin/courses/page.tsx
+          git commit -m "Fix course eyecatch dirty state build"
+          git push
