@@ -13,20 +13,21 @@ function asTileNumber(value: string) {
 function upstreamCandidates(layer: string, z: number, x: number, y: number) {
   if (layer === "edo-kiriezu") {
     return [
-      `https://mapwarper.h-gis.jp/mosaics/tile/25/${z}/${x}/${y}`,
       `https://mapwarper.h-gis.jp/mosaics/tile/25/${z}/${x}/${y}.png`,
+      `https://mapwarper.h-gis.jp/mosaics/tile/25/${z}/${x}/${y}`,
     ];
   }
 
   if (layer === "meiji-rapid") {
     return [
+      `https://boiledorange73.sakura.ne.jp/ws/tile/Kanto_Rapid-900913/${z}/${x}/${y}.jpg`,
       `https://aginfo.cgk.affrc.go.jp/ws/tmc/1.0.0/Kanto_Rapid-900913-L/${z}/${x}/${y}.png`,
-      `https://boiledorange73.sakura.ne.jp/ws/tile/Kanto_Rapid-900913/${z}/${x}/${y}.png`,
     ];
   }
 
   if (layer === "meiji-tokyo-5000") {
     return [
+      `https://boiledorange73.sakura.ne.jp/ws/tile/Tokyo5000-900913/${z}/${x}/${y}.jpg`,
       `https://aginfo.cgk.affrc.go.jp/ws/tmc/1.0.0/Tokyo5000-900913-L/${z}/${x}/${y}.png`,
     ];
   }
@@ -46,7 +47,7 @@ export async function GET(
 
   const z = asTileNumber(zText);
   const x = asTileNumber(xText);
-  const y = asTileNumber(yText.replace(/\.png$/i, ""));
+  const y = asTileNumber(yText.replace(/\.(png|jpe?g)$/i, ""));
 
   if (z === null || x === null || y === null || z > 20) {
     return NextResponse.json({ error: "タイル座標が不正です。" }, { status: 400 });
@@ -60,20 +61,26 @@ export async function GET(
           "User-Agent": "Mozilla/5.0 TimeWalk historical map tile proxy",
           Referer: new URL(url).origin + "/",
         },
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(12000),
         cache: "no-store",
       });
 
       const contentType = response.headers.get("content-type") || "";
-      if (!response.ok || !contentType.toLowerCase().startsWith("image/")) continue;
+      if (!response.ok) continue;
 
       const body = await response.arrayBuffer();
       if (body.byteLength === 0) continue;
 
+      const normalizedContentType = contentType.toLowerCase().startsWith("image/")
+        ? contentType
+        : url.toLowerCase().endsWith(".jpg") || url.toLowerCase().endsWith(".jpeg")
+          ? "image/jpeg"
+          : "image/png";
+
       return new Response(body, {
         status: 200,
         headers: {
-          "Content-Type": contentType,
+          "Content-Type": normalizedContentType,
           "Cache-Control": "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000",
           "X-TimeWalk-Tile-Source": new URL(url).hostname,
         },
