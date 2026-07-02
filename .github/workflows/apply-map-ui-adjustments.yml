@@ -22,6 +22,7 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
 
           home_path = Path('app/components/TimeWalkHome.tsx')
           home = home_path.read_text(encoding='utf-8')
@@ -31,23 +32,14 @@ jobs:
             'setError("位置情報が取得できないため表示できません。");'
           )
 
-          old_location = '''        <div className="flex items-center justify-center gap-2 mb-4">
-          {address ? (
-            <>
-              <p className="text-sm text-slate-300">📍 {address}</p>
-              <button
-                onClick={() => getCurrentLocation(true)}
-                className="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-bold whitespace-nowrap"
-              >
-                {locationLoading ? "取得中" : "現在地"}
-              </button>
-            </>
-          ) : (
-            <a href="https://yuru-rekishi-sanpo.com/timewalk#toc11" target="_blank" rel="noopener noreferrer" className="text-sm text-yellow-300 underline font-bold">位置情報サービスをオンにしてください</a>
-          )}
-        </div>
-'''
-          new_location = '''        {address && (
+          location_pattern = re.compile(
+            r'\n\s*<div className="flex items-center justify-center gap-2 mb-4">\s*'
+            r'\{address \? \(.*?\) : \(.*?\)\}\s*'
+            r'</div>\s*\n',
+            re.S,
+          )
+          location_replacement = '''
+        {address && (
           <div className="flex items-center justify-center gap-2 mb-4">
             <p className="text-sm text-slate-300">📍 {address}</p>
             <button
@@ -59,24 +51,18 @@ jobs:
           </div>
         )}
 '''
-          if old_location not in home:
-            raise SystemExit('Top location block not found')
-          home = home.replace(old_location, new_location, 1)
+          home, count = location_pattern.subn(location_replacement, home, count=1)
+          if count != 1:
+            raise SystemExit(f'Location block replacements: {count}')
 
-          old_messages = '''        {error && !position && <p className="bg-red-900 rounded-xl p-3 mb-4 text-sm">{error}</p>}
-        {!position && !error && <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">基準地点を取得中です。</p>}
-        {position && selectedTags.length === 0 && <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">タグが選択されていません。</p>}
+          start_marker = '        {error && !position && <p className="bg-red-900 rounded-xl p-3 mb-4 text-sm">{error}</p>}'
+          end_marker = '        {visibleSpots.length === 0 ? ('
+          start = home.find(start_marker)
+          end = home.find(end_marker, start)
+          if start < 0 or end < 0:
+            raise SystemExit(f'Message block markers not found: start={start}, end={end}')
 
-        <div className="mb-3">
-          <p className="font-bold">近くの歴史スポット</p>
-          <p className="text-xs text-slate-400 mt-1">{visibleSpots.length}件（最大{DISPLAY_LIMIT}件表示）</p>
-        </div>
-
-        {visibleSpots.length === 0 ? (
-          <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">条件に合う登録スポットがありません。</p>
-        ) : (
-'''
-          new_messages = '''        {position && selectedTags.length === 0 && <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">タグが選択されていません。</p>}
+          replacement = '''        {position && selectedTags.length === 0 && <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">タグが選択されていません。</p>}
 
         <div className="mb-3">
           <p className="font-bold">近くの歴史スポット</p>
@@ -87,12 +73,8 @@ jobs:
         {!position && !error && <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">基準地点を取得中です。</p>}
 
         {!position ? null : visibleSpots.length === 0 ? (
-          <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">条件に合う登録スポットがありません。</p>
-        ) : (
 '''
-          if old_messages not in home:
-            raise SystemExit('Location/list message block not found')
-          home = home.replace(old_messages, new_messages, 1)
+          home = home[:start] + replacement + home[end + len(end_marker):]
           home_path.write_text(home, encoding='utf-8')
 
           course_path = Path('app/courses/[id]/page.tsx')
