@@ -111,7 +111,7 @@ export default function CoursesSearchList({ courses }: { courses: SearchableCour
                     {String(course.sequenceNumber).padStart(2, "0")}.{course.title}
                   </h2>
                   <p className="mt-2 truncate text-sm font-bold leading-5 text-white">
-                    {course.area} / {formatCourseDistance(course.distanceKm)} / {course.durationLabel || `約${course.durationMin}分`}
+                    {formatCourseDistance(course.distanceKm)} / {course.durationLabel || `約${course.durationMin}分`}
                   </p>
                 </div>
 
