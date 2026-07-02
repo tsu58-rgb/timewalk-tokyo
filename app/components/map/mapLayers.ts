@@ -4,6 +4,9 @@ export type MapLayerId =
   | "edo-kiriezu"
   | "meiji-rapid"
   | "meiji-tokyo-5000"
+  | "gsi-swale"
+  | "gsi-sekishoku"
+  | "gsi-lcmfc2"
   | "gsi-hillshade"
   | "gsi-photo"
   | "gsi-photo-1945"
@@ -17,7 +20,8 @@ export type MapLayer = {
   attribution: string;
   minNativeZoom?: number;
   maxNativeZoom?: number;
-  tms?: boolean;
+  showPaleBase?: boolean;
+  opacity?: number;
 };
 
 export const GSI_ATTRIBUTION =
@@ -28,6 +32,9 @@ const EDO_KIRIEZU_ATTRIBUTION =
 
 const HABS_ATTRIBUTION =
   '<a href="https://habs.rad.naro.go.jp/" target="_blank" rel="noopener noreferrer">農研機構農業環境研究部門・歴史的農業環境閲覧システム</a>';
+
+export const PALE_MAP_URL =
+  "https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png";
 
 export const mapLayers: MapLayer[] = [
   {
@@ -43,7 +50,7 @@ export const mapLayers: MapLayer[] = [
     label: "地理院 淡色地図",
     description: "ピンが見やすい淡色地図",
     attribution: GSI_ATTRIBUTION,
-    url: "https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png",
+    url: PALE_MAP_URL,
     maxNativeZoom: 18,
   },
   {
@@ -51,27 +58,61 @@ export const mapLayers: MapLayer[] = [
     label: "江戸時代 江戸切絵図",
     description: "江戸市中の切絵図を現在の位置に重ねた古地図",
     attribution: EDO_KIRIEZU_ATTRIBUTION,
-    url: "https://mapwarper.h-gis.jp/mosaics/tile/25/{z}/{x}/{y}",
+    url: "/api/map-tiles/edo-kiriezu/{z}/{x}/{y}",
+    minNativeZoom: 10,
+    maxNativeZoom: 18,
+    showPaleBase: true,
   },
   {
     id: "meiji-rapid",
     label: "明治時代 迅速測図",
     description: "1880年代の関東地方を広域で見られる2万分の1迅速測図",
     attribution: HABS_ATTRIBUTION,
-    url: "https://habs.rad.naro.go.jp/rapid16/{z}/{x}/{y}.png",
+    url: "/api/map-tiles/meiji-rapid/{z}/{x}/{y}",
     minNativeZoom: 8,
     maxNativeZoom: 16,
-    tms: true,
+    showPaleBase: true,
   },
   {
     id: "meiji-tokyo-5000",
     label: "明治時代 東京五千分一",
     description: "1880年代の東京中心部を精密に見られる五千分の一測量図",
     attribution: HABS_ATTRIBUTION,
-    url: "https://habs.rad.naro.go.jp/tokyo5k/{z}/{x}/{y}.png",
-    minNativeZoom: 8,
+    url: "/api/map-tiles/meiji-tokyo-5000/{z}/{x}/{y}",
+    minNativeZoom: 10,
     maxNativeZoom: 17,
-    tms: true,
+    showPaleBase: true,
+  },
+  {
+    id: "gsi-swale",
+    label: "地理院 明治期の低湿地",
+    description: "明治期に河川・湿地・水田だった低湿地を確認できる地図",
+    attribution: GSI_ATTRIBUTION,
+    url: "https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png",
+    minNativeZoom: 10,
+    maxNativeZoom: 16,
+    showPaleBase: true,
+    opacity: 0.78,
+  },
+  {
+    id: "gsi-sekishoku",
+    label: "地理院 赤色立体地図",
+    description: "地形の微細な起伏を赤色の濃淡で読み取れる地図",
+    attribution: GSI_ATTRIBUTION,
+    url: "https://cyberjapandata.gsi.go.jp/xyz/sekishoku/{z}/{x}/{y}.png",
+    minNativeZoom: 2,
+    maxNativeZoom: 14,
+  },
+  {
+    id: "gsi-lcmfc2",
+    label: "地理院 治水地形分類図",
+    description: "旧河道・自然堤防・後背湿地など河川沿いの地形分類図",
+    attribution: GSI_ATTRIBUTION,
+    url: "https://cyberjapandata.gsi.go.jp/xyz/lcmfc2/{z}/{x}/{y}.png",
+    minNativeZoom: 11,
+    maxNativeZoom: 16,
+    showPaleBase: true,
+    opacity: 0.82,
   },
   {
     id: "gsi-hillshade",
