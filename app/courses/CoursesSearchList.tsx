@@ -72,17 +72,28 @@ export default function CoursesSearchList({ courses }: { courses: SearchableCour
           <Link
             key={course.id}
             href={`/courses/${course.id}`}
-            className="block rounded-2xl border border-slate-600 bg-slate-800 p-4 hover:border-yellow-300"
+            className="block overflow-hidden rounded-2xl border border-slate-600 bg-slate-800 hover:border-yellow-300"
           >
-            <h2 className="mb-2 font-bold text-yellow-300">
-              {String(course.sequenceNumber).padStart(2, "0")}.{course.title}
-            </h2>
-            <p className="text-sm font-bold text-white">
-              {course.area} / {formatCourseDistance(course.distanceKm)} / {course.durationLabel || `約${course.durationMin}分`}
-            </p>
-            {course.description && (
-              <p className="mt-2 text-sm leading-relaxed text-slate-300">{course.description}</p>
+            {course.eyecatchImage && (
+              <img
+                src={course.eyecatchImage}
+                alt={`${course.title}のアイキャッチ画像`}
+                loading="lazy"
+                decoding="async"
+                className="aspect-video w-full bg-black object-cover"
+              />
             )}
+            <div className="p-4">
+              <h2 className="mb-2 font-bold text-yellow-300">
+                {String(course.sequenceNumber).padStart(2, "0")}.{course.title}
+              </h2>
+              <p className="text-sm font-bold text-white">
+                {course.area} / {formatCourseDistance(course.distanceKm)} / {course.durationLabel || `約${course.durationMin}分`}
+              </p>
+              {course.description && (
+                <p className="mt-2 text-sm leading-relaxed text-slate-300">{course.description}</p>
+              )}
+            </div>
           </Link>
         ))}
       </div>
