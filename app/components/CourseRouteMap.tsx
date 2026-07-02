@@ -15,6 +15,21 @@ import {
 } from "react-leaflet";
 
 import type { CoursePoint } from "../lib/courses";
+import {
+  defaultMapLayerId,
+  GSI_ATTRIBUTION,
+  mapLayers,
+  PALE_MAP_URL,
+  type MapLayerId,
+} from "./map/mapLayers";
+import MapLayerSelector from "./map/MapLayerSelector";
+
+type BackgroundSpot = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+};
 
 function FitCourseBounds({ points }: { points: CoursePoint[] }) {
   const map = useMap();
@@ -41,17 +56,25 @@ function numberIcon(number: number) {
 
 export default function CourseRouteMap({
   points,
+  allSpots,
   height = "340px",
 }: {
   points: CoursePoint[];
+  allSpots: BackgroundSpot[];
   height?: string;
 }) {
   const [currentPosition, setCurrentPosition] = useState<[number, number] | null>(null);
+  const [selectedLayerId, setSelectedLayerId] = useState<MapLayerId>(defaultMapLayerId);
   const positions = useMemo(
     () => points.map((point) => [point.lat, point.lng] as [number, number]),
     [points]
   );
   const center = positions[0] || ([35.681236, 139.767125] as [number, number]);
+  const selectedLayer = mapLayers.find((layer) => layer.id === selectedLayerId) || mapLayers[0];
+  const courseSpotIds = useMemo(
+    () => new Set(points.filter((point) => point.pointType === "spot").map((point) => point.spotId)),
+    [points]
+  );
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -94,17 +117,11 @@ export default function CourseRouteMap({
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        startUpdates();
-      } else {
-        stopUpdates();
-      }
+      if (document.visibilityState === "visible") startUpdates();
+      else stopUpdates();
     };
 
-    if (document.visibilityState === "visible") {
-      startUpdates();
-    }
-
+    if (document.visibilityState === "visible") startUpdates();
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
@@ -115,50 +132,103 @@ export default function CourseRouteMap({
   }, []);
 
   return (
-    <MapContainer
-      center={center}
-      zoom={15}
-      style={{ width: "100%", height, borderRadius: 16, overflow: "hidden" }}
-    >
-      <TileLayer
-        attribution="&copy; OpenStreetMap contributors"
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        maxZoom={18}
-      />
-      <FitCourseBounds points={points} />
-      {positions.length >= 2 && (
-        <Polyline
-          positions={positions}
-          pathOptions={{ color: "#2563eb", weight: 5, opacity: 0.8 }}
+    <div style={{ position: "relative" }}>
+      <MapLayerSelector selectedLayerId={selectedLayerId} onChange={setSelectedLayerId} />
+      <MapContainer
+        center={center}
+        zoom={15}
+        style={{ width: "100%", height, borderRadius: 16, overflow: "hidden" }}
+      >
+        {selectedLayer.showPaleBase && (
+          <TileLayer
+            key={`course-pale-${selectedLayer.id}`}
+            attribution={GSI_ATTRIBUTION}
+            url={PALE_MAP_URL}
+            maxNativeZoom={18}
+            maxZoom={18}
+          />
+        )}
+        <TileLayer
+          key={`course-selected-${selectedLayer.id}`}
+          attribution={selectedLayer.attribution}
+          url={selectedLayer.url}
+          minNativeZoom={selectedLayer.minNativeZoom}
+          maxNativeZoom={selectedLayer.maxNativeZoom}
+          opacity={selectedLayer.opacity ?? 1}
+          maxZoom={18}
         />
-      )}
-      {points.map((point, index) => (
-        <Marker
-          key={point.pointId}
-          position={[point.lat, point.lng]}
-          icon={numberIcon(index + 1)}
-        >
-          <Popup>
-            {index + 1}. {point.name}
-          </Popup>
-        </Marker>
-      ))}
-      {currentPosition && (
-        <Pane name="course-current-location-pane" style={{ zIndex: 1000 }}>
-          <CircleMarker
-            center={currentPosition}
-            radius={10}
-            pathOptions={{
-              color: "#fff",
-              weight: 3,
-              fillColor: "#3b82f6",
-              fillOpacity: 1,
-            }}
-          >
-            <Popup>現在地</Popup>
-          </CircleMarker>
+
+        <FitCourseBounds points={points} />
+
+        <Pane name="course-background-spots" style={{ zIndex: 430 }}>
+          {allSpots
+            .filter(
+              (spot) =>
+                Number.isFinite(spot.lat) &&
+                Number.isFinite(spot.lng) &&
+                !courseSpotIds.has(spot.id)
+            )
+            .map((spot) => (
+              <CircleMarker
+                key={`background-${spot.id}`}
+                center={[spot.lat, spot.lng]}
+                radius={3.5}
+                pathOptions={{
+                  color: "#dc2626",
+                  weight: 0,
+                  fillColor: "#dc2626",
+                  fillOpacity: 1,
+                }}
+              >
+                <Popup>
+                  <div>
+                    <strong>{spot.name}</strong>
+                    <br />
+                    <a href={`/spot/${spot.id}`}>詳細ページを見る</a>
+                  </div>
+                </Popup>
+              </CircleMarker>
+            ))}
         </Pane>
-      )}
-    </MapContainer>
+
+        {positions.length >= 2 && (
+          <Polyline
+            positions={positions}
+            pathOptions={{ color: "#2563eb", weight: 5, opacity: 0.8 }}
+          />
+        )}
+
+        <Pane name="course-numbered-points" style={{ zIndex: 650 }}>
+          {points.map((point, index) => (
+            <Marker
+              key={point.pointId}
+              position={[point.lat, point.lng]}
+              icon={numberIcon(index + 1)}
+            >
+              <Popup>
+                {index + 1}. {point.name}
+              </Popup>
+            </Marker>
+          ))}
+        </Pane>
+
+        {currentPosition && (
+          <Pane name="course-current-location-pane" style={{ zIndex: 1000 }}>
+            <CircleMarker
+              center={currentPosition}
+              radius={10}
+              pathOptions={{
+                color: "#fff",
+                weight: 3,
+                fillColor: "#3b82f6",
+                fillOpacity: 1,
+              }}
+            >
+              <Popup>現在地</Popup>
+            </CircleMarker>
+          </Pane>
+        )}
+      </MapContainer>
+    </div>
   );
 }
