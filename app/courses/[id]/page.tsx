@@ -143,7 +143,15 @@ export default async function CoursePage({
 
         {points.length > 0 ? (
           <div className="mb-4">
-            <CourseRouteMapLoader points={points} />
+            <CourseRouteMapLoader
+    points={points}
+    allSpots={spots.map((spot) => ({
+      id: spot.id,
+      name: spot.name,
+      lat: spot.lat,
+      lng: spot.lng,
+    }))}
+  />
           </div>
         ) : (
           <p className="mb-4 rounded-xl bg-slate-800 p-3 text-sm">
