@@ -17,12 +17,6 @@ export default function OfflinePage() {
           通信状況を確認してから、もう一度読み込んでください。一度表示したページは端末に残っている場合があります。
         </p>
         <div className="mt-8 grid gap-3">
-          <button
-            type="button"
-            onClick={undefined}
-            className="hidden"
-            aria-hidden="true"
-          />
           <Link
             href="/"
             className="rounded-xl bg-yellow-300 px-5 py-3 font-black text-slate-950"
