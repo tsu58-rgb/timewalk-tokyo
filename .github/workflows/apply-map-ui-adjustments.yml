@@ -1,4 +1,4 @@
-name: Apply map UI adjustments
+name: Apply course map props
 
 on:
   push:
@@ -17,70 +17,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Patch TimeWalk home and course page
+      - name: Pass all spots to course map
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
-
-          home_path = Path('app/components/TimeWalkHome.tsx')
-          home = home_path.read_text(encoding='utf-8')
-
-          home = home.replace(
-            'setError("位置情報が取得できません: " + err.message);',
-            'setError("位置情報が取得できないため表示できません。");'
-          )
-
-          location_pattern = re.compile(
-            r'\n\s*<div className="flex items-center justify-center gap-2 mb-4">\s*'
-            r'\{address \? \(.*?\) : \(.*?\)\}\s*'
-            r'</div>\s*\n',
-            re.S,
-          )
-          location_replacement = '''
-        {address && (
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <p className="text-sm text-slate-300">📍 {address}</p>
-            <button
-              onClick={() => getCurrentLocation(true)}
-              className="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm font-bold whitespace-nowrap"
-            >
-              {locationLoading ? "取得中" : "現在地"}
-            </button>
-          </div>
-        )}
-'''
-          home, count = location_pattern.subn(location_replacement, home, count=1)
-          if count != 1:
-            raise SystemExit(f'Location block replacements: {count}')
-
-          start_marker = '        {error && !position && <p className="bg-red-900 rounded-xl p-3 mb-4 text-sm">{error}</p>}'
-          end_marker = '        {visibleSpots.length === 0 ? ('
-          start = home.find(start_marker)
-          end = home.find(end_marker, start)
-          if start < 0 or end < 0:
-            raise SystemExit(f'Message block markers not found: start={start}, end={end}')
-
-          replacement = '''        {position && selectedTags.length === 0 && <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">タグが選択されていません。</p>}
-
-        <div className="mb-3">
-          <p className="font-bold">近くの歴史スポット</p>
-          <p className="text-xs text-slate-400 mt-1">{visibleSpots.length}件（最大{DISPLAY_LIMIT}件表示）</p>
-        </div>
-
-        {error && !position && <p className="bg-red-900 rounded-xl p-3 mb-4 text-sm">位置情報が取得できないため表示できません。</p>}
-        {!position && !error && <p className="bg-slate-800 rounded-xl p-3 mb-4 text-sm">基準地点を取得中です。</p>}
-
-        {!position ? null : visibleSpots.length === 0 ? (
-'''
-          home = home[:start] + replacement + home[end + len(end_marker):]
-          home_path.write_text(home, encoding='utf-8')
-
-          course_path = Path('app/courses/[id]/page.tsx')
-          course = course_path.read_text(encoding='utf-8')
-          old_map = '<CourseRouteMapLoader points={points} />'
-          new_map = '''<CourseRouteMapLoader
+          path = Path('app/courses/[id]/page.tsx')
+          text = path.read_text(encoding='utf-8')
+          old = '<CourseRouteMapLoader points={points} />'
+          new = '''<CourseRouteMapLoader
               points={points}
               allSpots={spots.map((spot) => ({
                 id: spot.id,
@@ -89,16 +33,14 @@ jobs:
                 lng: spot.lng,
               }))}
             />'''
-          if old_map not in course:
-            raise SystemExit('CourseRouteMapLoader call not found')
-          course = course.replace(old_map, new_map, 1)
-          course_path.write_text(course, encoding='utf-8')
+          if old not in text:
+            raise SystemExit('Course map call not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
           PY
-
       - name: Commit patch
         run: |
           git config user.name "TimeWalk Bot"
           git config user.email "timewalk-bot@users.noreply.github.com"
-          git add app/components/TimeWalkHome.tsx app/courses/[id]/page.tsx
-          git commit -m "Adjust geolocation messages and enrich course maps"
+          git add app/courses/[id]/page.tsx
+          git commit -m "Pass all spots to course map"
           git push
