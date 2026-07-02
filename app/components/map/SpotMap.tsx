@@ -7,7 +7,13 @@ import type L from "leaflet";
 
 import { clusterSpots, type ClusterItem } from "./clusterSpots";
 import ClusterMarker from "./ClusterMarker";
-import { defaultMapLayerId, mapLayers, type MapLayerId } from "./mapLayers";
+import {
+  defaultMapLayerId,
+  GSI_ATTRIBUTION,
+  mapLayers,
+  PALE_MAP_URL,
+  type MapLayerId,
+} from "./mapLayers";
 import MapLayerSelector from "./MapLayerSelector";
 import SpotMarker, { type SpotMarkerItem } from "./SpotMarker";
 
@@ -143,12 +149,23 @@ export default function SpotMap({
           overflow: "hidden",
         }}
       >
+        {selectedLayer.showPaleBase && (
+          <TileLayer
+            key={`pale-base-${selectedLayer.id}`}
+            attribution={GSI_ATTRIBUTION}
+            url={PALE_MAP_URL}
+            maxNativeZoom={18}
+            maxZoom={18}
+          />
+        )}
+
         <TileLayer
+          key={`selected-${selectedLayer.id}`}
           attribution={selectedLayer.attribution}
           url={selectedLayer.url}
           minNativeZoom={selectedLayer.minNativeZoom}
           maxNativeZoom={selectedLayer.maxNativeZoom}
-          tms={selectedLayer.tms}
+          opacity={selectedLayer.opacity ?? 1}
           maxZoom={18}
         />
 
