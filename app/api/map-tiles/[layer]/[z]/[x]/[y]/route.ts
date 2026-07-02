@@ -11,8 +11,6 @@ function asTileNumber(value: string) {
 }
 
 function upstreamCandidates(layer: string, z: number, x: number, y: number) {
-  const tmsY = 2 ** z - 1 - y;
-
   if (layer === "edo-kiriezu") {
     return [
       `https://mapwarper.h-gis.jp/mosaics/tile/25/${z}/${x}/${y}`,
@@ -22,16 +20,14 @@ function upstreamCandidates(layer: string, z: number, x: number, y: number) {
 
   if (layer === "meiji-rapid") {
     return [
+      `https://aginfo.cgk.affrc.go.jp/ws/tmc/1.0.0/Kanto_Rapid-900913-L/${z}/${x}/${y}.png`,
       `https://boiledorange73.sakura.ne.jp/ws/tile/Kanto_Rapid-900913/${z}/${x}/${y}.png`,
-      `https://habs.rad.naro.go.jp/rapid16/${z}/${x}/${tmsY}.png`,
-      `https://habs.rad.naro.go.jp/rapid16/${z}/${x}/${y}.png`,
     ];
   }
 
   if (layer === "meiji-tokyo-5000") {
     return [
-      `https://habs.rad.naro.go.jp/tokyo5k/${z}/${x}/${tmsY}.png`,
-      `https://habs.rad.naro.go.jp/tokyo5k/${z}/${x}/${y}.png`,
+      `https://aginfo.cgk.affrc.go.jp/ws/tmc/1.0.0/Tokyo5000-900913-L/${z}/${x}/${y}.png`,
     ];
   }
 
@@ -60,11 +56,12 @@ export async function GET(
     try {
       const response = await fetch(url, {
         headers: {
-          Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-          "User-Agent": "TimeWalk historical map tile proxy",
+          Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+          "User-Agent": "Mozilla/5.0 TimeWalk historical map tile proxy",
+          Referer: new URL(url).origin + "/",
         },
-        signal: AbortSignal.timeout(10000),
-        next: { revalidate: 86400 },
+        signal: AbortSignal.timeout(15000),
+        cache: "no-store",
       });
 
       const contentType = response.headers.get("content-type") || "";
