@@ -74,6 +74,10 @@ function normalizeSpot(value: any): Spot {
   };
 }
 
+function serializeSpot(spot: Spot) {
+  return JSON.stringify(normalizeSpot(spot));
+}
+
 function reviewReasons(spot: Spot, characterIds: Set<string>) {
   const reasons: string[] = [];
   if (!String(spot.name || "").trim()) reasons.push("名前なし");
@@ -99,6 +103,7 @@ export default function AdminSpotsMapPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const savingRef = useRef(false);
   const selectionTokenRef = useRef(0);
+  const dirtyRef = useRef(false);
 
   const [passwordInput, setPasswordInput] = useState("");
   const [pagePassword, setPagePassword] = useState("");
@@ -111,11 +116,30 @@ export default function AdminSpotsMapPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [viewMode, setViewMode] = useState<"map" | "review">("map");
   const [pendingMove, setPendingMove] = useState<{ lat: number; lng: number } | null>(null);
+  const [savedSnapshot, setSavedSnapshot] = useState(() => serializeSpot(emptySpot));
+  const [imageDirty, setImageDirty] = useState(false);
 
   const reviewItems: ReviewItem[] = useMemo(
     () => spots.map((item) => ({ spot: item, reasons: reviewReasons(item, characterIds) })).filter((item) => item.reasons.length),
     [spots, characterIds]
   );
+
+  const currentSnapshot = useMemo(() => serializeSpot(spot), [spot]);
+  const isDirty = imageDirty || pendingMove !== null || currentSnapshot !== savedSnapshot;
+
+  useEffect(() => {
+    dirtyRef.current = isDirty;
+  }, [isDirty]);
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
 
   useEffect(() => {
     const saved = localStorage.getItem("timewalkAdminPassword");
@@ -129,12 +153,19 @@ export default function AdminSpotsMapPage() {
   }, [pagePassword]);
 
   function selectSpot(nextSpot: Spot) {
-    if (savingRef.current) return;
+    if (savingRef.current) return false;
+    if (dirtyRef.current && !window.confirm("未保存の変更があります。保存せずに別の地点へ移動しますか？")) {
+      return false;
+    }
+    const normalized = normalizeSpot(nextSpot);
     selectionTokenRef.current += 1;
-    setSpot(normalizeSpot(nextSpot));
+    setSpot(normalized);
+    setSavedSnapshot(serializeSpot(normalized));
     setPendingMove(null);
     setImageBase64("");
+    setImageDirty(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    return true;
   }
 
   async function loadCharacterIds() {
@@ -162,6 +193,7 @@ export default function AdminSpotsMapPage() {
 
     map.on("click", async (event: any) => {
       if (savingRef.current) return;
+      if (dirtyRef.current && !window.confirm("未保存の変更があります。保存せずに新しい地点を作成しますか？")) return;
       const requestToken = ++selectionTokenRef.current;
       const lat = event.latlng.lat;
       const lng = event.latlng.lng;
@@ -169,8 +201,10 @@ export default function AdminSpotsMapPage() {
       if (savingRef.current || requestToken !== selectionTokenRef.current) return;
 
       setSpot({ ...emptySpot, lat, lng, ...address });
+      setSavedSnapshot("");
       setPendingMove(null);
       setImageBase64("");
+      setImageDirty(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
       await placeNewMarker(lat, lng);
     });
@@ -239,7 +273,10 @@ export default function AdminSpotsMapPage() {
             return;
           }
           const point = event.target.getLatLng();
-          selectSpot(item.spot);
+          if (!selectSpot(item.spot)) {
+            loadExistingSpots(true);
+            return;
+          }
           setPendingMove({ lat: point.lat, lng: point.lng });
         });
         return;
@@ -357,15 +394,19 @@ export default function AdminSpotsMapPage() {
       }
 
       const { imageBase64: _unusedImageBase64, ...savedSpot } = savingSpot;
-      setSpot({
+      const nextSpot = normalizeSpot({
         ...savedSpot,
         id: json.id,
         spotsImage: json.spotsImage || savedSpot.spotsImage || "",
       });
+      setSpot(nextSpot);
+      setSavedSnapshot(serializeSpot(nextSpot));
       setImageBase64("");
+      setImageDirty(false);
+      setPendingMove(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-      setMessage(`保存しました：${json.id}`);
       await loadExistingSpots(true);
+      setMessage(`保存しました：${json.id}`);
     } catch (error) {
       console.error(error);
       setMessage("保存に失敗しました。");
@@ -449,7 +490,7 @@ export default function AdminSpotsMapPage() {
                 type="button"
                 onClick={() => {
                   if (savingRef.current) return;
-                  selectSpot(item.spot);
+                  if (!selectSpot(item.spot)) return;
                   setViewMode("map");
                   mapRef.current?.setView([item.spot.lat, item.spot.lng], 16);
                 }}
@@ -501,6 +542,7 @@ export default function AdminSpotsMapPage() {
           onChange={async (event) => {
             const file = event.target.files?.[0];
             if (!file) return;
+            setImageDirty(true);
             const reader = new FileReader();
             reader.onload = () => setImageBase64(String(reader.result));
             reader.readAsDataURL(file);
@@ -512,6 +554,19 @@ export default function AdminSpotsMapPage() {
         <textarea value={spot.description || ""} onChange={(event) => setSpot({ ...spot, description: event.target.value })} style={textareaStyle} />
         <label>trivia</label>
         <textarea value={spot.trivia || ""} onChange={(event) => setSpot({ ...spot, trivia: event.target.value })} style={textareaStyle} />
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            marginTop: 14,
+            marginBottom: 4,
+            fontSize: 18,
+            fontWeight: 900,
+            color: isSaving ? "#b45309" : isDirty ? "#dc2626" : "#16a34a",
+          }}
+        >
+          {isSaving ? "保存中" : isDirty ? "未保存" : "保存済み"}
+        </div>
         <button type="button" onClick={saveSpot} disabled={isSaving} style={buttonStyle}>{isSaving ? "保存中..." : "保存"}</button>
         <p>{message}</p>
       </aside>
