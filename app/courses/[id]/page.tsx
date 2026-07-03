@@ -144,14 +144,14 @@ export default async function CoursePage({
         {points.length > 0 ? (
           <div className="mb-4">
             <CourseRouteMapLoader
-    points={points}
-    allSpots={spots.map((spot) => ({
-      id: spot.id,
-      name: spot.name,
-      lat: spot.lat,
-      lng: spot.lng,
-    }))}
-  />
+              points={points}
+              allSpots={spots.map((spot) => ({
+                id: spot.id,
+                name: spot.name,
+                lat: spot.lat,
+                lng: spot.lng,
+              }))}
+            />
           </div>
         ) : (
           <p className="mb-4 rounded-xl bg-slate-800 p-3 text-sm">
@@ -183,14 +183,12 @@ export default async function CoursePage({
 
                         <div className="mt-2 flex flex-wrap justify-end gap-2">
                           {isSpot && (
-                            <a
+                            <Link
                               href={`/spot/${point.spotId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
                               className="whitespace-nowrap rounded-lg bg-white px-3 py-2 text-xs font-bold text-black"
                             >
-                              別タブで詳細
-                            </a>
+                              詳細をみる
+                            </Link>
                           )}
 
                           <a
