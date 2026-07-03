@@ -1,0 +1,47 @@
+
+> timewalk-tokyo@0.1.0 build
+> next build
+
+⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+▲ Next.js 16.2.4 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.7s
+  Running TypeScript ...
+  Finished TypeScript in 4.4s ...
+  Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/27) ...
+⨯ useSearchParams() should be wrapped in a suspense boundary at page "/offline". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at S (/home/runner/work/timewalk-tokyo/timewalk-tokyo/.next/server/chunks/ssr/node_modules_next_0rd0oc-._.js:2:2692)
+    at r (/home/runner/work/timewalk-tokyo/timewalk-tokyo/.next/server/chunks/ssr/node_modules_next_0rd0oc-._.js:4:6760)
+    at /home/runner/work/timewalk-tokyo/timewalk-tokyo/.next/server/chunks/ssr/_0y69z_k._.js:11:2231
+    at an (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:84267)
+    at ai (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:86086)
+    at ai (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:104615)
+    at al (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:107860)
+    at ao (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:105275)
+    at am (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:112789)
+    at au (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:109892)
+⨯ useSearchParams() should be wrapped in a suspense boundary at page "/404". Read more: https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+    at S (/home/runner/work/timewalk-tokyo/timewalk-tokyo/.next/server/chunks/ssr/node_modules_next_0rd0oc-._.js:2:2692)
+    at r (/home/runner/work/timewalk-tokyo/timewalk-tokyo/.next/server/chunks/ssr/node_modules_next_0rd0oc-._.js:4:6760)
+    at /home/runner/work/timewalk-tokyo/timewalk-tokyo/.next/server/chunks/ssr/_0y69z_k._.js:11:2231
+    at an (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:84267)
+    at ai (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:86086)
+    at ai (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:104615)
+    at al (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:107860)
+    at ao (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:105275)
+    at am (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:112789)
+    at au (/home/runner/work/timewalk-tokyo/timewalk-tokyo/node_modules/next/dist/compiled/next-server/app-page-turbo.runtime.prod.js:2:109892)
+Error occurred prerendering page "/offline". Read more: https://nextjs.org/docs/messages/prerender-error
+Export encountered an error on /offline/page: /offline, exiting the build.
+Error occurred prerendering page "/_not-found". Read more: https://nextjs.org/docs/messages/prerender-error
+Export encountered an error on /_not-found/page: /_not-found, exiting the build.
+⨯ Next.js build worker exited with code: 1 and signal: null
+
+EXIT_CODE=1
