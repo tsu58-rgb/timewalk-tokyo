@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { Suspense } from "react";
 import "./globals.css";
 import ContactFooter from "./components/ContactFooter";
 import InternalNavigationManager from "./components/InternalNavigationManager";
@@ -44,7 +45,9 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <PwaRegister />
-        <InternalNavigationManager />
+        <Suspense fallback={null}>
+          <InternalNavigationManager />
+        </Suspense>
         <NominatimPrefectureGuard />
         {children}
         <ContactFooter />
