@@ -56,42 +56,6 @@ function RecenterMap({
   return null;
 }
 
-function FitSpotsWithoutLocation({
-  spots,
-  hasCurrentPosition,
-}: {
-  spots: Spot[];
-  hasCurrentPosition: boolean;
-}) {
-  const map = useMap();
-  const fittedRef = useRef(false);
-
-  useEffect(() => {
-    if (hasCurrentPosition || fittedRef.current) return;
-
-    const validPositions = spots
-      .filter((spot) => Number.isFinite(spot.lat) && Number.isFinite(spot.lng))
-      .map((spot) => [spot.lat, spot.lng] as [number, number]);
-
-    if (validPositions.length === 0) return;
-
-    fittedRef.current = true;
-
-    if (validPositions.length === 1) {
-      map.setView(validPositions[0], 15);
-      return;
-    }
-
-    map.fitBounds(validPositions, {
-      padding: [24, 24],
-      maxZoom: 15,
-      animate: false,
-    });
-  }, [spots, hasCurrentPosition, map]);
-
-  return null;
-}
-
 function deferMarkerUpdate(callback: () => void) {
   const timeoutId = window.setTimeout(callback, 0);
   return () => window.clearTimeout(timeoutId);
@@ -203,11 +167,6 @@ export default function SpotMap({
           maxNativeZoom={selectedLayer.maxNativeZoom}
           opacity={selectedLayer.opacity ?? 1}
           maxZoom={18}
-        />
-
-        <FitSpotsWithoutLocation
-          spots={spots}
-          hasCurrentPosition={Boolean(displayedCurrentPosition)}
         />
 
         <SpotLayerController spots={spots} onItemsChange={setMapItems} />
