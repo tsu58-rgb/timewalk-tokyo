@@ -1,0 +1,43 @@
+name: Diagnose latest build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/diagnose-latest-build.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install and build
+        id: build
+        continue-on-error: true
+        run: |
+          npm ci
+          set +e
+          npm run build > diagnostics-build.log 2>&1
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Save diagnostic
+        run: |
+          mkdir -p diagnostics
+          cp diagnostics-build.log diagnostics/latest-build.log
+          printf '\nEXIT_CODE=%s\n' '${{ steps.build.outputs.exit_code }}' >> diagnostics/latest-build.log
+          git config user.name "TimeWalk Bot"
+          git config user.email "timewalk-bot@users.noreply.github.com"
+          git add diagnostics/latest-build.log
+          git commit -m "Record latest build diagnostic"
+          git push
