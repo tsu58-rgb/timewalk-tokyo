@@ -165,13 +165,14 @@ export default function CourseRouteMap({
                 center={[spot.lat, spot.lng]}
                 radius={3.5}
                 pathOptions={{
+                  className: "course-background-spot-dot",
                   color: "#dc2626",
                   weight: 0,
                   fillColor: "#dc2626",
                   fillOpacity: 1,
                 }}
               >
-                <Popup>
+                <Popup pane="course-spot-popup-pane">
                   <div>
                     <strong>{spot.name}</strong>
                     <br />
@@ -219,7 +220,15 @@ export default function CourseRouteMap({
             </CircleMarker>
           </Pane>
         )}
+
+        <Pane name="course-spot-popup-pane" style={{ zIndex: 1300 }} />
       </MapContainer>
+
+      <style>{`
+        .course-background-spot-dot {
+          filter: drop-shadow(1px 1px 0.7px rgba(0, 0, 0, 0.55));
+        }
+      `}</style>
     </div>
   );
 }
