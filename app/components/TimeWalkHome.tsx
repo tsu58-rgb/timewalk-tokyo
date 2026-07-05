@@ -50,6 +50,7 @@ export default function TimeWalkHome() {
   const [showDetails, setShowDetails] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [mapRecenterRequest, setMapRecenterRequest] = useState(0);
+  const [courseListLoading, setCourseListLoading] = useState(false);
 
   const mapCurrentPosition: [number, number] | null = position
     ? [position.latitude, position.longitude]
@@ -119,6 +120,12 @@ export default function TimeWalkHome() {
       },
       { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
     );
+  }
+
+  function openCourseList() {
+    if (courseListLoading) return;
+    setCourseListLoading(true);
+    window.location.href = "/courses";
   }
 
   useEffect(() => {
@@ -221,6 +228,14 @@ export default function TimeWalkHome() {
 
   return (
     <main className="min-h-screen bg-slate-900 text-white p-4 flex justify-center">
+      {courseListLoading && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/80 px-6" role="status" aria-live="assertive">
+          <div className="w-full max-w-sm rounded-3xl border-4 border-white bg-slate-900 p-6 text-center shadow-2xl">
+            <p className="text-xl font-bold text-white">散歩コース一覧を開いています</p>
+            <p className="mt-3 text-sm text-slate-300">少しお待ちください。</p>
+          </div>
+        </div>
+      )}
       <div className="w-full max-w-md bg-slate-950 border-4 border-white rounded-3xl p-5">
         <h1 className="text-2xl font-bold text-center mb-1">TimeWalk</h1>
         <p className="text-center text-xs text-slate-300 mb-3">近くの歴史スポットがわかるアプリ</p>
@@ -248,9 +263,9 @@ export default function TimeWalkHome() {
           />
         </div>
 
-        <a href="/courses" className="mb-4 block w-full rounded-2xl bg-yellow-300 px-4 py-3 text-center font-bold text-black">
+        <button type="button" onClick={openCourseList} disabled={courseListLoading} className="mb-4 block w-full rounded-2xl bg-yellow-300 px-4 py-3 text-center font-bold text-black disabled:opacity-70">
           散歩コース一覧
-        </a>
+        </button>
 
         <section className="bg-slate-800 rounded-2xl p-4 mb-4">
           <button onClick={() => setShowDetails(!showDetails)} className={`w-full text-center text-base font-bold ${showDetails ? "border border-white py-2" : ""}`}>詳細設定[{showDetails ? "閉じる" : "開く"}]</button>
