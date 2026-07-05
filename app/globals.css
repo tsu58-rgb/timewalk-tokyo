@@ -99,6 +99,32 @@ body {
     min-height: 360px !important;
     padding: 16px !important;
   }
+
+  body:has(main [role="status"] + button) {
+    padding-bottom: calc(138px + env(safe-area-inset-bottom)) !important;
+  }
+
+  main [role="status"] {
+    position: fixed !important;
+    left: 16px !important;
+    right: 16px !important;
+    bottom: calc(86px + env(safe-area-inset-bottom)) !important;
+    z-index: 10000 !important;
+    margin: 0 !important;
+    padding: 6px 0 0 !important;
+    background: #fff !important;
+  }
+
+  main [role="status"] + button {
+    position: fixed !important;
+    left: 16px !important;
+    right: 16px !important;
+    bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+    z-index: 10000 !important;
+    width: auto !important;
+    box-sizing: border-box !important;
+    background: #fff !important;
+  }
 }
 
 #review-list > div > button:nth-child(n + 31) {
