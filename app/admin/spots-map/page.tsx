@@ -152,6 +152,13 @@ export default function AdminSpotsMapPage() {
     loadCharacterIds();
   }, [pagePassword]);
 
+  function clearNewMarker() {
+    if (newMarkerRef.current && mapRef.current) {
+      mapRef.current.removeLayer(newMarkerRef.current);
+      newMarkerRef.current = null;
+    }
+  }
+
   function selectSpot(nextSpot: Spot) {
     if (savingRef.current) return false;
     if (dirtyRef.current && !window.confirm("未保存の変更があります。保存せずに別の地点へ移動しますか？")) {
@@ -159,6 +166,7 @@ export default function AdminSpotsMapPage() {
     }
     const normalized = normalizeSpot(nextSpot);
     selectionTokenRef.current += 1;
+    clearNewMarker();
     setSpot(normalized);
     setSavedSnapshot(serializeSpot(normalized));
     setPendingMove(null);
@@ -193,6 +201,7 @@ export default function AdminSpotsMapPage() {
 
     map.on("click", async (event: any) => {
       if (savingRef.current) return;
+      if (event.originalEvent?.defaultPrevented) return;
       if (dirtyRef.current && !window.confirm("未保存の変更があります。保存せずに新しい地点を作成しますか？")) return;
       const requestToken = ++selectionTokenRef.current;
       const lat = event.latlng.lat;
@@ -266,8 +275,12 @@ export default function AdminSpotsMapPage() {
           .addTo(markerLayerRef.current)
           .bindPopup(`${item.spot.name}<br>${item.spot.id || ""}`);
 
-        marker.on("click", () => selectSpot(item.spot));
+        marker.on("click", (event: any) => {
+          L.DomEvent.stop(event);
+          selectSpot(item.spot);
+        });
         marker.on("dragend", (event: any) => {
+          L.DomEvent.stop(event);
           if (savingRef.current) {
             loadExistingSpots(true);
             return;
@@ -287,7 +300,8 @@ export default function AdminSpotsMapPage() {
       })
         .addTo(markerLayerRef.current)
         .bindPopup(`${item.count}件`);
-      marker.on("click", () => {
+      marker.on("click", (event: any) => {
+        L.DomEvent.stop(event);
         if (savingRef.current) return;
         map.setView([item.lat, item.lng], Math.min(map.getZoom() + 1, map.getMaxZoom()));
       });
@@ -296,12 +310,16 @@ export default function AdminSpotsMapPage() {
 
   async function placeNewMarker(lat: number, lng: number) {
     const L = await import("leaflet");
-    if (newMarkerRef.current) mapRef.current.removeLayer(newMarkerRef.current);
+    clearNewMarker();
     newMarkerRef.current = L.marker([lat, lng], {
       draggable: true,
       icon: getNewSpotMarkerIcon(L) as any,
     }).addTo(mapRef.current);
+    newMarkerRef.current.on("click", (event: any) => {
+      L.DomEvent.stop(event);
+    });
     newMarkerRef.current.on("dragend", async (event: any) => {
+      L.DomEvent.stop(event);
       if (savingRef.current) return;
       const requestToken = ++selectionTokenRef.current;
       const point = event.target.getLatLng();
@@ -399,6 +417,7 @@ export default function AdminSpotsMapPage() {
         id: json.id,
         spotsImage: json.spotsImage || savedSpot.spotsImage || "",
       });
+      clearNewMarker();
       setSpot(nextSpot);
       setSavedSnapshot(serializeSpot(nextSpot));
       setImageBase64("");
@@ -468,7 +487,7 @@ export default function AdminSpotsMapPage() {
           </div>
         </div>
       )}
-      <style>{`.spots-admin-form,.spots-admin-form label,.spots-admin-form h2,.spots-admin-form p{color:#111!important}.spots-admin-form input,.spots-admin-form textarea{color:#111!important;background:#fff!important;border-color:#888!important}@media(max-width:800px){main{display:block!important;height:auto!important}#map,#review-list{width:100vw!important;height:60vh!important}.spots-admin-form{width:100vw!important}}`}</style>
+      <style>{`.spots-admin-form,.spots-admin-form label,.spots-admin-form h2,.spots-admin-form p{color:#111!important}.spots-admin-form input,.spots-admin-form textarea{color:#111!important;background:#fff!important;border-color:#888!important}@media(max-width:800px){main{display:block!important;height:auto!important}#map,#review-list{width:100vw!important;height:60vh!important}.spots-admin-form{width:100vw!important;padding-bottom:150px!important}}`}</style>
       <div style={{ position: "relative", minHeight: 420 }}>
         <div style={{ position: "absolute", top: 12, left: 64, right: 12, zIndex: 1000, display: "flex", gap: 8, pointerEvents: "none" }}>
           <button type="button" onClick={() => !savingRef.current && setViewMode("map")} style={{ ...topButtonStyle, background: viewMode === "map" ? "#111" : "#fff", color: viewMode === "map" ? "#fff" : "#111" }}>地図で探す</button>
