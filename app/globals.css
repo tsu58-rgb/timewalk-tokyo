@@ -100,11 +100,11 @@ body {
     padding: 16px !important;
   }
 
-  body:has(main [role="status"] + button) {
+  body:has(.spots-admin-form [role="status"] + button) {
     padding-bottom: calc(138px + env(safe-area-inset-bottom)) !important;
   }
 
-  main [role="status"] {
+  .spots-admin-form [role="status"] {
     position: fixed !important;
     left: 16px !important;
     right: 16px !important;
@@ -115,7 +115,7 @@ body {
     background: #fff !important;
   }
 
-  main [role="status"] + button {
+  .spots-admin-form [role="status"] + button {
     position: fixed !important;
     left: 16px !important;
     right: 16px !important;
