@@ -1,9 +1,3 @@
-import {
-  LANGUAGES_URL,
-  SPOT_I18N_URL,
-  WORK_I18N_URL,
-} from "./sheetUrls";
-import { fetchCsvObjects } from "./timewalkData";
 import type {
   Language,
   Spot,
@@ -11,6 +5,11 @@ import type {
   Work,
   WorkTranslation,
 } from "@/types/timewalk";
+import {
+  getStaticLanguages,
+  getStaticSpotTranslations,
+  getStaticWorkTranslations,
+} from "./staticTimewalkData";
 
 export const supportedLanguages = ["ja", "en", "zh-CN", "zh-TW", "ko", "vn"] as const;
 export type SupportedLanguage = (typeof supportedLanguages)[number];
@@ -39,56 +38,16 @@ export function languagePathCode(lang: SupportedLanguage) {
   return lang.toLowerCase();
 }
 
-export async function fetchLanguages(revalidateSeconds = 300) {
-  const rows = await fetchCsvObjects(LANGUAGES_URL, false, revalidateSeconds);
-  return rows
-    .map((row): Language => ({
-      lang: String(row.lang || "").trim(),
-      label: String(row.label || "").trim(),
-      nativeLabel: String(row.nativeLabel || "").trim(),
-      urlPrefix: String(row.urlPrefix || "").trim(),
-      isActive: String(row.isActive || "").toLowerCase() === "true",
-      note: String(row.note || "").trim(),
-    }))
-    .filter((item) => item.lang);
+export async function fetchLanguages(_revalidateSeconds = 300): Promise<Language[]> {
+  return getStaticLanguages();
 }
 
-export async function fetchWorkTranslations(revalidateSeconds = 300) {
-  const rows = await fetchCsvObjects(WORK_I18N_URL, false, revalidateSeconds);
-  return rows
-    .map((row): WorkTranslation => ({
-      workId: String(row.workId || "").trim(),
-      lang: String(row.lang || "").trim(),
-      workTitle: String(row.workTitle || "").trim(),
-      workDescription: String(row.workDescription || "").trim(),
-      metaTitle: String(row.metaTitle || "").trim(),
-      metaDescription: String(row.metaDescription || "").trim(),
-      h1: String(row.h1 || "").trim(),
-      leadText: String(row.leadText || "").trim(),
-      ogTitle: String(row.ogTitle || "").trim(),
-      ogDescription: String(row.ogDescription || "").trim(),
-      status: String(row.status || "").trim(),
-    }))
-    .filter((item) => item.workId && item.lang);
+export async function fetchWorkTranslations(_revalidateSeconds = 300): Promise<WorkTranslation[]> {
+  return getStaticWorkTranslations();
 }
 
-export async function fetchSpotTranslations(revalidateSeconds = 300) {
-  const rows = await fetchCsvObjects(SPOT_I18N_URL, false, revalidateSeconds);
-  return rows
-    .map((row): SpotTranslation => ({
-      spotId: String(row.spotId || "").trim(),
-      lang: String(row.lang || "").trim(),
-      name: String(row.name || "").trim(),
-      kana: String(row.kana || "").trim(),
-      description: String(row.description || "").trim(),
-      sceneTitle: String(row.sceneTitle || "").trim(),
-      sceneDescription: String(row.sceneDescription || "").trim(),
-      photoCaption: String(row.photoCaption || "").trim(),
-      metaTitle: String(row.metaTitle || "").trim(),
-      metaDescription: String(row.metaDescription || "").trim(),
-      status: String(row.status || "").trim(),
-    }))
-    .filter((item) => item.spotId && item.lang);
+export async function fetchSpotTranslations(_revalidateSeconds = 300): Promise<SpotTranslation[]> {
+  return getStaticSpotTranslations();
 }
 
 export function localizeWork(
