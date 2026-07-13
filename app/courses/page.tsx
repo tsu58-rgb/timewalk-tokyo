@@ -4,11 +4,10 @@ import CoursesSearchList from "./CoursesSearchList";
 import { fetchCoursePoints, getReadyCourses } from "../lib/courses";
 import { fetchSpots } from "../lib/timewalkData";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
 
 export default async function CoursesPage() {
-  const cacheOptions = { noStore: true };
+  const cacheOptions = { revalidateSeconds: 300 };
   const [courses, coursePoints, spots] = await Promise.all([
     getReadyCourses(cacheOptions),
     fetchCoursePoints(cacheOptions),
