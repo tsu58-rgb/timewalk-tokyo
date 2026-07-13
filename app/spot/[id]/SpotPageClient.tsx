@@ -1,13 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Papa from "papaparse";
-
-const SPOTS_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=1242477641&single=true&output=csv";
-
-const CHARACTERS_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vQs_sHwnzRP6UbWvwqiCURTbMWS8yrFRRErdzLk_Xt3w1vvBhS6Wa3nO7MulssNWSQ80aqlgM5B2x4Y/pub?gid=1745190060&single=true&output=csv";
 
 type Spot = {
   id: string;
@@ -34,6 +27,12 @@ type Character = {
   wikipediaUrl?: string;
 };
 
+async function fetchStaticJson<T>(path: string): Promise<T> {
+  const response = await fetch(path, { cache: "force-cache" });
+  if (!response.ok) throw new Error(`${path} を取得できませんでした: ${response.status}`);
+  return response.json();
+}
+
 function getCharacterIds(value: string) {
   return String(value || "")
     .split("・")
@@ -56,61 +55,31 @@ export default function SpotPageClient({ id }: { id: string }) {
   const [characterImageErrors, setCharacterImageErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    fetch(SPOTS_URL)
-      .then((res) => res.text())
-      .then((text) => {
-        const parsed = Papa.parse(text, {
-          header: true,
-          skipEmptyLines: true,
-        });
+    let cancelled = false;
 
-        const data = (parsed.data as any[])
-          .map((row: any) => ({
-            id: row.id || "",
-            name: row.name || "",
-            kana: row.kana || "",
-            lat: Number(row.lat),
-            lng: Number(row.lng),
-            category: row.category || "",
-            characterIds: row.characterIds || "",
-            description: row.description || "",
-            trivia: row.trivia || "",
-            status: String(row.status || "").trim(),
-            mode: row.mode || "",
-            spotsImage: row.spotsImage || "",
-          }))
-          .filter(
-            (item) =>
-              item.status.toLowerCase() === "ready" &&
-              Number.isFinite(item.lat) &&
-              Number.isFinite(item.lng) &&
-              !String(item.mode || "").includes("除外")
-          );
+    async function loadStaticData() {
+      try {
+        const [spotData, characterData] = await Promise.all([
+          fetchStaticJson<Spot[]>("/data/timewalk/spots.json"),
+          fetchStaticJson<Character[]>("/data/timewalk/characters.json"),
+        ]);
 
-        setSpot(data.find((s) => s.id === id) || null);
-        setLoading(false);
-      });
+        if (cancelled) return;
+        setSpot(spotData.find((s) => s.id === id) || null);
+        setCharacters(characterData);
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) setSpot(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
 
-    fetch(CHARACTERS_URL)
-      .then((res) => res.text())
-      .then((text) => {
-        const parsed = Papa.parse(text, {
-          header: true,
-          skipEmptyLines: true,
-        });
+    loadStaticData();
 
-        const data = (parsed.data as any[]).map((row: any) => ({
-          characterId: row.characterId || "",
-          characterName: row.characterName || "",
-          characterKana: row.characterKana || "",
-          characterYears: row.characterYears || "",
-          characterDescription: row.characterDescription || "",
-          characterImage: row.characterImage || "",
-          wikipediaUrl: row.wikipediaUrl || "",
-        }));
-
-        setCharacters(data);
-      });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   useEffect(() => {
