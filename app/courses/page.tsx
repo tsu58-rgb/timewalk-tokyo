@@ -1,17 +1,14 @@
 import Link from "next/link";
 
 import CoursesSearchList from "./CoursesSearchList";
-import { fetchCoursePoints, getReadyCourses } from "../lib/courses";
+import { getStaticCoursePoints, getStaticReadyCourses } from "../lib/staticTimewalkData";
 
-export const revalidate = 3600;
+export const dynamic = "force-static";
+export const revalidate = false;
 
-export default async function CoursesPage() {
-  const cacheOptions = { revalidateSeconds: 3600 };
-  const [courses, coursePoints] = await Promise.all([
-    getReadyCourses(cacheOptions),
-    fetchCoursePoints(cacheOptions),
-  ]);
-
+export default function CoursesPage() {
+  const courses = getStaticReadyCourses();
+  const coursePoints = getStaticCoursePoints();
   const courseSearchNames = new Map<string, Set<string>>();
 
   coursePoints.forEach((point) => {
