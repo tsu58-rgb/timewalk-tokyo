@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 
 import { calcDistanceMeters } from "../lib/distance";
-import { fetchCharacters, fetchEvents, fetchSpots } from "../lib/timewalkData";
 import type { Character, EventItem, Spot, SpotWithDistance } from "@/types/timewalk";
 
 const SpotMap = dynamic(() => import("./SpotMap"), {
@@ -18,6 +17,12 @@ const SpotMap = dynamic(() => import("./SpotMap"), {
 
 const DISTANCE_OPTIONS = [200, 500, 1000, 2000, 10000];
 const DISPLAY_LIMIT = 30;
+
+async function fetchStaticJson<T>(path: string): Promise<T> {
+  const response = await fetch(path, { cache: "force-cache" });
+  if (!response.ok) throw new Error(`${path} を取得できませんでした: ${response.status}`);
+  return response.json();
+}
 
 function splitJapaneseList(value: string) {
   return String(value || "")
@@ -57,7 +62,7 @@ export default function TimeWalkHome() {
     : null;
 
   useEffect(() => {
-    fetchSpots()
+    fetchStaticJson<Spot[]>("/data/timewalk/spots.json")
       .then(setSpots)
       .catch((err) => {
         console.error(err);
@@ -66,11 +71,11 @@ export default function TimeWalkHome() {
   }, []);
 
   useEffect(() => {
-    fetchCharacters().then(setCharacters).catch(console.error);
+    fetchStaticJson<Character[]>("/data/timewalk/characters.json").then(setCharacters).catch(console.error);
   }, []);
 
   useEffect(() => {
-    fetchEvents().then(setEvents).catch(console.error);
+    fetchStaticJson<EventItem[]>("/data/timewalk/events.json").then(setEvents).catch(console.error);
   }, []);
 
   async function fetchAddress(lat: number, lon: number) {
