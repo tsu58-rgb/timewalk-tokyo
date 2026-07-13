@@ -11,7 +11,7 @@ import {
   normalizeLanguage,
 } from "../../lib/seichiI18nData";
 import { htmlLanguageCode } from "../../lib/seichiSeo";
-import { fetchSpots, fetchWorks } from "../../lib/timewalkData";
+import { getStaticSeichiSpots, getStaticWorks } from "../../lib/staticTimewalkData";
 
 export default async function SeichiSpotDetail({
   id,
@@ -21,17 +21,15 @@ export default async function SeichiSpotDetail({
   language?: string;
 }) {
   const lang = normalizeLanguage(language);
-  const [spots, works, spotTranslations, workTranslations] = await Promise.all([
-    fetchSpots({ revalidateSeconds: 300, includeWorkSpots: true }),
-    fetchWorks({ revalidateSeconds: 300 }),
-    fetchSpotTranslations(300),
-    fetchWorkTranslations(300),
+  const [spotTranslations, workTranslations] = await Promise.all([
+    fetchSpotTranslations(),
+    fetchWorkTranslations(),
   ]);
 
-  const baseSpot = spots.find((item) => item.id === id && item.workId);
+  const baseSpot = getStaticSeichiSpots().find((item) => item.id === id && item.workId);
   if (!baseSpot) notFound();
 
-  const baseWork = works.find((item) => item.workId === baseSpot.workId);
+  const baseWork = getStaticWorks().find((item) => item.workId === baseSpot.workId);
   if (!baseWork) notFound();
 
   const spot = localizeSpot(baseSpot, lang, spotTranslations);
