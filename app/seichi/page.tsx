@@ -3,9 +3,10 @@ import type { Metadata } from "next";
 import SeichiWorksIndex from "../components/SeichiWorksIndex";
 import { fetchLanguages, fetchWorkTranslations, localizeWork } from "../lib/seichiI18nData";
 import { seichiIndexAlternates, seichiIndexUrl } from "../lib/seichiSeo";
-import { fetchWorks } from "../lib/timewalkData";
+import { getStaticWorks } from "../lib/staticTimewalkData";
 
-export const revalidate = 300;
+export const dynamic = "force-static";
+export const revalidate = false;
 
 export const metadata: Metadata = {
   title: "聖地巡礼TimeWalk｜作品の舞台を歩く",
@@ -23,13 +24,12 @@ export const metadata: Metadata = {
 };
 
 export default async function SeichiPage() {
-  const [works, languages, translations] = await Promise.all([
-    fetchWorks({ revalidateSeconds: 300 }),
-    fetchLanguages(300),
-    fetchWorkTranslations(300),
+  const [languages, translations] = await Promise.all([
+    fetchLanguages(),
+    fetchWorkTranslations(),
   ]);
 
-  const localizedWorks = works.map((work) => localizeWork(work, "ja", translations));
+  const localizedWorks = getStaticWorks().map((work) => localizeWork(work, "ja", translations));
 
   return <SeichiWorksIndex works={localizedWorks} lang="ja" languages={languages} />;
 }
