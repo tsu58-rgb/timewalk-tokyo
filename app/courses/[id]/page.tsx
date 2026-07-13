@@ -10,9 +10,10 @@ import {
 } from "../../lib/courses";
 import { fetchSpots } from "../../lib/timewalkData";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 const BASE_URL = "https://timewalk.yuru-rekishi-sanpo.com";
+const PUBLIC_CACHE_SECONDS = 3600;
 
 export async function generateMetadata({
   params,
@@ -20,7 +21,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const course = await getCourseById(id, { revalidateSeconds: 300 });
+  const course = await getCourseById(id, { revalidateSeconds: PUBLIC_CACHE_SECONDS });
 
   if (!course) {
     return {
@@ -79,7 +80,7 @@ export default async function CoursePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const cacheOptions = { revalidateSeconds: 300 };
+  const cacheOptions = { revalidateSeconds: PUBLIC_CACHE_SECONDS };
   const [course, storedPoints, spots] = await Promise.all([
     getCourseById(id, cacheOptions),
     getCoursePointsById(id, cacheOptions),
