@@ -8,6 +8,10 @@ const SHEETS_BASE_URL =
 const URLS = {
   events: `${SHEETS_BASE_URL}?gid=1015785763&single=true&output=csv`,
   spots: `${SHEETS_BASE_URL}?gid=1242477641&single=true&output=csv`,
+  works: `${SHEETS_BASE_URL}?gid=697753165&single=true&output=csv`,
+  languages: `${SHEETS_BASE_URL}?gid=31001&single=true&output=csv`,
+  workTranslations: `${SHEETS_BASE_URL}?gid=31002&single=true&output=csv`,
+  spotTranslations: `${SHEETS_BASE_URL}?gid=31003&single=true&output=csv`,
   characters: `${SHEETS_BASE_URL}?gid=1745190060&single=true&output=csv`,
   courses: `${SHEETS_BASE_URL}?gid=21001&single=true&output=csv`,
   coursePoints: `${SHEETS_BASE_URL}?gid=21002&single=true&output=csv`,
@@ -79,6 +83,57 @@ function normalizeEvent(row) {
   };
 }
 
+function normalizeWork(row) {
+  return {
+    workId: String(row.workId || "").trim(),
+    workTitle: String(row.workTitle || "").trim(),
+    workDescription: String(row.workDescription || "").trim(),
+  };
+}
+
+function normalizeLanguage(row) {
+  return {
+    lang: String(row.lang || "").trim(),
+    label: String(row.label || "").trim(),
+    nativeLabel: String(row.nativeLabel || "").trim(),
+    urlPrefix: String(row.urlPrefix || "").trim(),
+    isActive: String(row.isActive || "").toLowerCase() === "true",
+    note: String(row.note || "").trim(),
+  };
+}
+
+function normalizeWorkTranslation(row) {
+  return {
+    workId: String(row.workId || "").trim(),
+    lang: String(row.lang || "").trim(),
+    workTitle: String(row.workTitle || "").trim(),
+    workDescription: String(row.workDescription || "").trim(),
+    metaTitle: String(row.metaTitle || "").trim(),
+    metaDescription: String(row.metaDescription || "").trim(),
+    h1: String(row.h1 || "").trim(),
+    leadText: String(row.leadText || "").trim(),
+    ogTitle: String(row.ogTitle || "").trim(),
+    ogDescription: String(row.ogDescription || "").trim(),
+    status: String(row.status || "").trim(),
+  };
+}
+
+function normalizeSpotTranslation(row) {
+  return {
+    spotId: String(row.spotId || "").trim(),
+    lang: String(row.lang || "").trim(),
+    name: String(row.name || "").trim(),
+    kana: String(row.kana || "").trim(),
+    description: String(row.description || "").trim(),
+    sceneTitle: String(row.sceneTitle || "").trim(),
+    sceneDescription: String(row.sceneDescription || "").trim(),
+    photoCaption: String(row.photoCaption || "").trim(),
+    metaTitle: String(row.metaTitle || "").trim(),
+    metaDescription: String(row.metaDescription || "").trim(),
+    status: String(row.status || "").trim(),
+  };
+}
+
 function normalizeCourse(row) {
   return {
     id: String(row.courseId || "").trim(),
@@ -118,26 +173,44 @@ async function writeJson(fileName, data) {
 
 await Promise.all([mkdir(outputDir, { recursive: true }), mkdir(publicOutputDir, { recursive: true })]);
 
-const [spotRows, characterRows, eventRows, courseRows, coursePointRows] = await Promise.all([
+const [
+  spotRows,
+  characterRows,
+  eventRows,
+  workRows,
+  languageRows,
+  workTranslationRows,
+  spotTranslationRows,
+  courseRows,
+  coursePointRows,
+] = await Promise.all([
   fetchCsvObjects("spots", URLS.spots),
   fetchCsvObjects("characters", URLS.characters),
   fetchCsvObjects("events", URLS.events),
+  fetchCsvObjects("works", URLS.works),
+  fetchCsvObjects("languages", URLS.languages),
+  fetchCsvObjects("workTranslations", URLS.workTranslations),
+  fetchCsvObjects("spotTranslations", URLS.spotTranslations),
   fetchCsvObjects("courses", URLS.courses),
   fetchCsvObjects("coursePoints", URLS.coursePoints),
 ]);
 
-const spots = spotRows
+const allUsableSpots = spotRows
   .map(normalizeSpot)
-  .filter((spot) => {
-    const isPublishedRegularSpot = spot.status.toLowerCase() === "ready" && !spot.workId;
-    return (
-      isPublishedRegularSpot &&
+  .filter(
+    (spot) =>
+      spot.status.toLowerCase() === "ready" &&
       Number.isFinite(spot.lat) &&
       Number.isFinite(spot.lng) &&
       !String(spot.mode || "").includes("除外")
-    );
-  });
+  );
 
+const spots = allUsableSpots.filter((spot) => !spot.workId);
+const seichiSpots = allUsableSpots.filter((spot) => spot.workId);
+const works = workRows.map(normalizeWork).filter((item) => item.workId && item.workTitle);
+const languages = languageRows.map(normalizeLanguage).filter((item) => item.lang);
+const workTranslations = workTranslationRows.map(normalizeWorkTranslation).filter((item) => item.workId && item.lang);
+const spotTranslations = spotTranslationRows.map(normalizeSpotTranslation).filter((item) => item.spotId && item.lang);
 const characters = characterRows.map(normalizeCharacter).filter((item) => item.characterId && item.characterName);
 const events = eventRows.map(normalizeEvent).filter((item) => item.id || item.date || item.description);
 const courses = courseRows
@@ -157,12 +230,17 @@ const coursePoints = coursePointRows
 
 await Promise.all([
   writeJson("spots.json", spots),
+  writeJson("seichi-spots.json", seichiSpots),
   writeJson("characters.json", characters),
   writeJson("events.json", events),
+  writeJson("works.json", works),
+  writeJson("languages.json", languages),
+  writeJson("work-translations.json", workTranslations),
+  writeJson("spot-translations.json", spotTranslations),
   writeJson("courses.json", courses),
   writeJson("course-points.json", coursePoints),
 ]);
 
 console.log(
-  `Generated TimeWalk static data: spots=${spots.length}, characters=${characters.length}, events=${events.length}, courses=${courses.length}, coursePoints=${coursePoints.length}`
+  `Generated TimeWalk static data: spots=${spots.length}, seichiSpots=${seichiSpots.length}, characters=${characters.length}, events=${events.length}, works=${works.length}, courses=${courses.length}, coursePoints=${coursePoints.length}`
 );
