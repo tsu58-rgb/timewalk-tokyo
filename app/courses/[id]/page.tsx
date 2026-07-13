@@ -2,18 +2,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import CourseRouteMapLoader from "../../components/CourseRouteMapLoader";
+import { formatCourseDistance, type CoursePoint } from "../../lib/courses";
 import {
-  formatCourseDistance,
-  getCourseById,
-  getCoursePointsById,
-  type CoursePoint,
-} from "../../lib/courses";
-import { fetchSpots } from "../../lib/timewalkData";
+  getStaticCourseById,
+  getStaticCoursePointsById,
+  getStaticReadyCourses,
+  getStaticSpots,
+} from "../../lib/staticTimewalkData";
 
-export const revalidate = 3600;
+export const dynamic = "force-static";
+export const revalidate = false;
 
 const BASE_URL = "https://timewalk.yuru-rekishi-sanpo.com";
-const PUBLIC_CACHE_SECONDS = 3600;
+
+export function generateStaticParams() {
+  return getStaticReadyCourses().map((course) => ({ id: course.id }));
+}
 
 export async function generateMetadata({
   params,
@@ -21,7 +25,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const course = await getCourseById(id, { revalidateSeconds: PUBLIC_CACHE_SECONDS });
+  const course = getStaticCourseById(id);
 
   if (!course) {
     return {
@@ -80,12 +84,9 @@ export default async function CoursePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const cacheOptions = { revalidateSeconds: PUBLIC_CACHE_SECONDS };
-  const [course, storedPoints, spots] = await Promise.all([
-    getCourseById(id, cacheOptions),
-    getCoursePointsById(id, cacheOptions),
-    fetchSpots(cacheOptions),
-  ]);
+  const course = getStaticCourseById(id);
+  const storedPoints = getStaticCoursePointsById(id);
+  const spots = getStaticSpots();
 
   if (!course) {
     return (
