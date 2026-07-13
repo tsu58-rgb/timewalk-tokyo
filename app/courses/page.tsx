@@ -2,26 +2,20 @@ import Link from "next/link";
 
 import CoursesSearchList from "./CoursesSearchList";
 import { fetchCoursePoints, getReadyCourses } from "../lib/courses";
-import { fetchSpots } from "../lib/timewalkData";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export default async function CoursesPage() {
-  const cacheOptions = { revalidateSeconds: 300 };
-  const [courses, coursePoints, spots] = await Promise.all([
+  const cacheOptions = { revalidateSeconds: 3600 };
+  const [courses, coursePoints] = await Promise.all([
     getReadyCourses(cacheOptions),
     fetchCoursePoints(cacheOptions),
-    fetchSpots(cacheOptions),
   ]);
 
-  const spotNameMap = new Map(spots.map((spot) => [spot.id, spot.name]));
   const courseSearchNames = new Map<string, Set<string>>();
 
   coursePoints.forEach((point) => {
-    const name =
-      point.pointType === "spot"
-        ? spotNameMap.get(point.spotId) || point.name
-        : point.name;
+    const name = point.name;
 
     if (!name) return;
 
