@@ -18,6 +18,23 @@ type VercelDeployment = {
 const ACTIVE_STATES = new Set(["QUEUED", "INITIALIZING", "BUILDING", "DEPLOYING"]);
 const SUCCESS_STATES = new Set(["READY"]);
 
+function isAuthorized(request: Request) {
+  const expected = process.env.TIMEWALK_REDEPLOY_PASSWORD || process.env.TIMEWALK_ADMIN_PASSWORD || "";
+  if (!expected) return true;
+  const actual = request.headers.get("x-timewalk-admin-password") || "";
+  return actual === expected;
+}
+
+function unauthorizedResponse() {
+  return NextResponse.json(
+    {
+      ok: false,
+      message: "公開反映の権限がありません。管理パスワードでログインし直してください。",
+    },
+    { status: 401 }
+  );
+}
+
 function vercelApiUrl() {
   const projectId = process.env.VERCEL_PROJECT_ID || process.env.TIMEWALK_VERCEL_PROJECT_ID;
   const teamId = process.env.VERCEL_TEAM_ID || process.env.TIMEWALK_VERCEL_TEAM_ID;
@@ -80,7 +97,9 @@ async function fetchDeploymentStatus() {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!isAuthorized(request)) return unauthorizedResponse();
+
   try {
     const status = await fetchDeploymentStatus();
     return NextResponse.json(status);
@@ -100,7 +119,9 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  if (!isAuthorized(request)) return unauthorizedResponse();
+
   const hookUrl = process.env.TIMEWALK_DEPLOY_HOOK_URL;
   if (!hookUrl) {
     return NextResponse.json(
