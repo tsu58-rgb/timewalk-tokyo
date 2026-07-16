@@ -3,6 +3,8 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+import PublicRedeployButton from "./components/PublicRedeployButton";
+
 export default function AdminSectionShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isSpotsMap = pathname === "/admin/spots-map";
@@ -35,6 +37,9 @@ export default function AdminSectionShell({ children }: { children: ReactNode })
             </a>
           ))}
         </div>
+      </div>
+      <div className="admin-public-redeploy">
+        <PublicRedeployButton />
       </div>
       <div className="admin-section-content">{children}</div>
 
@@ -80,6 +85,12 @@ export default function AdminSectionShell({ children }: { children: ReactNode })
         .admin-section-switcher a:hover {
           background: #333;
         }
+        .admin-public-redeploy {
+          box-sizing: border-box;
+          width: min(100%, 1200px);
+          margin: 12px auto 0;
+          padding: 0 16px;
+        }
         .admin-section-content > main {
           height: calc(100vh - 56px) !important;
           min-height: calc(100vh - 56px) !important;
@@ -96,6 +107,9 @@ export default function AdminSectionShell({ children }: { children: ReactNode })
           .admin-section-switcher a {
             width: 100%;
             box-sizing: border-box;
+          }
+          .admin-public-redeploy {
+            padding: 0 8px;
           }
           .admin-section-content > main {
             height: auto !important;
