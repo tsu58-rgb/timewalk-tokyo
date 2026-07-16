@@ -40,20 +40,26 @@ export default function PublicRedeployButton() {
   const [loading, setLoading] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  async function loadStatus(silent = false) {
+  async function loadStatus(silent = false): Promise<RedeployStatus> {
     try {
       const response = await fetch("/api/admin/redeploy", {
         cache: "no-store",
         headers: getAdminHeaders(),
       });
-      const json = await response.json();
+      const json = (await response.json()) as RedeployStatus;
       setStatus(json);
       if (!silent && json.message) setMessage(json.message);
-      return json as RedeployStatus;
+      return json;
     } catch {
-      const fallback = { ok: false, message: "公開反映の状態を取得できませんでした。" };
+      const fallback: RedeployStatus = {
+        ok: false,
+        configured: false,
+        active: false,
+        lastReadyAt: "",
+        message: "公開反映の状態を取得できませんでした。",
+      };
       setStatus(fallback);
-      if (!silent) setMessage(fallback.message);
+      if (!silent) setMessage(fallback.message || "公開反映の状態を取得できませんでした。");
       return fallback;
     }
   }
@@ -101,7 +107,7 @@ export default function PublicRedeployButton() {
         cache: "no-store",
         headers: getAdminHeaders(),
       });
-      const json = await response.json();
+      const json = (await response.json()) as RedeployStatus;
 
       if (!response.ok || !json.ok) {
         setLoading(false);
