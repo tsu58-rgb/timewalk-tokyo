@@ -25,10 +25,13 @@ function formatDateTime(value?: string) {
   }).format(date);
 }
 
-function getAdminHeaders() {
-  if (typeof window === "undefined") return {};
+function getAdminHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (typeof window === "undefined") return headers;
+
   const password = window.localStorage.getItem("timewalkAdminPassword") || "";
-  return password ? { "x-timewalk-admin-password": password } : {};
+  if (password) headers["x-timewalk-admin-password"] = password;
+  return headers;
 }
 
 export default function PublicRedeployButton() {
