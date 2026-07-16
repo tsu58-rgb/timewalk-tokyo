@@ -25,6 +25,12 @@ function formatDateTime(value?: string) {
   }).format(date);
 }
 
+function getAdminHeaders() {
+  if (typeof window === "undefined") return {};
+  const password = window.localStorage.getItem("timewalkAdminPassword") || "";
+  return password ? { "x-timewalk-admin-password": password } : {};
+}
+
 export default function PublicRedeployButton() {
   const [status, setStatus] = useState<RedeployStatus | null>(null);
   const [message, setMessage] = useState("");
@@ -33,7 +39,10 @@ export default function PublicRedeployButton() {
 
   async function loadStatus(silent = false) {
     try {
-      const response = await fetch("/api/admin/redeploy", { cache: "no-store" });
+      const response = await fetch("/api/admin/redeploy", {
+        cache: "no-store",
+        headers: getAdminHeaders(),
+      });
       const json = await response.json();
       setStatus(json);
       if (!silent && json.message) setMessage(json.message);
@@ -87,6 +96,7 @@ export default function PublicRedeployButton() {
       const response = await fetch("/api/admin/redeploy", {
         method: "POST",
         cache: "no-store",
+        headers: getAdminHeaders(),
       });
       const json = await response.json();
 
